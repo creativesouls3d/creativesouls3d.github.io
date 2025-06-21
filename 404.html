@@ -17,30 +17,29 @@
   <p id="product-info">Loading product info...</p>
 
   <script>
-    const path = window.location.pathname;
-    const productRegex = /^\/product\/(\d{8})\/?$/;
-    const match = path.match(productRegex);
+  const path = window.location.pathname;
+  const productRegex = /^\/product\/(\d{8})\/?$/;
+  const match = path.match(productRegex);
 
-    if (match) {
-      const productId = match[1];
-      document.getElementById('product-info').textContent = `Product ID: ${productId}`;
+  if (match) {
+    const productId = match[1];
+    document.getElementById('product-info').textContent =
+      `Product ID: ${productId}`;
 
-      const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
+    // 👉 Trigger deep link
+    const deepLink = `https://creativesouls3d.github.io/product/${productId}`;
+    window.location.href = deepLink;
 
-      // Try to open the app
-      setTimeout(() => {
-        window.location.replace(intentUrl);
-      }, 1500);
-
-      // Fallback: If app is not installed, redirect to Play Store after a few seconds
-      setTimeout(() => {
-        window.location.href = 'https://play.google.com/store/apps/details?id=com.ls.creativesouls3d';
-      }, 4000);
-
-    } else {
-      document.querySelector('h2').textContent = '404 - Page Not Found';
-      document.getElementById('product-info').textContent = 'The page you requested does not exist.';
-    }
-  </script>
+    // Optional fallback
+    setTimeout(() => {
+      document.getElementById('product-info').textContent =
+        "If the app didn’t open, it may not be installed.";
+    }, 2500);
+  } else {
+    document.querySelector('h2').textContent = '404 - Page Not Found';
+    document.getElementById('product-info').textContent =
+      'The page you requested does not exist.';
+  }
+</script>
 </body>
 </html>
