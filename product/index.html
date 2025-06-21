@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Opening Product...</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Redirecting to Creative Souls 3D app...</h2>
+  <p id="product-info">Please wait...</p>
+
+  <script>
+    // Get product ID from URL path
+    const pathParts = window.location.pathname.split('/');
+    const productId = pathParts[pathParts.length - 1];
+
+    // Update message
+    document.getElementById('product-info').textContent =
+      `Opening product ID: ${productId}`;
+
+    // Replace this with your app's intent/deep link
+    // Example: open in Android app using intent
+    const redirectUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.creativesouls3d.app;end`;
+
+    // Try to redirect
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 2000);
+  </script>
+</body>
+</html>
