@@ -10,36 +10,44 @@
       font-family: Arial, sans-serif;
       padding: 50px;
     }
+    #fallback {
+      display: none;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h2>Redirecting to Creative Souls 3D App...</h2>
   <p id="product-info">Loading product info...</p>
+  <p id="fallback">
+    If the app didn’t open, <a id="manualLink" href="#">click here</a> to open it manually.
+  </p>
 
   <script>
-  const path = window.location.pathname;
-  const productRegex = /^\/product\/(\d{8})\/?$/;
-  const match = path.match(productRegex);
+    const path = window.location.pathname;
+    const productRegex = /^\/product\/(\d{8})\/?$/;
+    const match = path.match(productRegex);
 
-  if (match) {
-    const productId = match[1];
-    document.getElementById('product-info').textContent =
-      `Product ID: ${productId}`;
+    if (match) {
+      const productId = match[1];
+      document.getElementById('product-info').textContent = `Product ID: ${productId}`;
 
-    // 👉 Trigger deep link
-    const deepLink = `https://creativesouls3d.github.io/product/${productId}`;
-    window.location.href = deepLink;
+      const deepLink = `https://creativesouls3d.github.io/product/${productId}`;
+      document.getElementById('manualLink').href = deepLink;
 
-    // Optional fallback
-    setTimeout(() => {
-      document.getElementById('product-info').textContent =
-        "If the app didn’t open, it may not be installed.";
-    }, 2500);
-  } else {
-    document.querySelector('h2').textContent = '404 - Page Not Found';
-    document.getElementById('product-info').textContent =
-      'The page you requested does not exist.';
-  }
-</script>
+      // Redirect after short delay
+      setTimeout(() => {
+        window.location.href = deepLink;
+      }, 100); // Keep it quick for smoother experience
+
+      // Show fallback message after 2.5s if user is still on page
+      setTimeout(() => {
+        document.getElementById('fallback').style.display = 'block';
+      }, 2500);
+    } else {
+      document.querySelector('h2').textContent = '404 - Page Not Found';
+      document.getElementById('product-info').textContent = 'The page you requested does not exist.';
+    }
+  </script>
 </body>
 </html>
