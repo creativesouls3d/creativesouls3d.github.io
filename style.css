@@ -1,0 +1,79 @@
+body {
+  font-family: 'Comic Neue', cursive;
+  margin: 0;
+  padding: 0;
+  background: #fffbe6;
+  color: #000;
+}
+
+header {
+  background: #FFEB3B;
+  color: black;
+  text-align: center;
+  padding: 30px 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2.5em;
+}
+
+header p {
+  margin-top: 10px;
+  font-size: 1.1em;
+  color: #333;
+}
+
+section {
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: auto;
+  text-align: center;
+}
+
+h2 {
+  color: #111;
+  margin-bottom: 20px;
+}
+
+.about p {
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.btn {
+  background: #000;
+  color: #FFEB3B;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  display: inline-block;
+  margin-top: 15px;
+}
+
+.btn:hover {
+  background: #333;
+}
+
+.version-info {
+  margin-top: 15px;
+  font-size: 0.95em;
+  color: #444;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  background: #f0f0f0;
+  font-size: 0.9em;
+  color: #555;
+}
