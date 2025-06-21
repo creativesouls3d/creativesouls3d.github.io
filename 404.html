@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding: 50px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Redirecting to Creative Souls 3D App...</h2>
+  <p id="product-info">Loading...</p>
+
+  <script>
+    const path = window.location.pathname;
+    const productRegex = /^\/product\/(\d{8})\/?$/;
+
+    const match = path.match(productRegex);
+
+    if (match) {
+      const productId = match[1];
+      document.getElementById('product-info').textContent =
+        `Product ID: ${productId}`;
+
+      const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.creativesouls3d.app;end`;
+
+      setTimeout(() => {
+        window.location.href = intentUrl;
+      }, 2000);
+    } else {
+      document.querySelector('h2').textContent = '404 - Page Not Found';
+      document.getElementById('product-info').textContent = 'The page you requested does not exist.';
+    }
+  </script>
+</body>
+</html>
