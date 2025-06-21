@@ -32,15 +32,18 @@
       const productId = match[1];
       document.getElementById('product-info').textContent = `Product ID: ${productId}`;
 
-      const deepLink = `https://creativesouls3d.github.io/product/${productId}`;
-      document.getElementById('manualLink').href = deepLink;
+      // ✅ Intent-based deep link (for Android)
+      const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
 
-      // Redirect after short delay
+      // ⛳ Set fallback link for manual click
+      document.getElementById('manualLink').href = intentUrl;
+
+      // 🚀 Trigger redirect
       setTimeout(() => {
-        window.location.href = deepLink;
-      }, 100); // Keep it quick for smoother experience
+        window.location.href = intentUrl;
+      }, 100); // Fast redirect
 
-      // Show fallback message after 2.5s if user is still on page
+      // 🕐 Show fallback if app didn't open
       setTimeout(() => {
         document.getElementById('fallback').style.display = 'block';
       }, 2500);
