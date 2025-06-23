@@ -1,56 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Redirecting...</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body {
-      text-align: center;
-      font-family: Arial, sans-serif;
-      padding: 50px;
-    }
-    #fallback {
-      display: none;
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Redirecting...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            padding: 50px;
+        }
+
+        #fallback {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
+
 <body>
-  <h2>Redirecting to Creative Souls 3D App...</h2>
-  <p id="product-info">Loading product info...</p>
-  <p id="fallback">
-    If the app didn’t open, <a id="manualLink" href="#">click here</a> to open it manually.
-  </p>
+    <h2>Redirecting to Creative Souls 3D App...</h2>
+    <p id="product-info">Loading product info...</p>
+    <p id="fallback">
+        If the app didn’t open, <a id="manualLink" href="#">click here</a> to open it manually.
+    </p>
 
-  <script>
-    const path = window.location.pathname;
-    const productRegex = /^\/product\/(\d{8})\/?$/;
-    const match = path.match(productRegex);
+    <script>
+        const path = window.location.pathname;
+        const productRegex = /^\/product\/(\d{8})\/?$/;
+        const searchRegex = /^\/search\/([a-zA-Z0-9_-]+)\/?$/;
 
-    if (match) {
-      const productId = match[1];
-      document.getElementById('product-info').textContent = `Product ID: ${productId}`;
+        if (productRegex.test(path)) {
+            const productId = path.match(productRegex)[1];
+            const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
+            document.getElementById('manualLink').href = intentUrl;
+            setTimeout(() => window.location.href = intentUrl, 100);
+            setTimeout(() => document.getElementById('fallback').style.display = 'block', 2500);
+            document.getElementById('product-info').textContent = `Product ID: ${productId}`;
+        } else if (searchRegex.test(path)) {
+            const query = path.match(searchRegex)[1];
+            const intentUrl = `intent://search/${query}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
+            document.getElementById('manualLink').href = intentUrl;
+            setTimeout(() => window.location.href = intentUrl, 100);
+            setTimeout(() => document.getElementById('fallback').style.display = 'block', 2500);
+            document.getElementById('product-info').textContent = `Search: ${query}`;
+        } else {
+            document.querySelector('h2').textContent = '404 - Page Not Found';
+            document.getElementById('product-info').textContent = 'The page you requested does not exist.';
+        }
 
-      // ✅ Intent-based deep link (for Android)
-      const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
-
-      // ⛳ Set fallback link for manual click
-      document.getElementById('manualLink').href = intentUrl;
-
-      // 🚀 Trigger redirect
-      setTimeout(() => {
-        window.location.href = intentUrl;
-      }, 100); // Fast redirect
-
-      // 🕐 Show fallback if app didn't open
-      setTimeout(() => {
-        document.getElementById('fallback').style.display = 'block';
-      }, 2500);
-    } else {
-      document.querySelector('h2').textContent = '404 - Page Not Found';
-      document.getElementById('product-info').textContent = 'The page you requested does not exist.';
-    }
-  </script>
+    </script>
 </body>
+
 </html>
