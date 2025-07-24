@@ -7,7 +7,7 @@ const searchInput = document.getElementById("searchInput");
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
-    document.getElementById("user-name").textContent = user.displayName || "User";
+    document.getElementById("user-name").textContent = user.displayName;
     document.getElementById("user-photo").src = user.photoURL || "default-user.png";
     document.getElementById("login-btn").style.display = "none";
     document.getElementById("logout-btn").style.display = "block";
@@ -23,46 +23,20 @@ firebase.auth().onAuthStateChanged((user) => {
 // ==== Login / Logout ====
 document.getElementById("login-btn").onclick = () => {
   const provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithRedirect(provider);
+  firebase.auth().signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
 };
-
-firebase.auth().getRedirectResult()
-  .then((result) => {
-    if (result.user) {
-      console.log("User signed in:", result.user.displayName);
-      // Update UI as needed
-    }
-  })
-  .catch((error) => {
-    console.error("Sign-in error:", error.code, error.message);
-    alert("Sign-in failed: " + error.message);
-  });
-
 
 document.getElementById("logout-btn").onclick = () => {
   firebase.auth().signOut();
 };
 
-// ==== Handle Redirect Login Result ====
-firebase.auth().getRedirectResult()
-  .then((result) => {
-    if (result.user) {
-      console.log("✅ Redirect login successful:", result.user.email);
-    }
-  })
-  .catch((error) => {
-    console.error("❌ Login error:", error);
-    alert("Login failed: " + error.message);
-  });
-
-// ==== Profile Dropdown Toggle ====
+// ==== Profile Menu Toggle ====
 const userIcon = document.getElementById("user-photo");
 const dropdownMenu = document.getElementById("dropdown-menu");
 
 userIcon.onclick = () => {
   dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
 };
-
 document.body.addEventListener("click", (e) => {
   if (!userIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
     dropdownMenu.style.display = "none";
@@ -75,9 +49,7 @@ function renderProduct(data) {
   card.className = "product-card";
   card.innerHTML = `
     <a href="product.html?id=${data.productId}">
-      <div class="product-image-wrapper">
-        <img src="${data.imageUrl}" alt="${data.productName}" />
-      </div>
+      <img src="${data.imageUrl}" alt="${data.productName}" />
       <h3>${data.productName}</h3>
       <p>₹${data.price}</p>
       <p>${data.category}</p>
@@ -109,7 +81,7 @@ function displayProducts(products, filter = "All", query = "") {
   filtered.forEach(p => renderProduct(p));
 }
 
-// ==== Load Products (from Cache or DB) ====
+// ==== Load Products from Cache or Firestore ====
 function loadProducts() {
   const cached = localStorage.getItem("products");
   if (cached) {
@@ -124,7 +96,7 @@ function loadProducts() {
   }
 }
 
-// ==== Fetch from Firestore & Cache ====
+// ==== Fetch & Cache Products ====
 function fetchAndCacheProducts() {
   db.collection("products").get().then(snapshot => {
     const all = [];
@@ -137,7 +109,7 @@ function fetchAndCacheProducts() {
   });
 }
 
-// ==== Category Button Events ====
+// ==== Filter Button Events ====
 categoryButtons.forEach(btn => {
   btn.onclick = () => {
     document.querySelector(".filters .active")?.classList.remove("active");
@@ -148,12 +120,12 @@ categoryButtons.forEach(btn => {
   };
 });
 
-// ==== Search Input Live Filter ====
+// ==== Search Input Event ====
 searchInput?.addEventListener("input", () => {
   const products = JSON.parse(localStorage.getItem("products") || "[]");
   const activeCategory = document.querySelector(".filters .active")?.dataset.cat || "All";
   displayProducts(products, activeCategory, searchInput.value.trim());
 });
 
-// ==== Initial App Start ====
+// ==== Initial Load ====
 loadProducts();
