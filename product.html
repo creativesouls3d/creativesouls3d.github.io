@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product | Creative Souls 3D</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Product Page Logic -->
+  <script defer src="product.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-section">
+      <img src="logo_creativesouls.jpg" alt="Creative Souls Logo" />
+      <span>Creative Souls 3D</span>
+    </div>
+  </header>
+
+  <!-- Product Detail Section -->
+  <main>
+    <div id="product-details" class="product-detail-container">
+      <!-- Product content will load here dynamically -->
+    </div>
+
+    <!-- Open in App -->
+    <div id="open-in-app" style="text-align: center; margin: 30px 0; display: none;">
+      <p>Want a better experience?</p>
+      <a id="manualLink" class="app-open-btn" href="#">Open in App</a>
+      <p id="fallback" style="display:none; color: #666; font-size: 0.9rem;">If it didn't work, <a id="manualLinkFallback" href="#">tap here</a> to try manually.</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Creative Souls 3D &copy; 2025 — Personalized 3D Printed Art, Gifts & More</p>
+  </footer>
+
+</body>
+</html>

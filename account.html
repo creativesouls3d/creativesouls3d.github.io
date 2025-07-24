@@ -1,0 +1,69 @@
+<!-- account.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Account | Creative Souls 3D</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Logic -->
+  <script defer src="account.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo-section">
+      <img src="logo_creativesouls.jpg" />
+      <span>Creative Souls 3D</span>
+    </div>
+  </header>
+
+  <!-- Account Info Section -->
+  <main>
+    <section class="account-section">
+      <h1>Your Profile</h1>
+
+      <form id="profile-form">
+        <label>
+          Name:
+          <input type="text" id="name" required />
+        </label>
+
+        <label>
+          Address:
+          <textarea id="address" rows="3" required></textarea>
+        </label>
+
+        <label>
+          Phone:
+          <input type="tel" id="phone" required pattern="[0-9]{10}" />
+        </label>
+
+        <button type="submit">Save</button>
+      </form>
+
+      <p id="status" style="text-align: center; color: green; margin-top: 10px;"></p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Creative Souls 3D &copy; 2025</p>
+  </footer>
+</body>
+
+</html>

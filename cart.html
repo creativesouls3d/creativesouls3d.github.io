@@ -1,0 +1,49 @@
+<!-- cart.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart | Creative Souls 3D</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Logic -->
+  <script defer src="cart.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo-section">
+      <img src="logo_creativesouls.jpg" />
+      <span>Creative Souls 3D</span>
+    </div>
+  </header>
+
+  <!-- Main Cart Section -->
+  <main>
+    <h1>Your Cart</h1>
+    <div id="cart-items"></div>
+    <h3 id="total">Total: ₹0</h3>
+    <button id="checkout">Proceed to Checkout</button>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Creative Souls 3D &copy; 2025</p>
+  </footer>
+</body>
+
+</html>
