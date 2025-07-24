@@ -26,6 +26,19 @@ document.getElementById("login-btn").onclick = () => {
   firebase.auth().signInWithRedirect(provider);
 };
 
+firebase.auth().getRedirectResult()
+  .then((result) => {
+    if (result.user) {
+      console.log("User signed in:", result.user.displayName);
+      // Update UI as needed
+    }
+  })
+  .catch((error) => {
+    console.error("Sign-in error:", error.code, error.message);
+    alert("Sign-in failed: " + error.message);
+  });
+
+
 document.getElementById("logout-btn").onclick = () => {
   firebase.auth().signOut();
 };
