@@ -316,7 +316,7 @@ header {
   font-size: 1.2rem;
   margin-top: 20px;
 }
-#checkout {
+#checkout, #place-order {
   display: block;
   margin: 30px auto;
   padding: 12px 24px;
@@ -328,8 +328,19 @@ header {
   cursor: pointer;
   transition: background 0.3s ease;
 }
-#checkout:hover {
+#checkout:hover, #place-order:hover {
   background-color: #333;
+}
+
+/* ==== Order Message ==== */
+#order-message {
+  max-width: 800px;
+  margin: 10px auto 0;
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 /* ==== Footer ==== */
