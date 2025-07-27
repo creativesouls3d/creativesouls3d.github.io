@@ -17,14 +17,18 @@ if (productId) {
   manualLinkFallback.href = intentUrl;
   openAppSection.style.display = "block";
 
-  setTimeout(() => {
+  // Only open when button is clicked
+  manualLink.addEventListener("click", (e) => {
+    e.preventDefault();
     window.location.href = intentUrl;
-  }, 100);
 
-  setTimeout(() => {
-    document.getElementById("fallback").style.display = "block";
-  }, 2500);
+    // Show fallback if app doesn't open
+    setTimeout(() => {
+      document.getElementById("fallback").style.display = "block";
+    }, 2500);
+  });
 }
+
 
 // Try to load product from localStorage first
 function getCachedProduct(id) {
