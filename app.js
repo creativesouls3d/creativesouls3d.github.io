@@ -1,7 +1,7 @@
 let currentUser = null;
 const productList = document.getElementById("product-list");
 const categoryButtons = document.querySelectorAll(".filters button");
-const searchInput = document.getElementById("searchInput");
+const searchInput = document.getElementById("search-input");
 
 // ==== Auth State ====
 firebase.auth().onAuthStateChanged((user) => {
@@ -64,7 +64,7 @@ function displayProducts(products, filter = "All", query = "") {
   const q = query.toLowerCase();
 
   const filtered = products.filter(p => {
-    const matchCategory = filter === "All" || p.category === filter;
+    const matchCategory = filter === "All" || (p.category && p.category.toLowerCase() === filter.toLowerCase());
     const matchSearch =
       p.productName?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q) ||
@@ -114,11 +114,15 @@ categoryButtons.forEach(btn => {
   btn.onclick = () => {
     document.querySelector(".filters .active")?.classList.remove("active");
     btn.classList.add("active");
-    const filter = btn.dataset.cat;
+
+    const category = btn.dataset.cat;
+    searchInput.value = category; // Set the category name into the search box
+
     const products = JSON.parse(localStorage.getItem("products") || "[]");
-    displayProducts(products, filter, searchInput.value.trim());
+    displayProducts(products, "All", category); // Pass "All" so category filter doesn't apply
   };
 });
+
 
 // ==== Search Input Event ====
 searchInput?.addEventListener("input", () => {
