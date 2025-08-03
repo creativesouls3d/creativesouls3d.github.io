@@ -484,3 +484,28 @@ footer {
     text-align: left;
   }
 }
+
+#refresh-products-btn {
+  background-color: #ffc400;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  display: block;
+}
+
+#refresh-products-btn:hover {
+  background-color: #ffc400;
+  transform: scale(1.05);
+}
+
+#refresh-products-btn:active {
+  transform: scale(0.98);
+  background-color: #ffc400;
+}
