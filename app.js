@@ -2,74 +2,92 @@ let currentUser = null;
 const productList = document.getElementById("product-list");
 const categoryButtons = document.querySelectorAll(".filters button");
 const searchInput = document.getElementById("search-input");
+const userNameEl = document.getElementById("user-name");
+const userPhotoEl = document.getElementById("user-photo");
+const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const dropdownMenu = document.getElementById("dropdown-menu");
 
-// ==== Auth State ====
+// ========================
+// 🔐 AUTH STATE MANAGEMENT
+// ========================
 firebase.auth().onAuthStateChanged((user) => {
+  currentUser = user;
+
   if (user) {
-    currentUser = user;
-    document.getElementById("user-name").textContent = user.displayName;
-    document.getElementById("user-photo").src = user.photoURL || "default-user.png";
-    document.getElementById("login-btn").style.display = "none";
-    document.getElementById("logout-btn").style.display = "block";
+    userNameEl.textContent = user.displayName || "User";
+    userPhotoEl.src = user.photoURL || "default-user.png";
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "block";
   } else {
-    currentUser = null;
-    document.getElementById("user-name").textContent = "Guest";
-    document.getElementById("user-photo").src = "https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg";
-    document.getElementById("login-btn").style.display = "block";
-    document.getElementById("logout-btn").style.display = "none";
+    userNameEl.textContent = "Guest";
+    userPhotoEl.src = "https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg";
+    loginBtn.style.display = "block";
+    logoutBtn.style.display = "none";
   }
 });
 
-// ==== Login / Logout ====
-document.getElementById("login-btn").onclick = () => {
+// ==================
+// 🔁 LOGIN / LOGOUT
+// ==================
+loginBtn.onclick = () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   firebase.auth().signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
 };
 
-document.getElementById("logout-btn").onclick = () => {
+logoutBtn.onclick = () => {
   firebase.auth().signOut();
 };
 
-// ==== Profile Menu Toggle ====
-const userIcon = document.getElementById("user-photo");
-const dropdownMenu = document.getElementById("dropdown-menu");
-
-userIcon.onclick = () => {
+// =====================
+// 👤 PROFILE MENU TOGGLE
+// =====================
+userPhotoEl.onclick = (e) => {
+  e.stopPropagation();
   dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
 };
+
 document.body.addEventListener("click", (e) => {
-  if (!userIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+  if (!userPhotoEl.contains(e.target) && !dropdownMenu.contains(e.target)) {
     dropdownMenu.style.display = "none";
   }
 });
 
-// ==== Render Product Card ====
+// ========================
+// 🧱 RENDER PRODUCT CARD
+// ========================
 function renderProduct(data) {
   const card = document.createElement("div");
   card.className = "product-card";
   card.innerHTML = `
     <a href="product.html?id=${data.productId}">
-      <img src="${data.imageUrl}" alt="${data.productName}" />
+      <img src="${data.imageUrl}" alt="${data.productName}" loading="lazy"/>
       <h3>${data.productName}</h3>
       <p>₹${data.price}</p>
-      <p>${data.category}</p>
+      <p>${data.category || "Uncategorized"}</p>
     </a>
   `;
   productList.appendChild(card);
 }
 
-// ==== Display Products ====
+// ========================
+// 🧼 DISPLAY PRODUCT LIST
+// ========================
 function displayProducts(products, filter = "All", query = "") {
   productList.innerHTML = "";
   const q = query.toLowerCase();
 
   const filtered = products.filter(p => {
-    const matchCategory = filter === "All" || (p.category && p.category.toLowerCase() === filter.toLowerCase());
+    const matchCategory = filter === "All" || (p.category?.toLowerCase() === filter.toLowerCase());
     const matchSearch =
       p.productName?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q) ||
-      (Array.isArray(p.tags) && p.tags.join(" ").toLowerCase().includes(q));
+      (Array.isArray(p.tags)
+        ? p.tags.join(" ").toLowerCase().includes(q)
+        : (typeof p.tags === "string" && p.tags.toLowerCase().includes(q))
+      );
+
     return matchCategory && matchSearch;
   });
 
@@ -78,58 +96,99 @@ function displayProducts(products, filter = "All", query = "") {
     return;
   }
 
-  filtered.forEach(p => renderProduct(p));
+  filtered.forEach(renderProduct);
 }
 
-// ==== Load Products from Cache or Firestore ====
+// =============================
+// 💾 LOAD FROM CACHE OR CLOUD
+// =============================
+const CACHE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 function loadProducts() {
   const cached = localStorage.getItem("products");
-  if (cached) {
-    try {
-      const products = JSON.parse(cached);
-      displayProducts(products);
-    } catch {
-      fetchAndCacheProducts();
-    }
-  } else {
+  const cacheTime = localStorage.getItem("products_cache_time");
+
+  const now = Date.now();
+
+  // If no cache or cache is older than 15 minutes
+  if (!cached || !cacheTime || now - parseInt(cacheTime) > CACHE_DURATION_MS) {
+    console.log("🔁 Cache expired or not found. Fetching new products...");
+    fetchAndCacheProducts();
+    return;
+  }
+
+  try {
+    const products = JSON.parse(cached);
+    displayProducts(products);
+    console.log("✅ Loaded products from cache");
+  } catch (err) {
+    console.warn("❌ Cache corrupted. Refetching...");
     fetchAndCacheProducts();
   }
 }
 
-// ==== Fetch & Cache Products ====
 function fetchAndCacheProducts() {
   db.collection("products").get().then(snapshot => {
     const all = [];
     snapshot.forEach(doc => all.push(doc.data()));
+
     localStorage.setItem("products", JSON.stringify(all));
+    localStorage.setItem("products_cache_time", Date.now().toString());
+
     displayProducts(all);
+    console.log("✅ Products fetched and cached");
   }).catch(err => {
     console.error("❌ Firestore error:", err);
     productList.innerHTML = `<p style="color: red; text-align:center;">Failed to load products.</p>`;
   });
 }
 
-// ==== Filter Button Events ====
+
+// ==========================
+// 🧩 CATEGORY BUTTON FILTER
+// ==========================
 categoryButtons.forEach(btn => {
   btn.onclick = () => {
     document.querySelector(".filters .active")?.classList.remove("active");
     btn.classList.add("active");
 
     const category = btn.dataset.cat;
-    searchInput.value = category; // Set the category name into the search box
+    searchInput.value = category; // Optional: sync category into search
 
     const products = JSON.parse(localStorage.getItem("products") || "[]");
-    displayProducts(products, "All", category); // Pass "All" so category filter doesn't apply
+    displayProducts(products, "All", category); // Only apply search logic
   };
 });
 
-
-// ==== Search Input Event ====
+// =======================
+// 🔍 SEARCH PRODUCTS
+// =======================
 searchInput?.addEventListener("input", () => {
+  const query = searchInput.value.trim();
   const products = JSON.parse(localStorage.getItem("products") || "[]");
   const activeCategory = document.querySelector(".filters .active")?.dataset.cat || "All";
-  displayProducts(products, activeCategory, searchInput.value.trim());
+  displayProducts(products, activeCategory, query);
 });
 
-// ==== Initial Load ====
+document.getElementById("refresh-products-btn").onclick = function () {
+  this.innerText = "⏳ Refreshing...";
+  this.disabled = true;
+
+  localStorage.removeItem("products");
+  localStorage.removeItem("products_cache_time");
+
+  fetchAndCacheProducts();
+
+  // Re-enable after short delay
+  setTimeout(() => {
+    this.innerText = "🔄 Refresh Products";
+    this.disabled = false;
+  }, 2000);
+};
+
+
+
+// ===================
+// 🚀 INITIAL LOAD
+// ===================
 loadProducts();
