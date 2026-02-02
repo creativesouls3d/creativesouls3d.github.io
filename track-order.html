@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track Order - Creative Souls 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+    }
+
+    .order-box {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      margin-top: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #222;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+    }
+
+    .status {
+      padding: 8px 12px;
+      background: #e8f0ff;
+      border-radius: 8px;
+      display: inline-block;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 15px 0;
+    }
+
+    ul {
+      padding-left: 18px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #444;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <div id="track-info"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+  // 🔹 YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    projectId: "YOUR_PROJECT_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function getOrderId() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    return id ? `#${id}` : null;
+  }
+
+  function maskPhone(phone) {
+    if (!phone || phone.length < 4) return phone;
+    return phone.slice(0,2) + "XXXXXX" + phone.slice(-2);
+  }
+
+  async function loadOrder() {
+    const container = document.getElementById("track-info");
+    const orderId = getOrderId();
+
+    if (!orderId) {
+      container.innerHTML = "<p class='error'>Invalid Order ID</p>";
+      return;
+    }
+
+    try {
+      const doc = await db.collection("orders").doc(orderId).get();
+
+      if (!doc.exists) {
+        container.innerHTML = "<p class='error'>Order not found</p>";
+        return;
+      }
+
+      const data = doc.data();
+
+      const itemsHTML = data.items.map(item => `
+        <li>
+          <strong>${item.productName}</strong><br />
+          ₹${item.price} × ${item.quantity} = ₹${item.price * item.quantity}
+        </li>
+      `).join("");
+
+      container.innerHTML = `
+        <div class="order-box">
+          <h2>Order ${data.order_id}</h2>
+
+          <div class="status">
+            Status: ${data.status}
+          </div>
+
+          <p><span class="label">Placed on:</span>
+          ${data.timestamp.toDate().toLocaleString()}</p>
+
+          <hr/>
+
+          <p><span class="label">Phone:</span>
+          ${maskPhone(data.phone)}</p>
+
+          <p><span class="label">Delivery Address:</span>
+          ${data.address}</p>
+
+          <hr/>
+
+          <h3>Items</h3>
+          <ul>${itemsHTML}</ul>
+
+          <hr/>
+
+          <p><span class="label">Item Total:</span> ₹${data.item_total}</p>
+          <p><span class="label">Delivery Charge:</span> ₹${data.delivery_charge}</p>
+          <p><span class="label">Discount:</span> ₹${data.discount}</p>
+          <p><span class="label">Total Paid:</span> ₹${data.total}</p>
+          <p><span class="label">Payment Mode:</span> ${data.payment_ref || "UNKNOWN"}</p>
+          <p><span class="label">Coupon Code:</span> ${data.coupon_code || "-"}</p>
+        </div>
+      `;
+
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = "<p class='error'>Error loading order. Try again later.</p>";
+    }
+  }
+
+  loadOrder();
+</script>
+
+</body>
+</html>
