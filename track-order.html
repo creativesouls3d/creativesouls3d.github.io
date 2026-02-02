@@ -7,21 +7,21 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f6f9;
+      background: linear-gradient(135deg, #f5f7fa, #e4ecff);
       margin: 0;
       padding: 20px;
     }
 
     .container {
-      max-width: 700px;
+      max-width: 750px;
       margin: auto;
     }
 
     .order-box {
       background: #ffffff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       margin-top: 20px;
     }
 
@@ -30,42 +30,46 @@
       color: #222;
     }
 
-    h3 {
-      margin-bottom: 10px;
-    }
-
     .status {
-      padding: 8px 12px;
-      background: #e8f0ff;
-      border-radius: 8px;
       display: inline-block;
+      padding: 8px 14px;
+      border-radius: 20px;
       font-weight: bold;
+      background: #eef3ff;
+      color: #2a4dff;
       margin-bottom: 10px;
     }
 
     hr {
       border: none;
       border-top: 1px solid #eee;
-      margin: 15px 0;
+      margin: 20px 0;
     }
 
     ul {
-      padding-left: 18px;
+      padding-left: 20px;
     }
 
     li {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .label {
-      font-weight: bold;
+      font-weight: 600;
       color: #444;
     }
 
     .error {
-      color: red;
       text-align: center;
-      margin-top: 30px;
+      color: red;
+      margin-top: 40px;
+      font-weight: bold;
+    }
+
+    .loading {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 18px;
     }
   </style>
 </head>
@@ -73,24 +77,19 @@
 <body>
 
 <div class="container">
-  <div id="track-info"></div>
+  <div id="track-info" class="loading">Loading order details...</div>
 </div>
 
-<!-- Firebase -->
+<!-- Firebase Scripts -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+
+<!-- Your Firebase Config -->
+<script src="firebase-config.js"></script>
 
 <script>
-  // 🔹 YOUR FIREBASE CONFIG HERE
-  const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_DOMAIN",
-    projectId: "YOUR_PROJECT_ID"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
   function getOrderId() {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -99,7 +98,7 @@
 
   function maskPhone(phone) {
     if (!phone || phone.length < 4) return phone;
-    return phone.slice(0,2) + "XXXXXX" + phone.slice(-2);
+    return phone.slice(0, 2) + "XXXXXX" + phone.slice(-2);
   }
 
   async function loadOrder() {
@@ -123,7 +122,7 @@
 
       const itemsHTML = data.items.map(item => `
         <li>
-          <strong>${item.productName}</strong><br />
+          <strong>${item.productName}</strong><br>
           ₹${item.price} × ${item.quantity} = ₹${item.price * item.quantity}
         </li>
       `).join("");
@@ -133,13 +132,13 @@
           <h2>Order ${data.order_id}</h2>
 
           <div class="status">
-            Status: ${data.status}
+            ${data.status}
           </div>
 
           <p><span class="label">Placed on:</span>
           ${data.timestamp.toDate().toLocaleString()}</p>
 
-          <hr/>
+          <hr>
 
           <p><span class="label">Phone:</span>
           ${maskPhone(data.phone)}</p>
@@ -147,12 +146,12 @@
           <p><span class="label">Delivery Address:</span>
           ${data.address}</p>
 
-          <hr/>
+          <hr>
 
           <h3>Items</h3>
           <ul>${itemsHTML}</ul>
 
-          <hr/>
+          <hr>
 
           <p><span class="label">Item Total:</span> ₹${data.item_total}</p>
           <p><span class="label">Delivery Charge:</span> ₹${data.delivery_charge}</p>
@@ -163,9 +162,9 @@
         </div>
       `;
 
-    } catch (err) {
-      console.error(err);
-      container.innerHTML = "<p class='error'>Error loading order. Try again later.</p>";
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      container.innerHTML = "<p class='error'>Error loading order. Please try again later.</p>";
     }
   }
 
@@ -174,3 +173,4 @@
 
 </body>
 </html>
+
