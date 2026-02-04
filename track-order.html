@@ -15,15 +15,12 @@
       color: #222;
     }
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
+    .container { max-width: 900px; margin: auto; }
 
     .card {
       background: #fff;
       border-radius: 18px;
-      padding: 35px;
+      padding: 30px;
       box-shadow: 0 15px 40px rgba(0,0,0,0.08);
       margin-top: 20px;
     }
@@ -49,15 +46,12 @@
       margin: 25px 0;
     }
 
-    .label {
-      font-weight: 600;
-      color: #555;
-    }
+    .label { font-weight: 600; color: #555; }
 
     ul { padding-left: 20px; }
     li { margin-bottom: 12px; }
 
-    /* PROGRESS BAR */
+    /* ===== DESKTOP PROGRESS ===== */
 
     .progress-container {
       display: flex;
@@ -69,7 +63,7 @@
     .progress-container::before {
       content: '';
       position: absolute;
-      top: 20px;
+      top: 21px;
       left: 0;
       width: 100%;
       height: 4px;
@@ -79,7 +73,7 @@
 
     .progress {
       position: absolute;
-      top: 20px;
+      top: 21px;
       left: 0;
       height: 4px;
       background: #4b7bec;
@@ -87,10 +81,18 @@
       transition: width 0.6s ease;
     }
 
+    .progress.rejected-bar {
+      background: #d63031 !important;
+      width: 100% !important;
+    }
+
     .step {
       position: relative;
-      text-align: center;
       width: 20%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
       z-index: 2;
     }
 
@@ -99,16 +101,12 @@
       height: 42px;
       border-radius: 50%;
       background: #eee;
-      margin: auto;
-      line-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: bold;
       color: #777;
       transition: 0.3s ease;
-    }
-
-    .step.active .circle {
-      background: #4b7bec;
-      color: white;
     }
 
     .step.completed .circle {
@@ -116,10 +114,64 @@
       color: white;
     }
 
+    .step.active .circle {
+      background: #4b7bec;
+      color: white;
+    }
+
+    .step.rejected .circle {
+      background: #d63031;
+      color: white;
+    }
+
     .step span {
-      display: block;
       margin-top: 10px;
       font-size: 12px;
+    }
+
+    /* ===== MOBILE TIMELINE ===== */
+
+    @media (max-width: 768px) {
+
+      .progress-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .progress-container::before {
+        top: 0;
+        left: 21px;
+        width: 4px;
+        height: 100%;
+      }
+
+      .progress {
+        top: 0;
+        left: 21px;
+        width: 4px !important;
+        height: 0;
+        transition: height 0.6s ease;
+      }
+
+      .progress.rejected-bar {
+        height: 100% !important;
+      }
+
+      .step {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .circle {
+        margin-right: 15px;
+      }
+
+      .step span {
+        margin-top: 0;
+        font-size: 14px;
+      }
     }
 
     .error, .loading {
@@ -139,7 +191,6 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="firebase-config.js"></script>
 
@@ -157,7 +208,6 @@
 
   function getProgressIndex(status) {
     if (!status) return 0;
-
     status = status.toLowerCase();
 
     if (status.includes("placed")) return 0;
@@ -189,20 +239,26 @@
 
       const data = doc.data();
       const currentStep = getProgressIndex(data.status);
+      const isRejected = data.status.toLowerCase().includes("rejected");
 
       const steps = [
         "Order Placed",
         "Order Approved",
         "Printing Product",
-        "Out For Delivery",
+        "Put For Delivery",
         "Product Delivered"
       ];
 
       let stepsHTML = "";
       steps.forEach((step, index) => {
         let className = "";
-        if (index < currentStep) className = "completed";
-        else if (index === currentStep) className = "active";
+
+        if (isRejected) {
+          if (index <= 1) className = "rejected";
+        } else {
+          if (index < currentStep) className = "completed";
+          else if (index === currentStep) className = "active";
+        }
 
         stepsHTML += `
           <div class="step ${className}">
@@ -214,27 +270,21 @@
 
       const progressWidth = (currentStep / (steps.length - 1)) * 100;
 
-      const itemsHTML = data.items.map(item => `
-        <li>
-          <strong>${item.productName}</strong><br>
-          ₹${item.price} × ${item.quantity} = ₹${item.price * item.quantity}
-        </li>
-      `).join("");
-
       container.innerHTML = `
         <div class="card">
           <h2>Order ${data.order_id}</h2>
 
           <div class="status-badge ${
+            isRejected ? "rejected" :
             data.status.toLowerCase().includes("approved") ? "approved" :
-            data.status.toLowerCase().includes("rejected") ? "rejected" :
             "pending"
           }">
             ${data.status}
           </div>
 
           <div class="progress-container">
-            <div class="progress" style="width:${progressWidth}%"></div>
+            <div class="progress ${isRejected ? "rejected-bar" : ""}" 
+                 style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
             ${stepsHTML}
           </div>
 
@@ -251,18 +301,15 @@
 
           <hr>
 
-          <h3>Items</h3>
-          <ul>${itemsHTML}</ul>
-
-          <hr>
-
-          <p><span class="label">Item Total:</span> ₹${data.item_total}</p>
-          <p><span class="label">Delivery Charge:</span> ₹${data.delivery_charge}</p>
-          <p><span class="label">Discount:</span> ₹${data.discount}</p>
-          <p><span class="label">Total:</span> ₹${data.total}</p>
-          <p><span class="label">Payment Mode:</span> ${data.payment_ref || "UNKNOWN"}</p>
+          <p><span class="label">Total Paid:</span> ₹${data.total}</p>
         </div>
       `;
+
+      // Mobile vertical height animation
+      if (window.innerWidth <= 768 && !isRejected) {
+        const progress = document.querySelector(".progress");
+        progress.style.height = progressWidth + "%";
+      }
 
     } catch (error) {
       console.error(error);
