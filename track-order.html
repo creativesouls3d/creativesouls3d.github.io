@@ -221,105 +221,150 @@
   }
 
   async function loadOrder() {
-    const container = document.getElementById("track-info");
-    const orderId = getOrderId();
+  const container = document.getElementById("track-info");
+  const orderId = getOrderId();
 
-    if (!orderId) {
-      container.innerHTML = "<p class='error'>Invalid Order ID</p>";
+  if (!orderId) {
+    container.innerHTML = "<p class='error'>Invalid Order ID</p>";
+    return;
+  }
+
+  try {
+    const doc = await db.collection("orders").doc(orderId).get();
+
+    if (!doc.exists) {
+      container.innerHTML = "<p class='error'>Order not found</p>";
       return;
     }
 
-    try {
-      const doc = await db.collection("orders").doc(orderId).get();
+    const data = doc.data();
+    const statusText = data.status ? data.status.toLowerCase() : "";
+    const currentStep = getProgressIndex(statusText);
+    const isRejected = statusText.includes("rejected");
+    const isWaitingPayment = statusText.includes("waiting for payment");
 
-      if (!doc.exists) {
-        container.innerHTML = "<p class='error'>Order not found</p>";
-        return;
+    const steps = [
+      "Order Placed",
+      "Order Approved",
+      "Printing Product",
+      "Put For Delivery",
+      "Product Delivered"
+    ];
+
+    // Build steps
+    let stepsHTML = "";
+    steps.forEach((step, index) => {
+      let className = "";
+
+      if (isRejected) {
+        if (index <= 1) className = "rejected";
+      } else {
+        if (index < currentStep) className = "completed";
+        else if (index === currentStep) className = "active";
       }
 
-      const data = doc.data();
-      const currentStep = getProgressIndex(data.status);
-      const isRejected = data.status.toLowerCase().includes("rejected");
-
-      const steps = [
-        "Order Placed",
-        "Order Approved",
-        "Printing Product",
-        "Put For Delivery",
-        "Product Delivered"
-      ];
-
-      let stepsHTML = "";
-      steps.forEach((step, index) => {
-        let className = "";
-
-        if (isRejected) {
-          if (index <= 1) className = "rejected";
-        } else {
-          if (index < currentStep) className = "completed";
-          else if (index === currentStep) className = "active";
-        }
-
-        stepsHTML += `
-          <div class="step ${className}">
-            <div class="circle">${index + 1}</div>
-            <span>${step}</span>
-          </div>
-        `;
-      });
-
-      const progressWidth = (currentStep / (steps.length - 1)) * 100;
-
-      container.innerHTML = `
-        <div class="card">
-          <h2>Order ${data.order_id}</h2>
-
-          <div class="status-badge ${
-            isRejected ? "rejected" :
-            data.status.toLowerCase().includes("approved") ? "approved" :
-            "pending"
-          }">
-            ${data.status}
-          </div>
-
-          <div class="progress-container">
-            <div class="progress ${isRejected ? "rejected-bar" : ""}" 
-                 style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
-            ${stepsHTML}
-          </div>
-
-          <p><span class="label">Placed on:</span>
-          ${data.timestamp.toDate().toLocaleString()}</p>
-
-          <hr>
-
-          <p><span class="label">Phone:</span>
-          ${maskPhone(data.phone)}</p>
-
-          <p><span class="label">Delivery Address:</span>
-          ${data.address}</p>
-
-          <hr>
-
-          <p><span class="label">Total:</span> ₹${data.total}</p>
+      stepsHTML += `
+        <div class="step ${className}">
+          <div class="circle">${index + 1}</div>
+          <span>${step}</span>
         </div>
       `;
+    });
 
-      // Mobile vertical height animation
-      if (window.innerWidth <= 768 && !isRejected) {
-        const progress = document.querySelector(".progress");
+    const progressWidth = (currentStep / (steps.length - 1)) * 100;
+
+    // Build product list
+    let itemsHTML = "";
+    if (data.items && data.items.length > 0) {
+      data.items.forEach(item => {
+        itemsHTML += `
+          <li>
+            <strong>${item.productName}</strong><br>
+            Qty: ${item.quantity} × ₹${item.price}<br>
+            Subtotal: ₹${item.quantity * item.price}
+          </li>
+        `;
+      });
+    }
+
+    container.innerHTML = `
+      <div class="card">
+        <h2>Order ${data.order_id || ""}</h2>
+
+        <div class="status-badge ${
+          isRejected ? "rejected" :
+          statusText.includes("approved") ? "approved" :
+          "pending"
+        }">
+          ${data.status || ""}
+        </div>
+
+        ${isWaitingPayment ? `
+          <div style="background:#fff4d6;padding:15px;border-radius:10px;margin-bottom:20px;font-weight:600;color:#e67e22;">
+            ⚠ Payment Pending — Please complete your payment to process the order.
+          </div>
+        ` : ""}
+
+        <div class="progress-container">
+          <div class="progress ${isRejected ? "rejected-bar" : ""}" 
+               style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
+          ${stepsHTML}
+        </div>
+
+        <p><span class="label">Placed on:</span>
+        ${data.timestamp ? data.timestamp.toDate().toLocaleString() : "-"}</p>
+
+        <p><span class="label">Expected Delivery:</span>
+        ${data.expected_delivery || "Will be updated after payment"}</p>
+
+        <hr>
+
+        <p><span class="label">Phone:</span>
+        ${maskPhone(data.phone || "")}</p>
+
+        <p><span class="label">Delivery Address:</span>
+        ${data.address || ""}</p>
+
+        <hr>
+
+        <h3>Products Ordered</h3>
+        <ul>
+          ${itemsHTML}
+        </ul>
+
+        <hr>
+
+        <p><span class="label">Item Total:</span> ₹${data.item_total || 0}</p>
+
+        ${data.discount && data.discount > 0 ? `
+          <p><span class="label">Discount:</span> - ₹${data.discount}</p>
+        ` : ""}
+
+        <p><span class="label">Delivery Charge:</span> ₹${data.delivery_charge || 0}</p>
+
+        <h3>Total Payable: ₹${data.total || 0}</h3>
+      </div>
+    `;
+
+    // Mobile vertical animation
+    if (window.innerWidth <= 768 && !isRejected) {
+      const progress = document.querySelector(".progress");
+      if (progress) {
         progress.style.height = progressWidth + "%";
       }
-
-    } catch (error) {
-      console.error(error);
-      container.innerHTML = "<p class='error'>Error loading order.</p>";
     }
+
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = "<p class='error'>Error loading order.</p>";
   }
+}
+
 
   loadOrder();
 </script>
 
 </body>
 </html>
+
 
