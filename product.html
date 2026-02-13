@@ -156,8 +156,8 @@
         if (doc.exists) {
           const data = doc.data();
 
-          document.getElementById("product-image").src = data.image || "";
-          document.getElementById("product-name").textContent = data.name || "No Name";
+          document.getElementById("product-image").src = data.imageUrl || "";
+          document.getElementById("product-name").textContent = data.productName || "No Name";
           document.getElementById("product-price").textContent = "₹" + (data.price || 0);
           document.getElementById("product-description").textContent = data.description || "";
 
@@ -202,3 +202,4 @@
 
 </body>
 </html>
+
