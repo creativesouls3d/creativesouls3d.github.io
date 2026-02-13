@@ -5,49 +5,198 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Product | Creative Souls 3D</title>
 
+  <!-- SEO -->
+  <meta name="description" content="View product details - Creative Souls 3D personalized 3D printed items." />
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
+
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <style>
+    .product-container {
+      max-width: 1100px;
+      margin: 50px auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
 
-  <!-- Firebase Config -->
-  <script src="firebase-config.js"></script>
+    .product-image img {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
 
-  <!-- Product Page Logic -->
-  <script defer src="product.js"></script>
+    .product-details h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .product-price {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 15px 0;
+      color: #000;
+    }
+
+    .product-description {
+      color: #555;
+      margin-bottom: 25px;
+    }
+
+    .product-buttons button {
+      padding: 12px 22px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 10px;
+      transition: 0.3s;
+    }
+
+    #add-to-cart {
+      background: #FFD700;
+      color: #000;
+    }
+
+    #add-to-cart:hover {
+      background: #ffc400;
+    }
+
+    #back-btn {
+      background: #000;
+      color: #fff;
+    }
+
+    #back-btn:hover {
+      background: #333;
+    }
+
+    .loading,
+    .error-message {
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .product-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
   <!-- Header -->
   <header>
     <div class="logo-section">
-      <img src="logo_creativesouls.jpg" alt="Creative Souls Logo" />
+      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
       <span>Creative Souls 3D</span>
+    </div>
+
+    <div class="cart-link">
+      <a href="cart.html">🛒 Cart</a>
     </div>
   </header>
 
-  <!-- Product Detail Section -->
-  <main>
-    <div id="product-details" class="product-detail-container">
-      <!-- Product content will load here dynamically -->
+  <!-- Loading -->
+  <div id="loading" class="loading">Loading product...</div>
+
+  <!-- Error -->
+  <div id="error" class="error-message" style="display:none;">
+    Product not found.
+  </div>
+
+  <!-- Product Section -->
+  <div id="product-section" class="product-container" style="display:none;">
+    <div class="product-image">
+      <img id="product-image" src="" alt="Product Image">
     </div>
 
-    <!-- Open in App -->
-    <div id="open-in-app" style="text-align: center; margin: 30px 0; display: none;">
-      <p>Want a better experience?</p>
-      <a id="manualLink" class="app-open-btn" href="#">Open in App</a>
-      <p id="fallback" style="display:none; color: #666; font-size: 0.9rem;">If it didn't work, <a id="manualLinkFallback" href="#">tap here</a> to try manually.</p>
+    <div class="product-details">
+      <h1 id="product-name"></h1>
+      <div class="product-price" id="product-price"></div>
+      <p class="product-description" id="product-description"></p>
+
+      <div class="product-buttons">
+        <button id="add-to-cart">Add to Cart</button>
+        <button id="back-btn">Back</button>
+      </div>
     </div>
-  </main>
+  </div>
 
   <!-- Footer -->
   <footer>
-    <p>Creative Souls 3D &copy; 2025 — Personalized 3D Printed Art, Gifts & More</p>
+    <p>
+      Creative Souls 3D &copy; 2025 —
+      Personalized 3D Printed Art, Gifts & More
+    </p>
   </footer>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("id");
+
+    const loading = document.getElementById("loading");
+    const error = document.getElementById("error");
+    const productSection = document.getElementById("product-section");
+
+    if (!productId) {
+      loading.style.display = "none";
+      error.style.display = "block";
+    } else {
+      db.collection("products").doc(productId).get()
+        .then(doc => {
+          if (doc.exists) {
+            const data = doc.data();
+
+            document.getElementById("product-image").src = data.image;
+            document.getElementById("product-name").textContent = data.name;
+            document.getElementById("product-price").textContent = "₹" + data.price;
+            document.getElementById("product-description").textContent = data.description;
+
+            loading.style.display = "none";
+            productSection.style.display = "grid";
+          } else {
+            loading.style.display = "none";
+            error.style.display = "block";
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          loading.style.display = "none";
+          error.style.display = "block";
+        });
+    }
+
+    // Add to Cart
+    document.getElementById("add-to-cart").addEventListener("click", () => {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.push(productId);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alert("Product added to cart!");
+    });
+
+    // Back button
+    document.getElementById("back-btn").addEventListener("click", () => {
+      window.history.back();
+    });
+  </script>
 
 </body>
 </html>
