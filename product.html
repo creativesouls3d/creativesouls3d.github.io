@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Product | Creative Souls 3D</title>
 
-  <!-- SEO -->
   <meta name="description" content="View product details - Creative Souls 3D personalized 3D printed items." />
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
 
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
 
@@ -92,111 +90,115 @@
 
 <body>
 
-  <!-- Header -->
-  <header>
-    <div class="logo-section">
-      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
-      <span>Creative Souls 3D</span>
-    </div>
-
-    <div class="cart-link">
-      <a href="cart.html">🛒 Cart</a>
-    </div>
-  </header>
-
-  <!-- Loading -->
-  <div id="loading" class="loading">Loading product...</div>
-
-  <!-- Error -->
-  <div id="error" class="error-message" style="display:none;">
-    Product not found.
+<header>
+  <div class="logo-section">
+    <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
+    <span>Creative Souls 3D</span>
   </div>
 
-  <!-- Product Section -->
-  <div id="product-section" class="product-container" style="display:none;">
-    <div class="product-image">
-      <img id="product-image" src="" alt="Product Image">
-    </div>
+  <div class="cart-link">
+    <a href="cart.html">🛒 Cart</a>
+  </div>
+</header>
 
-    <div class="product-details">
-      <h1 id="product-name"></h1>
-      <div class="product-price" id="product-price"></div>
-      <p class="product-description" id="product-description"></p>
+<div id="loading" class="loading">Loading product...</div>
 
-      <div class="product-buttons">
-        <button id="add-to-cart">Add to Cart</button>
-        <button id="back-btn">Back</button>
-      </div>
-    </div>
+<div id="error" class="error-message" style="display:none;">
+  Product not found.
+</div>
+
+<div id="product-section" class="product-container" style="display:none;">
+  <div class="product-image">
+    <img id="product-image" src="" alt="Product Image">
   </div>
 
-  <!-- Footer -->
-  <footer>
-    <p>
-      Creative Souls 3D &copy; 2025 —
-      Personalized 3D Printed Art, Gifts & More
-    </p>
-  </footer>
+  <div class="product-details">
+    <h1 id="product-name"></h1>
+    <div class="product-price" id="product-price"></div>
+    <p class="product-description" id="product-description"></p>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <div class="product-buttons">
+      <button id="add-to-cart">Add to Cart</button>
+      <button id="back-btn">Back</button>
+    </div>
+  </div>
+</div>
 
-  <!-- Firebase Config -->
-  <script src="firebase-config.js"></script>
+<footer>
+  <p>
+    Creative Souls 3D &copy; 2026 —
+    Personalized 3D Printed Art, Gifts & More
+  </p>
+</footer>
 
-  <script>
-    const db = firebase.firestore();
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get("id");
+<!-- Firebase Config -->
+<script src="firebase-config.js"></script>
 
-    const loading = document.getElementById("loading");
-    const error = document.getElementById("error");
-    const productSection = document.getElementById("product-section");
+<script>
+  const loading = document.getElementById("loading");
+  const error = document.getElementById("error");
+  const productSection = document.getElementById("product-section");
 
-    if (!productId) {
-      loading.style.display = "none";
-      error.style.display = "block";
-    } else {
-      db.collection("products").doc(productId).get()
-        .then(doc => {
-          if (doc.exists) {
-            const data = doc.data();
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("id");
 
-            document.getElementById("product-image").src = data.image;
-            document.getElementById("product-name").textContent = data.name;
-            document.getElementById("product-price").textContent = "₹" + data.price;
-            document.getElementById("product-description").textContent = data.description;
+  if (!productId) {
+    loading.style.display = "none";
+    error.style.display = "block";
+  } else {
 
-            loading.style.display = "none";
-            productSection.style.display = "grid";
-          } else {
-            loading.style.display = "none";
-            error.style.display = "block";
-          }
-        })
-        .catch(err => {
-          console.error(err);
+    db.collection("products").doc(productId).get()
+      .then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+
+          document.getElementById("product-image").src = data.image || "";
+          document.getElementById("product-name").textContent = data.name || "No Name";
+          document.getElementById("product-price").textContent = "₹" + (data.price || 0);
+          document.getElementById("product-description").textContent = data.description || "";
+
+          loading.style.display = "none";
+          productSection.style.display = "grid";
+        } else {
           loading.style.display = "none";
           error.style.display = "block";
-        });
+        }
+      })
+      .catch(err => {
+        console.error("Error loading product:", err);
+        loading.style.display = "none";
+        error.style.display = "block";
+      });
+  }
+
+  // Add to Cart
+  document.getElementById("add-to-cart").addEventListener("click", () => {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    const existing = cart.find(item => item.id === productId);
+
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({
+        id: productId,
+        quantity: 1
+      });
     }
 
-    // Add to Cart
-    document.getElementById("add-to-cart").addEventListener("click", () => {
-      let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      cart.push(productId);
-      localStorage.setItem("cart", JSON.stringify(cart));
-      alert("Product added to cart!");
-    });
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert("Product added to cart!");
+  });
 
-    // Back button
-    document.getElementById("back-btn").addEventListener("click", () => {
-      window.history.back();
-    });
-  </script>
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.history.back();
+  });
+
+</script>
 
 </body>
 </html>
