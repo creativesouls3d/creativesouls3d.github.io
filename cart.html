@@ -1,75 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cart | Creative Souls 3D</title>
 
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
-
-  <!-- Cart Logic -->
   <script defer src="cart.js"></script>
 </head>
 
 <body>
-
-  <!-- Header -->
   <header>
+    <button class="back-nav" type="button" data-back data-fallback="index.html">&larr; Back</button>
     <div class="logo-section">
-      <img src="logo_creativesouls.jpg" alt="Creative Souls Logo" />
+      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
       <span>Creative Souls 3D</span>
     </div>
-    <div class="cart-link">
-      <a href="account.html">👤 Account</a>
-    </div>
+    <nav class="cart-link" aria-label="Main navigation">
+      <a href="index.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="account.html">Account</a>
+    </nav>
   </header>
 
-  <!-- Main -->
   <main>
-    <h1 style="text-align: center; margin-top: 30px;">Your Cart</h1>
+    <section class="account-section">
+      <h1>Your Cart</h1>
+      <p>Review your custom items before placing the order.</p>
+    </section>
 
-    <!-- Cart Items -->
     <div id="cart-items"></div>
+    <div id="cart-summary" class="cart-summary"></div>
 
-    <!-- Cart Summary -->
-    <div id="cart-summary"
-      style="max-width: 800px; margin: 40px auto; padding: 20px; border: 1px solid #eee; border-radius: 12px; background: #f9f9f9;">
-      <!-- Summary populated by JS -->
+    <div class="coupon-row">
+      <input type="text" id="coupon" placeholder="Enter coupon code (optional)" />
+      <button onclick="applyCoupon()">Apply</button>
     </div>
+    <p id="coupon-message" style="max-width:900px;margin:8px auto 0;font-weight:700;"></p>
 
-    <!-- Coupon Input -->
-    <div style="max-width: 800px; margin: 20px auto; padding: 0 20px;">
-      <input type="text" id="coupon" placeholder="Enter Coupon Code (optional)"
-        style="padding: 10px; width: 60%; max-width: 300px;" />
-      <button onclick="applyCoupon()"
-        style="padding: 10px 16px; background: #FFD700; border: none; border-radius: 6px; font-weight: bold;">Apply</button>
-      <p id="coupon-message" style="margin-top: 8px; font-size: 0.95rem;"></p>
+    <div style="text-align:center; margin-bottom: 50px;">
+      <button id="place-order" style="display:inline-block;">Place Order</button>
+      <p id="order-message" style="margin-top:20px;font-weight:800;"></p>
     </div>
-
-    <!-- Place Order Button -->
-    <div style="text-align: center; margin-bottom: 50px;">
-      <button id="place-order" style="display: inline-block;">Place Order</button>
-      <p id="order-message" style="margin-top: 20px; font-weight: bold;"></p>
-    </div>
-
   </main>
 
-  <!-- Footer -->
   <footer>
-    <p>Creative Souls 3D &copy; 2025 — Custom 3D Printed Gifts & Art</p>
+    <p>Creative Souls 3D &copy; 2026 - Custom 3D Printed Gifts & Art</p>
   </footer>
-
+  <script src="navigation.js"></script>
 </body>
-
 </html>

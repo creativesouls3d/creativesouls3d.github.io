@@ -1,9 +1,4 @@
-// Prevent multiple db declarations
-if (typeof db === "undefined") {
-  const db = firebase.firestore();
-}
-
-let cart = JSON.parse(localStorage.getItem('cart')) || [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let userData = null;
 let deliveryCharge = 20;
 let discountAmount = 0;
@@ -14,9 +9,17 @@ const cartSummary = document.getElementById("cart-summary");
 const couponInput = document.getElementById("coupon");
 const couponMessage = document.getElementById("coupon-message");
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0
+  }).format(Number(value || 0));
+}
+
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    cartSummary.innerHTML = "<p style='color:red;'>Please login to continue.</p>";
+    cartSummary.innerHTML = "<p style='color:#c0392b;font-weight:800;'>Please login to continue.</p>";
     return;
   }
 
@@ -34,7 +37,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     renderCart();
   } catch (err) {
     console.error("Error fetching user/charges:", err);
-    cartSummary.innerHTML = "<p style='color:red;'>Error loading cart.</p>";
+    cartSummary.innerHTML = "<p style='color:#c0392b;font-weight:800;'>Error loading cart.</p>";
   }
 });
 
@@ -43,8 +46,8 @@ document.getElementById("place-order").addEventListener("click", async () => {
   const msg = document.getElementById("order-message");
 
   if (!userData || cart.length === 0) {
-    msg.style.color = "red";
-    msg.textContent = "❌ You must be logged in and have items in your cart.";
+    msg.style.color = "#c0392b";
+    msg.textContent = "You must be logged in and have items in your cart.";
     return;
   }
 
@@ -52,21 +55,22 @@ document.getElementById("place-order").addEventListener("click", async () => {
   btn.textContent = "Placing Order...";
 
   try {
-    // Fetch latest order_id number
     const ordersSnapshot = await db.collection("orders").orderBy("timestamp", "desc").limit(1).get();
     let lastId = 253750;
+
     if (!ordersSnapshot.empty) {
       const lastOrder = ordersSnapshot.docs[0].data();
-      const parsed = parseInt(lastOrder.order_id.replace("#", ""));
+      const parsed = parseInt(String(lastOrder.order_id || "").replace("#", ""), 10);
       if (!isNaN(parsed)) lastId = parsed;
     }
-    const newId = "#"+(lastId + 1);
 
-    const itemTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const newId = "#" + (lastId + 1);
+    const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
     const finalTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
 
     const orderData = {
       order_id: newId,
+      name: userData.name || "",
       email: userData.email,
       phone: userData.phone || "null",
       address: userData.address,
@@ -76,28 +80,27 @@ document.getElementById("place-order").addEventListener("click", async () => {
       discount: discountAmount,
       total: finalTotal,
       coupon_code: appliedCouponCode,
-      status: "Order Placed ✅",
+      status: "Order Placed",
       timestamp: firebase.firestore.Timestamp.now(),
       approved: false,
-      mop: "cash", // Default for now
+      mop: "cash",
       payment_ref: "cash-on-delivery",
       expected_delivery: getExpectedDeliveryDate()
     };
 
     await db.collection("orders").doc(newId).set(orderData);
 
-    // Clear cart
     localStorage.removeItem("cart");
     cart = [];
     renderCart();
 
-    msg.style.color = "green";
-    msg.innerHTML = `✅ Order placed successfully!<br/>Your Order ID is <strong>${newId}</strong>`;
+    msg.style.color = "#2f7d68";
+    msg.innerHTML = `Order placed successfully.<br>Your Order ID is <strong>${newId}</strong>`;
     btn.style.display = "none";
   } catch (err) {
     console.error("Order Error:", err);
-    msg.style.color = "red";
-    msg.textContent = "❌ Failed to place order. Please try again.";
+    msg.style.color = "#c0392b";
+    msg.textContent = "Failed to place order. Please try again.";
     btn.disabled = false;
     btn.textContent = "Place Order";
   }
@@ -105,34 +108,33 @@ document.getElementById("place-order").addEventListener("click", async () => {
 
 function getExpectedDeliveryDate() {
   const today = new Date();
-  today.setDate(today.getDate() + 3); // 3 days later
-  const options = { day: 'numeric', month: 'long', year: 'numeric' };
-  return today.toLocaleDateString('en-IN', options);
+  today.setDate(today.getDate() + 3);
+  return today.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 }
-
 
 function renderCart() {
   cartItemsContainer.innerHTML = "";
 
   if (cart.length === 0) {
-    cartItemsContainer.innerHTML = "<p style='text-align:center;'>Your cart is empty.</p>";
+    cartItemsContainer.innerHTML = "<div class='empty-state'>Your cart is empty.</div>";
     cartSummary.innerHTML = "";
     return;
   }
 
   let itemTotal = 0;
+
   cart.forEach((item, index) => {
-    const total = item.price * item.quantity;
+    const total = Number(item.price || 0) * Number(item.quantity || 0);
     itemTotal += total;
 
     const div = document.createElement("div");
     div.className = "cart-item";
     div.innerHTML = `
-      <span>${item.productName}</span>
-      <span>₹${item.price}</span>
-      <span>× ${item.quantity}</span>
-      <span>₹${total}</span>
-      <button onclick="removeItem(${index})">🗑</button>
+      <span>${item.productName || "Untitled product"}</span>
+      <span>${formatPrice(item.price)}</span>
+      <span>&times; ${item.quantity}</span>
+      <span>${formatPrice(total)}</span>
+      <button onclick="removeItem(${index})" aria-label="Remove item">X</button>
     `;
     cartItemsContainer.appendChild(div);
   });
@@ -144,12 +146,12 @@ function renderCart() {
     <p><strong>Email:</strong> ${userData?.email || "-"}</p>
     <p><strong>Phone:</strong> ${userData?.phone || "-"}</p>
     <p><strong>Address:</strong> ${userData?.address || "-"}</p>
-    <hr/>
-    <p><strong>Item Total:</strong> ₹${itemTotal}</p>
-    <p><strong>Delivery Charge:</strong> ₹${deliveryCharge}</p>
-    <p><strong>Discount:</strong> ₹${discountAmount} ${appliedCouponCode ? `(${appliedCouponCode})` : ""}</p>
-    <hr/>
-    <p><strong>Total Amount:</strong> ₹${finalTotal}</p>
+    <hr>
+    <p><strong>Item Total:</strong> ${formatPrice(itemTotal)}</p>
+    <p><strong>Delivery Charge:</strong> ${formatPrice(deliveryCharge)}</p>
+    <p><strong>Discount:</strong> ${formatPrice(discountAmount)} ${appliedCouponCode ? `(${appliedCouponCode})` : ""}</p>
+    <hr>
+    <p><strong>Total Amount:</strong> ${formatPrice(finalTotal)}</p>
   `;
 }
 
@@ -159,62 +161,55 @@ function removeItem(index) {
   renderCart();
 }
 
-// Expose to window so inline onclick works
 window.removeItem = removeItem;
 
 window.applyCoupon = async () => {
   const code = couponInput?.value?.trim().toUpperCase();
   couponMessage.textContent = "";
-  couponMessage.style.color = "red";
+  couponMessage.style.color = "#c0392b";
 
   if (!code) {
-    couponMessage.textContent = "❌ Please enter a coupon code.";
+    couponMessage.textContent = "Please enter a coupon code.";
     return;
   }
 
   try {
     const doc = await db.collection("shopping app").doc("coupon_code").get();
     if (!doc.exists) {
-      couponMessage.textContent = "❌ Invalid Coupon Code";
+      couponMessage.textContent = "Invalid coupon code.";
       return;
     }
 
     const couponRaw = doc.data()[code];
     if (!couponRaw) {
-      couponMessage.textContent = "❌ Invalid Coupon Code";
+      couponMessage.textContent = "Invalid coupon code.";
       return;
     }
 
     const [discountText, expiry, minVal, maxVal, emailFilter] = couponRaw.split(",").map(e => e.trim());
-
-    // Check expiry
     const today = new Date();
     const expiryDate = new Date(expiry.split("-").reverse().join("-"));
+
     if (today > expiryDate) {
-      couponMessage.textContent = "❌ Coupon expired.";
+      couponMessage.textContent = "Coupon expired.";
       return;
     }
 
-    // Calculate current item total
-    const itemTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
-    // Check min order value
     if (minVal && itemTotal < parseFloat(minVal)) {
-      couponMessage.textContent = `❌ Minimum order ₹${minVal} required.`;
+      couponMessage.textContent = `Minimum order ${formatPrice(minVal)} required.`;
       return;
     }
 
-    // Check max value (for flat discount)
-    const maxDiscountLimit = maxVal ? parseFloat(maxVal) : null;
-
-    // Check email restriction
     if (emailFilter && userData?.email !== emailFilter) {
-      couponMessage.textContent = `❌ Coupon is not valid for your email.`;
+      couponMessage.textContent = "Coupon is not valid for your email.";
       return;
     }
 
-    // Calculate discount
+    const maxDiscountLimit = maxVal ? parseFloat(maxVal) : null;
     let discount = 0;
+
     if (discountText.includes("%")) {
       const percentage = parseFloat(discountText.split("%")[0]);
       discount = (percentage / 100) * itemTotal;
@@ -230,11 +225,10 @@ window.applyCoupon = async () => {
     appliedCouponCode = code;
     renderCart();
 
-    couponMessage.textContent = `✅ ${discountText} applied.`;
-    couponMessage.style.color = "green";
-
+    couponMessage.textContent = `${discountText} applied.`;
+    couponMessage.style.color = "#2f7d68";
   } catch (err) {
     console.error("Coupon error:", err);
-    couponMessage.textContent = "❌ Error applying coupon.";
+    couponMessage.textContent = "Error applying coupon.";
   }
 };

@@ -1,56 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Redirecting...</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            padding: 50px;
-        }
-
-        #fallback {
-            display: none;
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Page Not Found | Creative Souls 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 </head>
 
 <body>
-    <h2>Redirecting to Creative Souls 3D App...</h2>
+  <main class="account-section">
+    <h1 id="page-title">Redirecting to Creative Souls 3D App...</h1>
     <p id="product-info">Loading product info...</p>
-    <p id="fallback">
-        If the app didn’t open, <a id="manualLink" href="#">click here</a> to open it manually.
+    <p id="fallback" style="display:none;margin-top:20px;">
+      If the app did not open, <a id="manualLink" class="back-button" href="#">open it manually</a>.
     </p>
+    <a href="index.html" class="back-button">Back to Shop</a>
+  </main>
 
-    <script>
-        const path = window.location.pathname;
-        const productRegex = /^\/product\/(\d{8})\/?$/;
-        const searchRegex = /^\/search\/([a-zA-Z0-9_-]+)\/?$/;
+  <script>
+    const path = window.location.pathname;
+    const productRegex = /^\/product\/(\d{8})\/?$/;
+    const searchRegex = /^\/search\/([a-zA-Z0-9_-]+)\/?$/;
+    const title = document.getElementById("page-title");
+    const info = document.getElementById("product-info");
+    const fallback = document.getElementById("fallback");
+    const manualLink = document.getElementById("manualLink");
 
-        if (productRegex.test(path)) {
-            const productId = path.match(productRegex)[1];
-            const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
-            document.getElementById('manualLink').href = intentUrl;
-            setTimeout(() => window.location.href = intentUrl, 100);
-            setTimeout(() => document.getElementById('fallback').style.display = 'block', 2500);
-            document.getElementById('product-info').textContent = `Product ID: ${productId}`;
-        } else if (searchRegex.test(path)) {
-            const query = path.match(searchRegex)[1];
-            const intentUrl = `intent://search/${query}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
-            document.getElementById('manualLink').href = intentUrl;
-            setTimeout(() => window.location.href = intentUrl, 100);
-            setTimeout(() => document.getElementById('fallback').style.display = 'block', 2500);
-            document.getElementById('product-info').textContent = `Search: ${query}`;
-        } else {
-            document.querySelector('h2').textContent = '404 - Page Not Found';
-            document.getElementById('product-info').textContent = 'The page you requested does not exist.';
-        }
-
-    </script>
+    if (productRegex.test(path)) {
+      const productId = path.match(productRegex)[1];
+      const intentUrl = `intent://product/${productId}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
+      manualLink.href = intentUrl;
+      setTimeout(() => window.location.href = intentUrl, 100);
+      setTimeout(() => fallback.style.display = "block", 2500);
+      info.textContent = `Product ID: ${productId}`;
+    } else if (searchRegex.test(path)) {
+      const query = path.match(searchRegex)[1];
+      const intentUrl = `intent://search/${query}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
+      manualLink.href = intentUrl;
+      setTimeout(() => window.location.href = intentUrl, 100);
+      setTimeout(() => fallback.style.display = "block", 2500);
+      info.textContent = `Search: ${query}`;
+    } else {
+      title.textContent = "404 - Page Not Found";
+      info.textContent = "The page you requested does not exist.";
+    }
+  </script>
 </body>
-
 </html>

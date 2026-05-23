@@ -1,5 +1,3 @@
-// account.js
-
 const nameInput = document.getElementById("name");
 const addressInput = document.getElementById("address");
 const phoneInput = document.getElementById("phone");
@@ -16,7 +14,7 @@ firebase.auth().onAuthStateChanged(user => {
   }
 
   currentUser = user;
-  loadProfile(user.email); // ✅ use email as doc ID
+  loadProfile(user.email);
 });
 
 function loadProfile(email) {
@@ -32,7 +30,7 @@ function loadProfile(email) {
   }).catch(err => {
     console.error("Failed to load profile:", err);
     statusMsg.textContent = "Failed to load profile.";
-    statusMsg.style.color = "red";
+    statusMsg.style.color = "#c0392b";
   });
 }
 
@@ -45,7 +43,7 @@ profileForm.onsubmit = (e) => {
 
   if (!name || !address || !phone) {
     statusMsg.textContent = "Please fill in all fields.";
-    statusMsg.style.color = "red";
+    statusMsg.style.color = "#c0392b";
     return;
   }
 
@@ -53,11 +51,11 @@ profileForm.onsubmit = (e) => {
     { name, address, phone, email: currentUser.email },
     { merge: true }
   ).then(() => {
-    statusMsg.textContent = "Profile updated successfully!";
-    statusMsg.style.color = "green";
+    statusMsg.textContent = "Profile updated successfully.";
+    statusMsg.style.color = "#2f7d68";
   }).catch(err => {
     console.error("Error saving profile:", err);
     statusMsg.textContent = "Failed to update profile.";
-    statusMsg.style.color = "red";
+    statusMsg.style.color = "#c0392b";
   });
 };

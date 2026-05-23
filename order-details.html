@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Order Details | Creative Souls 3D</title>
   <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -13,20 +14,26 @@
 </head>
 <body>
   <header>
+    <button class="back-nav" type="button" data-back data-fallback="orders.html">&larr; Back</button>
     <div class="logo-section">
-      <img src="logo_creativesouls.jpg" alt="Creative Souls Logo" />
+      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
       <span>Creative Souls 3D</span>
     </div>
+    <nav class="cart-link" aria-label="Main navigation">
+      <a href="index.html">Shop</a>
+      <a href="orders.html">Orders</a>
+      <a href="cart.html">Cart</a>
+    </nav>
   </header>
 
   <main class="order-detail-container">
-    <h1>Order Details</h1>
     <div id="order-info"></div>
-    <a href="orders.html" class="back-button">← Back to Orders</a>
+    <a href="orders.html" class="back-button">Back to Orders</a>
   </main>
 
   <footer>
-    <p>Creative Souls 3D &copy; 2025 — Personalized 3D Printed Art, Gifts & More</p>
+    <p>Creative Souls 3D &copy; 2026 - Personalized 3D Printed Art, Gifts & More</p>
   </footer>
+  <script src="navigation.js"></script>
 </body>
 </html>

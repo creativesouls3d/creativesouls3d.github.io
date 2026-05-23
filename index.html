@@ -5,33 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Creative Souls 3D</title>
 
-  <!-- SEO -->
-  <meta name="description" content="Creative Souls 3D - Personalized 3D printed keychains, gifts and decor. Made with passion in India." />
+  <meta name="description" content="Creative Souls 3D - personalized 3D printed keychains, gifts, and decor made with care in India." />
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
 
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 </head>
 
 <body>
-
-  <!-- Top Banner -->
   <div class="top-download-banner">
-    📱 Try our Android App —
+    Try our Android app for faster checkout -
     <a href="downloads/CreativeSouls3D.apk" download>Download Now</a>
   </div>
 
-  <!-- Header -->
-  <header>
+  <header class="site-header">
     <div class="logo-section">
       <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
       <span>Creative Souls 3D</span>
     </div>
 
-    <div class="cart-link">
-      <a href="cart.html">🛒 Cart</a>
-    </div>
+    <form class="search-bar header-search" id="search-form">
+      <input type="text" id="search-input" placeholder="Search Creative Souls 3D products" />
+      <button id="search-products-btn" type="submit">Search</button>
+    </form>
 
     <div class="user-info">
       <img id="user-photo"
@@ -42,83 +38,80 @@
       <button id="logout-btn" style="display:none;">Logout</button>
     </div>
 
-    <!-- Dropdown Menu -->
+    <nav class="cart-link" aria-label="Main navigation">
+      <a href="orders.html">Orders</a>
+      <a href="cart.html">Cart</a>
+    </nav>
+
     <div id="dropdown-menu" class="dropdown-menu">
-      <a href="account.html">👤 Your Account</a>
-      <a href="orders.html">📦 Your Orders</a>
-      <a href="feedback.html">💬 Feedback</a>
-      <a href="contact.html">📞 Contact Us</a>
+      <a href="account.html">Your Account</a>
+      <a href="orders.html">Your Orders</a>
+      <a href="cart.html">Your Cart</a>
+      <a href="track-order.html">Track Order</a>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <h1>Welcome to Creative Souls 3D</h1>
-    <p>
-      Explore personalized 3D printed keychains, gifts, and more crafted just for you.
-    </p>
+  <section class="shop-controls" aria-label="Shop categories">
+    <div class="filters">
+      <button class="active" data-cat="All">All</button>
+      <button data-cat="Keychains">Keychains</button>
+      <button data-cat="Gifts">Gifts</button>
+      <button data-cat="Decor">Decor</button>
+      <button data-cat="All" data-price-max="50">Under Rs50</button>
+      <button data-cat="All" data-price-max="100">Under Rs100</button>
+    </div>
+    <a href="track-order.html" class="track-link">Track Order</a>
   </section>
 
-  <!-- Filters -->
-  <div class="filters">
-    <button class="active" data-cat="All">All</button>
-    <button data-cat="Keychains">Keychains</button>
-    <button data-cat="Gifts">Gifts</button>
-    <button data-cat="Decor">Decor</button>
-    <button data-cat="Others">Others</button>
-  </div>
+  <section class="hero">
+    <div class="hero-content">
+      <span class="eyebrow">Custom 3D printed gifts</span>
+      <h1>Creative Souls 3D</h1>
+      <p>
+        Personalized keychains, desk decor, keepsakes, and small-batch gifts made for people who want something more personal than ordinary.
+      </p>
+      <div class="hero-actions">
+        <a href="#product-list">Browse Products</a>
+        <a href="track-order.html">Track an Order</a>
+      </div>
+    </div>
+  </section>
 
-  <div style="text-align:center;">
-    <button id="refresh-products-btn">🔄 Refresh Products</button>
-  </div>
+  <section class="section-heading" aria-label="Products">
+    <div>
+      <h2>Shop products</h2>
+      <p>Custom gifts, decor, and printed keepsakes</p>
+    </div>
+  </section>
 
-  <!-- Search -->
-  <div class="search-bar">
-    <input type="text" id="search-input" placeholder="Search products..." />
-  </div>
-
-  <!-- Products -->
   <div id="product-list" class="product-grid">
-    <!-- Products will load here -->
+    <div class="empty-state">Loading products...</div>
   </div>
 
-  <!-- Empty State -->
-  <div id="empty-message" style="text-align:center; padding:40px; display:none;">
+  <div id="empty-message" class="empty-state" style="display:none;">
     No products available right now.
   </div>
 
-  <!-- App Promo -->
   <div class="app-promo">
     <h2>Get the Full Experience</h2>
     <p>
       Download the Creative Souls 3D app and access exclusive designs and faster checkout.
     </p>
-    <a href="downloads/CreativeSouls3D.apk"
-       class="app-open-btn"
-       download>
-       📲 Install Now
-    </a>
+    <a href="downloads/CreativeSouls3D.apk" class="app-open-btn" download>Install App</a>
   </div>
 
-  <!-- Footer -->
   <footer>
     <p>
-      This website is still under Testing* —
-      Creative Souls 3D &copy; 2025 —
+      This website is still under testing -
+      Creative Souls 3D &copy; 2026 -
       Personalized 3D Printed Art, Gifts & More
     </p>
   </footer>
 
-  <!-- Firebase SDKs (Loaded at Bottom for Performance) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
-
-  <!-- App Logic -->
   <script src="app.js"></script>
-
 </body>
 </html>
