@@ -14,6 +14,25 @@ document.addEventListener("click", (event) => {
   goBackOrHome(button.dataset.fallback || "index.html");
 });
 
+const serviceMenuBar = document.getElementById("service-menu-bar");
+if (serviceMenuBar) {
+  let scrollUpdateQueued = false;
+  const updateServiceMenuVisibility = () => {
+    const hide = window.scrollY > 12;
+    serviceMenuBar.classList.toggle("is-hidden", hide);
+    serviceMenuBar.setAttribute("aria-hidden", hide ? "true" : "false");
+    serviceMenuBar.inert = hide;
+    scrollUpdateQueued = false;
+  };
+
+  updateServiceMenuVisibility();
+  window.addEventListener("scroll", () => {
+    if (scrollUpdateQueued) return;
+    scrollUpdateQueued = true;
+    window.requestAnimationFrame(updateServiceMenuVisibility);
+  }, { passive: true });
+}
+
 // Cart Count Synchronizer
 function getCartItemCount() {
   try {
