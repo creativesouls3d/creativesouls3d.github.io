@@ -3,66 +3,124 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Creative Souls 3D</title>
+  <title>Creative Souls 3D | Custom 3D Printed Gifts & Art</title>
 
   <meta name="description" content="Creative Souls 3D - personalized 3D printed keychains, gifts, and decor made with care in India." />
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
 
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 </head>
 
 <body>
+  <!-- Top App Promo Banner -->
   <div class="top-download-banner">
-    Try our Android app for faster checkout -
+    Try our Android app for faster checkout —
     <a href="downloads/CreativeSouls3D.apk" download>Download Now</a>
   </div>
 
+  <!-- Header -->
   <header class="site-header">
-    <div class="logo-section">
+    <div class="logo-section" onclick="window.location.href='index.html'">
       <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
-      <span>Creative Souls 3D</span>
+      <span>Creative Souls <strong>3D</strong></span>
     </div>
 
-    <form class="search-bar header-search" id="search-form">
-      <input type="text" id="search-input" placeholder="Search Creative Souls 3D products" />
+    <form class="search-bar header-search" id="search-form" role="search">
+      <span class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Search keychains, decor, gifts..." aria-label="Search products" />
       <button id="search-products-btn" type="submit">Search</button>
     </form>
 
     <div class="user-info">
-      <img id="user-photo"
-           src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
-           alt="User Profile" />
+      <div class="user-avatar-wrap">
+        <img id="user-photo"
+             src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
+             alt="User Profile"
+             title="Account Menu" />
+      </div>
       <span id="user-name">Guest</span>
-      <button id="login-btn">Login</button>
+      <button id="login-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.35 11.1h-9.17v2.73h5.51c-.33 1.94-1.87 3.32-3.84 3.32-2.31 0-4.18-1.87-4.18-4.18s1.87-4.18 4.18-4.18c1.07 0 2.05.41 2.8 1.09l2.06-2.06C17.39 6.55 15.42 5.8 13.18 5.8 9.21 5.8 6 9.01 6 12.98s3.21 7.18 7.18 7.18c4.15 0 6.91-2.92 6.91-7.03 0-.71-.07-1.39-.2-2.03z"/>
+        </svg>
+        Login
+      </button>
       <button id="logout-btn" style="display:none;">Logout</button>
     </div>
 
     <nav class="cart-link" aria-label="Main navigation">
-      <a href="orders.html">Orders</a>
-      <a href="cart.html">Cart</a>
+      <a href="orders.html" class="nav-pill" title="View your orders">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <span>Orders</span>
+      </a>
+      <a href="cart.html" class="nav-pill" title="View your cart">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span>Cart</span>
+        <span class="cart-badge" id="cart-badge">0</span>
+      </a>
+      <a href="service-request.html?type=bulk" class="nav-pill">Bulk Orders</a>
+      <a href="service-request.html?type=printing" class="nav-pill">3D Printing Service</a>
     </nav>
 
     <div id="dropdown-menu" class="dropdown-menu">
-      <a href="account.html">Your Account</a>
-      <a href="orders.html">Your Orders</a>
-      <a href="cart.html">Your Cart</a>
-      <a href="track-order.html">Track Order</a>
+      <a href="account.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Your Account
+      </a>
+      <a href="orders.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        Your Orders
+      </a>
+      <a href="cart.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Your Cart
+      </a>
+      <a href="track-order.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        Track Order
+      </a>
     </div>
   </header>
 
+  <aside class="sale-countdown-bar" aria-label="Limited time offer countdown">
+    <span>✨ Special offers end in</span>
+    <time id="sale-countdown" aria-label="Time remaining">08:00:00</time>
+  </aside>
+
+  <!-- Category Filter Controls -->
   <section class="shop-controls" aria-label="Shop categories">
     <div class="filters">
-      <button class="active" data-cat="All">All</button>
-      <button data-cat="Keychains">Keychains</button>
-      <button data-cat="Gifts">Gifts</button>
-      <button data-cat="Decor">Decor</button>
-      <button data-cat="All" data-price-max="50">Under Rs50</button>
-      <button data-cat="All" data-price-max="100">Under Rs100</button>
+      <button class="active" data-cat="All">✨ All Items</button>
+      <button data-cat="Keychains">🔑 Keychains</button>
+      <button data-cat="Gifts">🎁 Gifts</button>
+      <button data-cat="Decor">🏠 Decor</button>
+      <button data-cat="All" data-price-max="50">🏷️ Under ₹50</button>
+      <button data-cat="All" data-price-max="100">🏷️ Under ₹100</button>
     </div>
-    <a href="track-order.html" class="track-link">Track Order</a>
+    <a href="track-order.html" class="track-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      Track Order
+    </a>
   </section>
 
+  <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
       <span class="eyebrow">Custom 3D printed gifts</span>
@@ -70,6 +128,13 @@
       <p>
         Personalized keychains, desk decor, keepsakes, and small-batch gifts made for people who want something more personal than ordinary.
       </p>
+
+      <div class="hero-badges" aria-label="Store totals">
+        <span class="hero-badge-item"><strong id="total-products-count">—</strong><span>Products</span></span>
+        <span class="hero-badge-item"><strong id="total-orders-count">—</strong><span>Orders</span></span>
+        <small class="live-count-label" aria-label="Live product and order counts"><i aria-hidden="true"></i> Live</small>
+      </div>
+
       <div class="hero-actions">
         <a href="#product-list">Browse Products</a>
         <a href="track-order.html">Track an Order</a>
@@ -77,21 +142,137 @@
     </div>
   </section>
 
+  <div class="catalog-layout">
+  <!-- Section Heading -->
   <section class="section-heading" aria-label="Products">
     <div>
-      <h2>Shop products</h2>
-      <p>Custom gifts, decor, and printed keepsakes</p>
+      <h2>Handcrafted Collection</h2>
+      <p>Browse personalized gifts, miniatures, and custom 3D prints</p>
     </div>
   </section>
 
+  <section class="catalog-filters" aria-label="Filter and sort products">
+    <div class="catalog-filter-field">
+      <label for="filter-category">Category</label>
+      <select id="filter-category"><option value="">All Categories</option><option>Keychains</option><option>Home Decor</option><option>Idols</option><option>Desk Accessories</option><option>Gifts</option><option>Car Accessories</option><option>Custom Products</option><option>Other</option></select>
+    </div>
+    <div class="catalog-filter-field">
+      <label for="filter-price">Price</label>
+      <select id="filter-price"><option value="">Any Price</option><option value="under100">Under ₹100</option><option value="100-199">₹100–₹199</option><option value="200-399">₹200–₹399</option><option value="400-699">₹400–₹699</option><option value="700plus">₹700+</option><option value="custom">Custom Range</option></select>
+    </div>
+    <div id="custom-price-range" class="custom-price-range" hidden>
+      <label>From ₹<input id="filter-price-min" type="number" min="0" inputmode="numeric" placeholder="Min"></label>
+      <label>To ₹<input id="filter-price-max" type="number" min="0" inputmode="numeric" placeholder="Max"></label>
+    </div>
+    <div class="catalog-filter-field">
+      <label for="filter-customizable">Customizable</label>
+      <select id="filter-customizable"><option value="">Any</option><option value="yes">Customizable</option><option value="no">Ready to Buy</option></select>
+    </div>
+    <div class="catalog-filter-field">
+      <label for="filter-best-for">Best For</label>
+      <select id="filter-best-for"><option value="">Any</option><option>Gifts</option><option>Return Gifts</option><option>Home Decor</option><option>Desk/Office</option><option>Car</option><option>Pooja/Festival</option></select>
+    </div>
+    <div class="catalog-filter-field">
+      <label for="filter-availability">Availability</label>
+      <select id="filter-availability"><option value="">Any</option><option value="in-stock">In Stock</option><option value="out-of-stock">Out of Stock</option></select>
+    </div>
+    <div id="filter-color-wrap" class="catalog-filter-field" hidden>
+      <label for="filter-color">Color</label>
+      <select id="filter-color"><option value="">Any Color</option></select>
+    </div>
+    <div class="catalog-filter-field catalog-sort-field">
+      <label for="sort-by">Sort By</label>
+      <select id="sort-by"><option value="featured">Featured</option><option value="newest">Newest</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="popular">Popular</option></select>
+    </div>
+    <button id="clear-filters" class="clear-filter-button" type="button">Clear filters</button>
+  </section>
+
+  <!-- Product Grid -->
   <div id="product-list" class="product-grid">
-    <div class="empty-state">Loading products...</div>
+    <!-- Skeleton Loaders -->
+    <div class="skeleton-card">
+      <div class="skeleton-box" style="height: 180px;"></div>
+      <div class="skeleton-box" style="height: 18px; width: 40%;"></div>
+      <div class="skeleton-box" style="height: 24px; width: 90%;"></div>
+      <div class="skeleton-box" style="height: 28px; width: 50%;"></div>
+      <div class="skeleton-box" style="height: 40px; border-radius: 999px;"></div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-box" style="height: 180px;"></div>
+      <div class="skeleton-box" style="height: 18px; width: 40%;"></div>
+      <div class="skeleton-box" style="height: 24px; width: 90%;"></div>
+      <div class="skeleton-box" style="height: 28px; width: 50%;"></div>
+      <div class="skeleton-box" style="height: 40px; border-radius: 999px;"></div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-box" style="height: 180px;"></div>
+      <div class="skeleton-box" style="height: 18px; width: 40%;"></div>
+      <div class="skeleton-box" style="height: 24px; width: 90%;"></div>
+      <div class="skeleton-box" style="height: 28px; width: 50%;"></div>
+      <div class="skeleton-box" style="height: 40px; border-radius: 999px;"></div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-box" style="height: 180px;"></div>
+      <div class="skeleton-box" style="height: 18px; width: 40%;"></div>
+      <div class="skeleton-box" style="height: 24px; width: 90%;"></div>
+      <div class="skeleton-box" style="height: 28px; width: 50%;"></div>
+      <div class="skeleton-box" style="height: 40px; border-radius: 999px;"></div>
+    </div>
   </div>
+  <nav id="product-pagination" class="product-pagination" aria-label="Product pages" style="display:none;"></nav>
 
   <div id="empty-message" class="empty-state" style="display:none;">
-    No products available right now.
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+    <p>No products available right now.</p>
+  </div>
   </div>
 
+  <section class="service-options-section" aria-labelledby="service-options-heading">
+    <div class="service-options-heading">
+      <span class="eyebrow">More ways we can help</span>
+      <h2 id="service-options-heading">Have a bigger idea?</h2>
+      <p>Planning a group order or need a 3D model printed? Tell us what you have in mind.</p>
+    </div>
+    <div class="service-options-grid">
+      <a class="service-option-card" href="service-request.html?type=bulk">
+        <span class="service-option-icon" aria-hidden="true">BO</span>
+        <span><strong>Bulk Orders</strong><small>Request pricing for larger quantities and personalized batches.</small></span>
+        <span class="service-option-arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="service-option-card" href="service-request.html?type=printing">
+        <span class="service-option-icon" aria-hidden="true">3D</span>
+        <span><strong>3D Printing Service</strong><small>Share your file and requirements for a custom quote.</small></span>
+        <span class="service-option-arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="customer-review-slider" class="customer-review-section" aria-label="Customer reviews" style="display:none;">
+    <div class="customer-review-heading">
+      <div><span class="eyebrow">Made by us, loved by you</span><h2>What customers say</h2></div>
+      <div class="review-slider-controls">
+        <button id="review-prev" type="button" aria-label="Previous review">‹</button>
+        <button id="review-next" type="button" aria-label="Next review">›</button>
+      </div>
+    </div>
+    <div id="customer-review-content" aria-live="polite"></div>
+  </section>
+
+  <section class="faq-section" aria-labelledby="faq-heading">
+    <div class="section-heading"><div><h2 id="faq-heading">Frequently Asked Questions</h2></div></div>
+    <div class="faq-list">
+      <details><summary>How long does it take to dispatch my order?</summary><p>Most orders are prepared for dispatch within 1–2 days. Custom or unusually detailed pieces may take longer; we’ll share updates if that applies to your order.</p></details>
+      <details><summary>How can I track my order?</summary><p>Use the Track Order link on the website and enter your order ID to see the latest order status.</p></details>
+      <details><summary>Can I request a personalized design?</summary><p>Yes. Email hello.creative.souls3d@gmail.com or DM us on <a href="https://www.instagram.com/creative.souls3d/" target="_blank" rel="noopener noreferrer">Instagram @creative.souls3d</a> with your idea and reference details.</p></details>
+      <details><summary>Which payment options are available?</summary><p>Available payment options are shown at checkout. Cash on Delivery is available for eligible orders.</p></details>
+      <details><summary>What if my order arrives damaged or incorrect?</summary><p>Please contact us at hello.creative.souls3d@gmail.com with your order ID and photos of the item and packaging so we can review and help.</p></details>
+    </div>
+  </section>
+
+  <!-- App Download Promo Card -->
   <div class="app-promo">
     <h2>Get the Full Experience</h2>
     <p>
@@ -100,10 +281,11 @@
     <a href="downloads/CreativeSouls3D.apk" class="app-open-btn" download>Install App</a>
   </div>
 
+  <!-- Footer -->
   <footer>
     <p>
-      This website is still under testing -
-      Creative Souls 3D &copy; 2026 -
+      This website is still under testing —
+      Creative Souls 3D &copy; 2026 —
       Personalized 3D Printed Art, Gifts & More
     </p>
   </footer>
@@ -112,6 +294,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="navigation.js"></script>
   <script src="app.js"></script>
+  <script src="site-footer.js"></script>
+  <script src="animations.js"></script>
 </body>
 </html>
