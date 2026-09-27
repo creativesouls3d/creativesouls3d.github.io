@@ -1,13 +1,21 @@
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let userData = null;
-let deliveryCharge = 20;
+let standardDeliveryCharge = 20;
+let fulfillmentType = localStorage.getItem("fulfillment_type") === "pickup" ? "pickup" : "delivery";
+let deliveryCharge = fulfillmentType === "pickup" ? 0 : standardDeliveryCharge;
 let discountAmount = 0;
 let appliedCouponCode = "";
+const PICKUP_LOCATION = "Creative Souls 3D, Andheri West, Mumbai, Maharashtra, Pin-400053";
 
 const cartItemsContainer = document.getElementById("cart-items");
 const cartSummary = document.getElementById("cart-summary");
 const couponInput = document.getElementById("coupon");
 const couponMessage = document.getElementById("coupon-message");
+const orderNoteInput = document.getElementById("order-note");
+if (orderNoteInput) {
+  orderNoteInput.value = localStorage.getItem("cart_order_note") || "";
+  orderNoteInput.addEventListener("input", () => localStorage.setItem("cart_order_note", orderNoteInput.value));
+}
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -17,9 +25,22 @@ function formatPrice(value) {
   }).format(Number(value || 0));
 }
 
+function escapeHTML(value = "") {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  })[character]);
+}
+
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    cartSummary.innerHTML = "<p style='color:#c0392b;font-weight:800;'>Please login to continue.</p>";
+    cartSummary.innerHTML = `
+      <h2>Order Summary</h2>
+      <div style="padding: 16px; background: var(--warning-bg); border: 1px solid #fde68a; border-radius: var(--radius-md); text-align: center;">
+        <p style="color: #92400e; font-weight: 700; margin-bottom: 10px;">Please login to complete your order and review saved addresses.</p>
+        <button onclick="loginUser()" class="add-card-btn" style="max-width: 180px; margin: 0 auto;">Login with Google</button>
+      </div>
+    `;
+    renderCart();
     return;
   }
 
@@ -27,32 +48,54 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const doc = await db.collection("users").doc(user.email).get();
     if (doc.exists) {
       userData = doc.data();
+    } else {
+      userData = { email: user.email, name: user.displayName || "User" };
     }
 
     const chargeDoc = await db.collection("shopping app").doc("charges").get();
     if (chargeDoc.exists) {
-      deliveryCharge = chargeDoc.data().delivery_charge || 20;
+      standardDeliveryCharge = Number(chargeDoc.data().delivery_charge ?? 20);
     }
+    deliveryCharge = fulfillmentType === "pickup" ? 0 : standardDeliveryCharge;
 
     renderCart();
   } catch (err) {
     console.error("Error fetching user/charges:", err);
-    cartSummary.innerHTML = "<p style='color:#c0392b;font-weight:800;'>Error loading cart.</p>";
+    cartSummary.innerHTML = "<p style='color:var(--danger);font-weight:800;'>Error loading cart data.</p>";
   }
 });
+
+function loginUser() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
+}
+
+window.loginUser = loginUser;
 
 document.getElementById("place-order").addEventListener("click", async () => {
   const btn = document.getElementById("place-order");
   const msg = document.getElementById("order-message");
 
   if (!userData || cart.length === 0) {
-    msg.style.color = "#c0392b";
+    msg.style.color = "var(--danger)";
     msg.textContent = "You must be logged in and have items in your cart.";
     return;
   }
 
+  if (fulfillmentType === "delivery" && (!userData.address || userData.address.trim() === "")) {
+    msg.style.color = "var(--danger)";
+    msg.innerHTML = `Please add your delivery address in <a href="account.html" style="text-decoration: underline; color: var(--brand-dark);">Your Account</a> before placing an order.`;
+    return;
+  }
+
   btn.disabled = true;
-  btn.textContent = "Placing Order...";
+  btn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 1s linear infinite;">
+      <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+      <path d="M12 2a10 10 0 0 1 10 10"></path>
+    </svg>
+    Placing Order...
+  `;
 
   try {
     const ordersSnapshot = await db.collection("orders").orderBy("timestamp", "desc").limit(1).get();
@@ -73,8 +116,11 @@ document.getElementById("place-order").addEventListener("click", async () => {
       name: userData.name || "",
       email: userData.email,
       phone: userData.phone || "null",
-      address: userData.address,
+      address: fulfillmentType === "pickup" ? PICKUP_LOCATION : userData.address || "",
+      fulfillment_type: fulfillmentType,
+      pickup_location: fulfillmentType === "pickup" ? PICKUP_LOCATION : "",
       items: cart,
+      order_note: orderNoteInput?.value.trim() || "",
       item_total: itemTotal,
       delivery_charge: deliveryCharge,
       discount: discountAmount,
@@ -84,42 +130,67 @@ document.getElementById("place-order").addEventListener("click", async () => {
       timestamp: firebase.firestore.Timestamp.now(),
       approved: false,
       mop: "cash",
-      payment_ref: "cash-on-delivery",
-      expected_delivery: getExpectedDeliveryDate()
+      payment_ref: fulfillmentType === "pickup" ? "cash-on-pickup" : "cash-on-delivery",
+      expected_delivery: fulfillmentType === "pickup"
+        ? "We will contact you when your order is ready for pickup."
+        : "Estimated delivery within 5–7 days. The exact date will be updated once your order is confirmed."
     };
 
     await db.collection("orders").doc(newId).set(orderData);
 
     localStorage.removeItem("cart");
+    localStorage.removeItem("cart_order_note");
+    if (orderNoteInput) orderNoteInput.value = "";
     cart = [];
+    if (typeof window.updateHeaderCartCount === "function") {
+      window.updateHeaderCartCount();
+    }
     renderCart();
 
-    msg.style.color = "#2f7d68";
-    msg.innerHTML = `Order placed successfully.<br>Your Order ID is <strong>${newId}</strong>`;
+    const cleanId = newId.replace("#", "");
+    msg.innerHTML = `
+      <div style="background: var(--accent-emerald-bg); border: 1px solid var(--accent-emerald-border); border-radius: var(--radius-lg); padding: 24px; text-align: center; margin-top: 16px;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🎉</div>
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--accent-emerald-text); margin-bottom: 6px;">Order Placed Successfully!</h3>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Your Order ID is <strong style="color: var(--text-primary); font-size: 1.1rem;">${newId}</strong></p>
+        <a href="track-order.html?id=${encodeURIComponent(cleanId)}" class="add-card-btn" style="max-width: 220px; margin: 0 auto; display: inline-flex;">Track Order Status ➔</a>
+      </div>
+    `;
     btn.style.display = "none";
   } catch (err) {
     console.error("Order Error:", err);
-    msg.style.color = "#c0392b";
+    msg.style.color = "var(--danger)";
     msg.textContent = "Failed to place order. Please try again.";
     btn.disabled = false;
-    btn.textContent = "Place Order";
+    btn.textContent = fulfillmentType === "pickup" ? "Place Pickup Order" : "Place Order (Cash on Delivery)";
   }
 });
-
-function getExpectedDeliveryDate() {
-  const today = new Date();
-  today.setDate(today.getDate() + 3);
-  return today.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-}
 
 function renderCart() {
   cartItemsContainer.innerHTML = "";
 
   if (cart.length === 0) {
-    cartItemsContainer.innerHTML = "<div class='empty-state'>Your cart is empty.</div>";
-    cartSummary.innerHTML = "";
+    cartItemsContainer.innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 6px;">Your cart is empty</h3>
+        <p style="color: var(--text-muted); max-width: 320px; font-size: 0.95rem;">Explore our catalog of custom 3D keychains, lithophanes, and decor to add items.</p>
+        <a href="index.html" class="add-card-btn" style="max-width: 180px; margin-top: 14px; display: inline-flex;">Explore Catalog</a>
+      </div>
+    `;
+    cartSummary.innerHTML = `
+      <h2>Order Summary</h2>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">No items in cart yet.</p>
+    `;
+    document.getElementById("place-order").style.display = "none";
     return;
   }
+
+  document.getElementById("place-order").style.display = "flex";
 
   let itemTotal = 0;
 
@@ -130,43 +201,123 @@ function renderCart() {
     const div = document.createElement("div");
     div.className = "cart-item";
     div.innerHTML = `
-      <span>${item.productName || "Untitled product"}</span>
-      <span>${formatPrice(item.price)}</span>
-      <span>&times; ${item.quantity}</span>
-      <span>${formatPrice(total)}</span>
-      <button onclick="removeItem(${index})" aria-label="Remove item">X</button>
+      <img src="${item.imageUrl || 'logo_creativesouls.jpg'}" alt="${item.productName || 'Product'}" class="cart-item-img" />
+      <div class="cart-item-info">
+        <span class="cart-item-title">${item.productName || "Untitled product"}</span>
+        ${item.colour ? `<span class="cart-item-colour">Colour: ${escapeHTML(item.colour)}</span>` : ""}
+        <span class="cart-item-unit-price">${formatPrice(item.price)} each</span>
+        ${item.customizable ? `<label class="cart-customization-field">Customization details<textarea data-cart-customization="${index}" rows="2" maxlength="500" placeholder="Name, text, colors, or other details">${escapeHTML(item.customization || "")}</textarea></label>` : item.customization ? `<span class="cart-item-colour">Customization: ${escapeHTML(item.customization)}</span>` : ""}
+      </div>
+      <div class="qty-stepper" style="padding: 2px;">
+        <button type="button" onclick="changeQuantity(${index}, -1)" aria-label="Decrease quantity" style="width: 28px; height: 28px; font-size: 0.95rem;">−</button>
+        <span style="min-width: 28px; font-size: 0.92rem;">${item.quantity}</span>
+        <button type="button" onclick="changeQuantity(${index}, 1)" aria-label="Increase quantity" style="width: 28px; height: 28px; font-size: 0.95rem;">+</button>
+      </div>
+      <span class="cart-item-total">${formatPrice(total)}</span>
+      <button class="cart-item-remove-btn" onclick="removeItem(${index})" title="Remove item" aria-label="Remove item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
     `;
     cartItemsContainer.appendChild(div);
+  });
+
+  cartItemsContainer.querySelectorAll("[data-cart-customization]").forEach(input => {
+    input.addEventListener("input", () => {
+      const index = Number(input.dataset.cartCustomization);
+      if (!cart[index]) return;
+      cart[index].customization = input.value;
+      localStorage.setItem("cart", JSON.stringify(cart));
+    });
   });
 
   const finalTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
 
   cartSummary.innerHTML = `
-    <p><strong>Name:</strong> ${userData?.name || "-"}</p>
-    <p><strong>Email:</strong> ${userData?.email || "-"}</p>
-    <p><strong>Phone:</strong> ${userData?.phone || "-"}</p>
-    <p><strong>Address:</strong> ${userData?.address || "-"}</p>
-    <hr>
-    <p><strong>Item Total:</strong> ${formatPrice(itemTotal)}</p>
-    <p><strong>Delivery Charge:</strong> ${formatPrice(deliveryCharge)}</p>
-    <p><strong>Discount:</strong> ${formatPrice(discountAmount)} ${appliedCouponCode ? `(${appliedCouponCode})` : ""}</p>
-    <hr>
-    <p><strong>Total Amount:</strong> ${formatPrice(finalTotal)}</p>
+    <h2>Order Summary</h2>
+    <fieldset class="fulfillment-selector">
+      <legend>Choose how to receive your order</legend>
+      <label><input type="radio" name="fulfillment-type" value="delivery" ${fulfillmentType === "delivery" ? "checked" : ""}> Home delivery</label>
+      <label><input type="radio" name="fulfillment-type" value="pickup" ${fulfillmentType === "pickup" ? "checked" : ""}> Store pickup</label>
+    </fieldset>
+    <div class="user-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong>${fulfillmentType === "pickup" ? "Pickup Details:" : "Delivery Details:"}</strong>
+        ${fulfillmentType === "delivery" ? `<a href="account.html" style="font-size: 0.8rem; color: var(--brand-dark); font-weight: 800; text-decoration: underline;">Change</a>` : ""}
+      </div>
+      <p><strong>${userData?.name || "Customer"}</strong> ${userData?.phone ? `&bull; ${userData.phone}` : ""}</p>
+      <p style="color: var(--text-secondary); font-size: 0.84rem;">${fulfillmentType === "pickup" ? PICKUP_LOCATION : userData?.address || "<span style='color:var(--danger);'>Please set delivery address in Account</span>"}</p>
+      ${fulfillmentType === "pickup" ? `<p style="font-size:0.82rem;">We’ll contact you when your order is ready to collect.</p>` : ""}
+    </div>
+
+    <p class="cart-delivery-estimate"><strong>${fulfillmentType === "pickup" ? "Pickup estimate:" : "Estimated delivery:"}</strong> ${fulfillmentType === "pickup" ? "We’ll confirm the pickup date once your order is confirmed." : "Within 5–7 days. The exact date will be updated once your order is confirmed."}</p>
+
+    <div class="summary-row">
+      <span>Items Subtotal</span>
+      <span>${formatPrice(itemTotal)}</span>
+    </div>
+    <div class="summary-row">
+      <span>${fulfillmentType === "pickup" ? "Pickup" : "Delivery Charge"}</span>
+      <span style="color: var(--text-primary); font-weight: 700;">${fulfillmentType === "pickup" ? "Free" : formatPrice(deliveryCharge)}</span>
+    </div>
+    ${discountAmount > 0 ? `
+      <div class="summary-row" style="color: var(--accent-emerald);">
+        <span>Discount (${appliedCouponCode || "Promo"})</span>
+        <span>-${formatPrice(discountAmount)}</span>
+      </div>
+    ` : ""}
+    <div class="summary-row total">
+      <span>Total to Pay</span>
+      <span>${formatPrice(finalTotal)}</span>
+    </div>
   `;
+
+  cartSummary.querySelectorAll('input[name="fulfillment-type"]').forEach(input => {
+    input.addEventListener("change", () => {
+      fulfillmentType = input.value;
+      localStorage.setItem("fulfillment_type", fulfillmentType);
+      deliveryCharge = fulfillmentType === "pickup" ? 0 : standardDeliveryCharge;
+      renderCart();
+    });
+  });
+  document.getElementById("place-order").textContent = fulfillmentType === "pickup"
+    ? "Place Pickup Order"
+    : "Place Order (Cash on Delivery)";
+}
+
+function changeQuantity(index, delta) {
+  if (!cart[index]) return;
+  cart[index].quantity = Number(cart[index].quantity || 1) + delta;
+
+  if (cart[index].quantity <= 0) {
+    cart.splice(index, 1);
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  if (typeof window.updateHeaderCartCount === "function") {
+    window.updateHeaderCartCount();
+  }
+  renderCart();
 }
 
 function removeItem(index) {
   cart.splice(index, 1);
   localStorage.setItem("cart", JSON.stringify(cart));
+  if (typeof window.updateHeaderCartCount === "function") {
+    window.updateHeaderCartCount();
+  }
   renderCart();
 }
 
 window.removeItem = removeItem;
+window.changeQuantity = changeQuantity;
 
 window.applyCoupon = async () => {
   const code = couponInput?.value?.trim().toUpperCase();
   couponMessage.textContent = "";
-  couponMessage.style.color = "#c0392b";
+  couponMessage.style.color = "var(--danger)";
 
   if (!code) {
     couponMessage.textContent = "Please enter a coupon code.";
@@ -191,19 +342,19 @@ window.applyCoupon = async () => {
     const expiryDate = new Date(expiry.split("-").reverse().join("-"));
 
     if (today > expiryDate) {
-      couponMessage.textContent = "Coupon expired.";
+      couponMessage.textContent = "Coupon has expired.";
       return;
     }
 
     const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
     if (minVal && itemTotal < parseFloat(minVal)) {
-      couponMessage.textContent = `Minimum order ${formatPrice(minVal)} required.`;
+      couponMessage.textContent = `Minimum order amount ${formatPrice(minVal)} required.`;
       return;
     }
 
     if (emailFilter && userData?.email !== emailFilter) {
-      couponMessage.textContent = "Coupon is not valid for your email.";
+      couponMessage.textContent = "This coupon is not valid for your account.";
       return;
     }
 
@@ -225,8 +376,8 @@ window.applyCoupon = async () => {
     appliedCouponCode = code;
     renderCart();
 
-    couponMessage.textContent = `${discountText} applied.`;
-    couponMessage.style.color = "#2f7d68";
+    couponMessage.textContent = `✓ ${discountText} coupon applied!`;
+    couponMessage.style.color = "var(--accent-emerald)";
   } catch (err) {
     console.error("Coupon error:", err);
     couponMessage.textContent = "Error applying coupon.";

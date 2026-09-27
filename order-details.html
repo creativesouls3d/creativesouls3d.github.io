@@ -4,8 +4,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Order Details | Creative Souls 3D</title>
+
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    #invoice-print { display: none; }
+    @media print {
+      @page { margin: 16mm; }
+      body { background: #fff !important; color: #111 !important; font: 12px Arial, sans-serif !important; }
+      body > * { display: none !important; }
+      body > main.order-detail-container { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+      main.order-detail-container > * { display: none !important; }
+      main.order-detail-container > #invoice-print { display: block !important; }
+      #invoice-print { color: #111; }
+      #invoice-print h1 { margin: 0 0 4px; font-size: 26px; }
+      #invoice-print h2 { margin: 22px 0 8px; font-size: 15px; }
+      #invoice-print .invoice-meta, #invoice-print .invoice-parties { display: flex; justify-content: space-between; gap: 24px; }
+      #invoice-print .invoice-meta { margin: 18px 0; padding: 12px 0; border-top: 1px solid #bbb; border-bottom: 1px solid #bbb; }
+      #invoice-print table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      #invoice-print th, #invoice-print td { padding: 9px 6px; border-bottom: 1px solid #ddd; text-align: left; }
+      #invoice-print th:last-child, #invoice-print td:last-child { text-align: right; }
+      #invoice-print .invoice-totals { width: 280px; margin: 18px 0 0 auto; }
+      #invoice-print .invoice-totals div { display: flex; justify-content: space-between; padding: 5px 0; }
+      #invoice-print .invoice-grand-total { margin-top: 5px; padding-top: 10px !important; border-top: 1px solid #111; font-size: 15px; font-weight: 700; }
+      #invoice-print .invoice-note { margin-top: 36px; padding-top: 12px; border-top: 1px solid #bbb; text-align: center; font-size: 11px; }
+    }
+  </style>
+
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -13,27 +39,61 @@
   <script defer src="order-details.js"></script>
 </head>
 <body>
+  <!-- Header -->
   <header>
-    <button class="back-nav" type="button" data-back data-fallback="orders.html">&larr; Back</button>
-    <div class="logo-section">
+    <button class="back-nav" type="button" data-back data-fallback="orders.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Orders
+    </button>
+    <div class="logo-section" onclick="window.location.href='index.html'">
       <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
-      <span>Creative Souls 3D</span>
+      <span>Creative Souls <strong>3D</strong></span>
     </div>
     <nav class="cart-link" aria-label="Main navigation">
-      <a href="index.html">Shop</a>
-      <a href="orders.html">Orders</a>
-      <a href="cart.html">Cart</a>
+      <a href="index.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Shop
+      </a>
+      <a href="cart.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Cart
+        <span class="cart-badge" id="cart-badge">0</span>
+      </a>
+      <a href="account.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Account
+      </a>
     </nav>
   </header>
 
   <main class="order-detail-container">
-    <div id="order-info"></div>
-    <a href="orders.html" class="back-button">Back to Orders</a>
+    <section id="invoice-print" aria-label="Printable invoice"></section>
+    <div id="order-info">
+      <div class="empty-state">
+        <p>Loading order details...</p>
+      </div>
+    </div>
+    <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <a href="orders.html" class="back-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to All Orders
+      </a>
+      <button id="print-invoice-button" onclick="window.print()" class="nav-pill" style="color: var(--text-primary); border-color: var(--border); background: #ffffff;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print Invoice
+      </button>
+    </div>
   </main>
 
+  <!-- Footer -->
   <footer>
-    <p>Creative Souls 3D &copy; 2026 - Personalized 3D Printed Art, Gifts & More</p>
+    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts & Keepsakes</p>
   </footer>
+
   <script src="navigation.js"></script>
+  <script src="site-footer.js"></script>
 </body>
 </html>

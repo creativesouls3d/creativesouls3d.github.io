@@ -4,19 +4,29 @@
   <meta charset="UTF-8" />
   <title>Page Not Found | Creative Souls 3D</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 </head>
 
-<body>
-  <main class="account-section">
-    <h1 id="page-title">Redirecting to Creative Souls 3D App...</h1>
-    <p id="product-info">Loading product info...</p>
-    <p id="fallback" style="display:none;margin-top:20px;">
-      If the app did not open, <a id="manualLink" class="back-button" href="#">open it manually</a>.
+<body style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+  <main class="account-section" style="max-width: 540px; margin: auto; text-align: center; padding: 48px 32px;">
+    <div style="font-size: 3.5rem; margin-bottom: 12px;">🧊</div>
+    <h1 id="page-title" style="font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;">Opening Creative Souls 3D...</h1>
+    <p id="product-info" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 24px;">Looking up page details...</p>
+
+    <p id="fallback" style="display:none; margin: 18px 0; padding: 14px; background: var(--surface-alt); border-radius: var(--radius-sm); font-size: 0.9rem;">
+      App didn't launch automatically? <br>
+      <a id="manualLink" href="#" style="color: var(--brand-dark); font-weight: 800; text-decoration: underline;">Tap here to open manually</a>
     </p>
-    <a href="index.html" class="back-button">Back to Shop</a>
+
+    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+      <a href="index.html" class="add-card-btn" style="max-width: 180px; display: inline-flex;">Back to Shop</a>
+      <a href="track-order.html" class="nav-pill" style="color: var(--text-primary); border-color: var(--border);">Track Order</a>
+    </div>
   </main>
+
+  <footer></footer>
 
   <script>
     const path = window.location.pathname;
@@ -33,18 +43,19 @@
       manualLink.href = intentUrl;
       setTimeout(() => window.location.href = intentUrl, 100);
       setTimeout(() => fallback.style.display = "block", 2500);
-      info.textContent = `Product ID: ${productId}`;
+      info.textContent = `Opening product ID: ${productId}`;
     } else if (searchRegex.test(path)) {
       const query = path.match(searchRegex)[1];
       const intentUrl = `intent://search/${query}#Intent;scheme=creativesouls3d;package=com.ls.creativesouls3d;end`;
       manualLink.href = intentUrl;
       setTimeout(() => window.location.href = intentUrl, 100);
       setTimeout(() => fallback.style.display = "block", 2500);
-      info.textContent = `Search: ${query}`;
+      info.textContent = `Searching for: "${query}"`;
     } else {
       title.textContent = "404 - Page Not Found";
-      info.textContent = "The page you requested does not exist.";
+      info.textContent = "The link you followed may be broken or the page has been moved.";
     }
   </script>
+  <script src="site-footer.js"></script>
 </body>
 </html>

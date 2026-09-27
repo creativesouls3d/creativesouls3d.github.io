@@ -3,63 +3,208 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Account | Creative Souls 3D</title>
+  <title>Your Profile & Settings | Creative Souls 3D</title>
 
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script defer src="account.js"></script>
+
+  <style>
+    .profile-hero {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile-avatar-large {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid var(--brand);
+      background: var(--surface-alt);
+      object-fit: cover;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+    }
+
+    .profile-info h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .profile-info p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .account-quick-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .account-quick-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 10px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+
+    .account-quick-card:hover {
+      background: #ffffff;
+      border-color: var(--brand);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-icon svg {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .input-with-icon input {
+      padding-left: 42px !important;
+    }
+
+    @media (max-width: 600px) {
+      .account-quick-links {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <!-- Header -->
   <header>
-    <button class="back-nav" type="button" data-back data-fallback="index.html">&larr; Back</button>
-    <div class="logo-section">
+    <button class="back-nav" type="button" data-back data-fallback="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back
+    </button>
+    <div class="logo-section" onclick="window.location.href='index.html'">
       <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
-      <span>Creative Souls 3D</span>
+      <span>Creative Souls <strong>3D</strong></span>
     </div>
     <nav class="cart-link" aria-label="Main navigation">
-      <a href="index.html">Shop</a>
-      <a href="orders.html">Orders</a>
-      <a href="cart.html">Cart</a>
+      <a href="index.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Shop
+      </a>
+      <a href="orders.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        Orders
+      </a>
+      <a href="cart.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Cart
+        <span class="cart-badge" id="cart-badge">0</span>
+      </a>
     </nav>
   </header>
 
   <main>
     <section class="account-section">
-      <h1>Your Profile</h1>
-      <p>Keep your delivery details updated for quicker checkout.</p>
+      <!-- Profile Hero Header -->
+      <div class="profile-hero">
+        <img id="profile-photo" class="profile-avatar-large" src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg" alt="User Avatar" />
+        <div class="profile-info">
+          <h2 id="profile-display-name">Customer Profile</h2>
+          <p id="profile-email">Sign in to manage your orders</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards -->
+      <div class="account-quick-links">
+        <a href="orders.html" class="account-quick-card">
+          <span style="font-size: 1.3rem;">📦</span>
+          <span>My Orders</span>
+        </a>
+        <a href="cart.html" class="account-quick-card">
+          <span style="font-size: 1.3rem;">🛒</span>
+          <span>View Cart</span>
+        </a>
+        <a href="track-order.html" class="account-quick-card">
+          <span style="font-size: 1.3rem;">📍</span>
+          <span>Track Order</span>
+        </a>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">Delivery Information</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Keep your address updated for fast 1-click checkout on all custom prints.</p>
+      </div>
 
       <form id="profile-form">
         <label>
-          Name
-          <input type="text" id="name" required />
+          Full Name
+          <div class="input-with-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <input type="text" id="name" placeholder="Your full name" required />
+          </div>
         </label>
 
         <label>
-          Address
-          <textarea id="address" rows="3" required></textarea>
+          Delivery Address (House no, Street, Landmark, City, Pincode)
+          <textarea id="address" rows="3" placeholder="Enter complete doorstep delivery address with pincode" required></textarea>
         </label>
 
         <label>
-          Phone
-          <input type="tel" id="phone" required pattern="[0-9]{10}" />
+          Contact Phone Number (10 digits)
+          <div class="input-with-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <input type="tel" id="phone" placeholder="9876543210" required pattern="[0-9]{10}" />
+          </div>
         </label>
 
-        <button type="submit">Save Profile</button>
+        <button type="submit" id="save-btn" style="margin-top: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Save Profile Details
+        </button>
       </form>
 
-      <p id="status" style="text-align:center;color:#2f7d68;margin-top:10px;font-weight:800;"></p>
+      <p id="status" style="text-align:center; margin-top:14px; font-weight:800; font-size: 0.95rem;"></p>
     </section>
   </main>
 
+  <!-- Footer -->
   <footer>
-    <p>Creative Souls 3D &copy; 2026</p>
+    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts & Keepsakes</p>
   </footer>
+
   <script src="navigation.js"></script>
+  <script src="site-footer.js"></script>
 </body>
 </html>
