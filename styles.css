@@ -1160,6 +1160,8 @@ header,
   justify-content: center;
   position: relative;
   overflow: hidden;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .product-image img {
@@ -1173,6 +1175,22 @@ header,
 .product-image:hover img {
   transform: scale(1.03);
 }
+
+.product-image > img { cursor: zoom-in; }
+.product-image-hint { flex-basis: 100%; margin: 0; text-align: center; color: var(--text-muted); font-size: 0.82rem; }
+.product-thumbnails { display: flex; flex-basis: 100%; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.product-thumbnail { width: 64px; height: 64px; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
+.product-thumbnail.active { border: 2px solid var(--brand); }
+.product-thumbnail img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
+.product-image-dialog { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; padding: 64px 80px; border: 0; background: rgba(8, 12, 20, 0.96); overflow: hidden; }
+.product-image-dialog::backdrop { background: rgba(8, 12, 20, 0.92); }
+.product-image-dialog img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; margin: auto; object-fit: contain; transform-origin: center; transition: transform 120ms ease; cursor: zoom-in; }
+.product-image-dialog button { position: absolute; z-index: 1; padding: 9px 13px; border: 0; border-radius: 8px; background: #fff; color: #111827; font-size: 1.1rem; cursor: pointer; }
+.product-image-dialog-close { top: 18px; right: 20px; font-size: 1.8rem !important; }
+.product-image-zoom-in { right: 20px; bottom: 20px; }
+.product-image-zoom-out { right: 72px; bottom: 20px; }
+.product-image-reset { left: 20px; bottom: 20px; font-size: 0.9rem !important; }
+@media (max-width: 600px) { .product-image-dialog { padding: 56px 12px; } }
 
 .product-details {
   display: flex;
