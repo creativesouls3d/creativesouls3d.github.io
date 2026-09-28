@@ -12,6 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="firebase-config.js"></script>
   <script defer src="cart.js"></script>
 </head>
@@ -91,8 +92,14 @@
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            Place Order (Cash on Delivery)
+            Place Order
           </button>
+          <div id="upi-payment" hidden style="margin-top:14px;padding:16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);text-align:center;">
+            <strong>Scan to pay the exact order amount</strong>
+            <div id="upi-qr" style="display:flex;justify-content:center;margin:12px auto;"></div>
+            <p id="upi-amount" style="font-weight:800;"></p>
+            <p style="font-size:.88rem;color:var(--text-muted);">After paying, select “I’ve paid” to place your order. Your order will remain pending until we verify the payment.</p>
+          </div>
           <p id="order-message" style="margin-top: 16px; text-align: center; font-weight: 800; font-size: 0.95rem;"></p>
         </div>
       </aside>
