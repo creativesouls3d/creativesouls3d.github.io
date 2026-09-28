@@ -6,6 +6,15 @@
   <title>Product Details | Creative Souls 3D</title>
 
   <meta name="description" content="View personalized 3D printed product details from Creative Souls 3D." />
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content="Creative Souls 3D Product" />
+  <meta property="og:description" content="View this personalized 3D printed product from Creative Souls 3D." />
+  <meta property="og:image" content="https://creativesouls3d.github.io/logo_creativesouls.jpg" />
+  <meta property="og:url" content="" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Creative Souls 3D Product" />
+  <meta name="twitter:description" content="View this personalized 3D printed product from Creative Souls 3D." />
+  <meta name="twitter:image" content="https://creativesouls3d.github.io/logo_creativesouls.jpg" />
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -399,6 +408,23 @@
       largeImage.style.transform = `scale(${zoom})`;
     }
 
+    function setProductShareMetadata(product) {
+      const name = product.productName || "Creative Souls 3D Product";
+      const description = String(product.description || "Personalized 3D printed creation from Creative Souls 3D.").replace(/\s+/g, " ").trim().slice(0, 300);
+      const image = productImages[0] || "logo_creativesouls.jpg";
+      const absoluteImage = new URL(image, window.location.href).href;
+      const canonicalUrl = window.location.href;
+      document.title = `${name} | Creative Souls 3D`;
+      document.querySelector('meta[name="description"]').content = description;
+      document.querySelector('meta[property="og:title"]').content = name;
+      document.querySelector('meta[property="og:description"]').content = description;
+      document.querySelector('meta[property="og:image"]').content = absoluteImage;
+      document.querySelector('meta[property="og:url"]').content = canonicalUrl;
+      document.querySelector('meta[name="twitter:title"]').content = name;
+      document.querySelector('meta[name="twitter:description"]').content = description;
+      document.querySelector('meta[name="twitter:image"]').content = absoluteImage;
+    }
+
     productImage.addEventListener("click", () => imageDialog.showModal());
     imageDialog.querySelector(".product-image-dialog-close").addEventListener("click", () => imageDialog.close());
     imageDialog.querySelector(".product-image-zoom-in").addEventListener("click", () => changeImageZoom(0.25));
@@ -713,6 +739,7 @@
           });
           productThumbnails.hidden = productImages.length < 2;
           selectProductImage(0);
+          setProductShareMetadata(data);
           document.getElementById("product-name").textContent = data.productName || "Untitled product";
           document.getElementById("product-price").textContent = formatPrice(data.price);
           document.getElementById("product-original-price").textContent = formatPrice(getOriginalPrice(data.price));
