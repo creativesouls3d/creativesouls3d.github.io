@@ -467,7 +467,9 @@ function renderProduct(data) {
   card.className = "product-card";
   card.productData = data;
 
-  const id = encodeURIComponent(data.productId || data.id || "");
+  const rawId = data.productId || data.id || "";
+  const id = encodeURIComponent(rawId);
+  const productPreviewUrl = `https://us-central1-creative-souls-3d.cloudfunctions.net/productPreview?id=${id}`;
   const name = escapeHTML(data.productName || "Untitled product");
   const image = escapeHTML(data.imageUrl || "logo_creativesouls.jpg");
   const category = escapeHTML(data.category || "Custom Print");
@@ -506,7 +508,7 @@ function renderProduct(data) {
     </div>`;
 
   card.innerHTML = `
-    <a class="product-card-link" href="product.html?id=${id}">
+    <a class="product-card-link" href="${productPreviewUrl}">
       <div class="img-wrapper">
         <img src="${image}" alt="${name}" loading="lazy"/>
       </div>

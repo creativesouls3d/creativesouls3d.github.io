@@ -1,0 +1,156 @@
+[debug] [2026-09-28T19:36:41.099Z] ----------------------------------------------------------------------
+[debug] [2026-09-28T19:36:41.106Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:list
+[debug] [2026-09-28T19:36:41.106Z] CLI Version:   14.8.0
+[debug] [2026-09-28T19:36:41.106Z] Platform:      win32
+[debug] [2026-09-28T19:36:41.106Z] Node Version:  v20.17.0
+[debug] [2026-09-28T19:36:41.107Z] Time:          Tue Sep 29 2026 01:06:41 GMT+0530 (India Standard Time)
+[debug] [2026-09-28T19:36:41.107Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-28T19:36:41.109Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-28T19:36:41.306Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-28T19:36:41.306Z] > authorizing via signed-in user (ls.projects.base@gmail.com)
+[debug] [2026-09-28T19:36:41.309Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:41.309Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:41.310Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:41.310Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:41.311Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:41.539Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:41.539Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:41.540Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-09-28T19:36:41.944Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-09-28T19:36:41.944Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-09-28T19:36:41.992Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2026-09-28T19:36:41.992Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-09-28T19:36:41.992Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-09-28T19:36:41.993Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:41.993Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:41.993Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:41.993Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:41.993Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:42.082Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:42.082Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:42.083Z] Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-09-28T19:36:42.085Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=1000 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at responseToError (C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:52:12)
+    at RetryOperation._fn (C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:312:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-09-28T19:36:45.716Z] ----------------------------------------------------------------------
+[debug] [2026-09-28T19:36:45.718Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:productPreview --project creative-souls-3d
+[debug] [2026-09-28T19:36:45.719Z] CLI Version:   14.8.0
+[debug] [2026-09-28T19:36:45.719Z] Platform:      win32
+[debug] [2026-09-28T19:36:45.719Z] Node Version:  v20.17.0
+[debug] [2026-09-28T19:36:45.719Z] Time:          Tue Sep 29 2026 01:06:45 GMT+0530 (India Standard Time)
+[debug] [2026-09-28T19:36:45.719Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-28T19:36:45.867Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-28T19:36:45.868Z] > authorizing via signed-in user (ls.projects.base@gmail.com)
+[debug] [2026-09-28T19:36:45.868Z] [iam] checking project creative-souls-3d for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-09-28T19:36:45.870Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:45.871Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:45.871Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:45.872Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:45.872Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.047Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:46.047Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.048Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions [none]
+[debug] [2026-09-28T19:36:46.048Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-09-28T19:36:46.048Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-09-28T19:36:46.449Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions 401
+[debug] [2026-09-28T19:36:46.450Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"error":{"code":401,"message":"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":"UNAUTHENTICATED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"CREDENTIALS_MISSING","metadata":{"method":"google.cloudresourcemanager.v1.Projects.TestIamPermissions","service":"cloudresourcemanager.googleapis.com"}}]}}
+[debug] [2026-09-28T19:36:46.450Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-09-28T19:36:46.450Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:46.450Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:46.450Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:46.450Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:46.450Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.551Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:46.551Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.551Z] [iam] error while checking permissions, command may fail: Request to https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-09-28T19:36:46.552Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:46.552Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:46.552Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:46.552Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:46.552Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.858Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:46.858Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:46.858Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-09-28T19:36:46.859Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-09-28T19:36:48.496Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions 401
+[debug] [2026-09-28T19:36:48.496Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":401,"message":"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":"UNAUTHENTICATED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"CREDENTIALS_MISSING","metadata":{"method":"google.iam.admin.v1.IAM.TestIamPermissions","service":"iam.googleapis.com"}}]}}
+[debug] [2026-09-28T19:36:48.496Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-09-28T19:36:48.496Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:48.496Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:48.496Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:48.497Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:48.497Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:48.599Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:48.599Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:48.599Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":401,"message":"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":"UNAUTHENTICATED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"CREDENTIALS_MISSING","metadata":{"method":"google.iam.admin.v1.IAM.TestIamPermissions","service":"iam.googleapis.com"}}]}},"response":{"statusCode":401}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":401}
+[info] 
+[info] === Deploying to 'creative-souls-3d'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-09-28T19:36:48.603Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:48.603Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:48.603Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:48.603Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:48.603Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:48.858Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:48.858Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:48.858Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudresourcemanager.googleapis.com [none]
+[debug] [2026-09-28T19:36:48.859Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-09-28T19:36:50.497Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudresourcemanager.googleapis.com 401
+[debug] [2026-09-28T19:36:50.497Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudresourcemanager.googleapis.com [omitted]
+[debug] [2026-09-28T19:36:50.497Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-09-28T19:36:50.497Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:50.497Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:50.497Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:50.497Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:50.498Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:50.648Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:50.648Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:50.648Z] Unable to check that https://cloudresourcemanager.googleapis.com is enabled on creative-souls-3d. Calls to it will fail if it is not enabled
+[debug] [2026-09-28T19:36:50.649Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:50.649Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:50.649Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:50.649Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:50.649Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:50.954Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:50.954Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:50.954Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d [none]
+[debug] [2026-09-28T19:36:51.187Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d 401
+[debug] [2026-09-28T19:36:51.187Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d {"error":{"code":401,"message":"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.","status":"UNAUTHENTICATED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"CREDENTIALS_MISSING","metadata":{"method":"google.cloudresourcemanager.v1.Projects.GetProject","service":"cloudresourcemanager.googleapis.com"}}]}}
+[debug] [2026-09-28T19:36:51.187Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-09-28T19:36:51.187Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:51.187Z] Checked if tokens are valid: false, expires at: 1724785556003
+[debug] [2026-09-28T19:36:51.187Z] > refreshing access token with scopes: []
+[debug] [2026-09-28T19:36:51.187Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-28T19:36:51.187Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-28T19:36:51.271Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-09-28T19:36:51.272Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[error] 
+[error] Error: Request to https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-09-28T19:36:51.274Z] Error Context: {
+  "body": {
+    "error": {
+      "code": 401,
+      "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+      "status": "UNAUTHENTICATED",
+      "details": [
+        {
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          "reason": "CREDENTIALS_MISSING",
+          "metadata": {
+            "method": "google.cloudresourcemanager.v1.Projects.GetProject",
+            "service": "cloudresourcemanager.googleapis.com"
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "statusCode": 401
+  }
+}
