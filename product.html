@@ -763,12 +763,10 @@
     }
 
     shareProductBtn.addEventListener("click", async () => {
-      const productName = currentProduct?.productName || document.getElementById("product-name").textContent;
-      const previewDescription = String(currentProduct?.description || "Personalized 3D printed creation from Creative Souls 3D.").replace(/\s+/g, " ").trim().slice(0, 180);
       const shareData = {
-        title: productName,
-        text: `${previewDescription} — Creative Souls 3D`,
-        url: `https://us-central1-creative-souls-3d.cloudfunctions.net/productPreview?id=${encodeURIComponent(productId)}`
+        title: document.getElementById("product-name").textContent,
+        text: `Check out ${document.getElementById("product-name").textContent} at Creative Souls 3D`,
+        url: window.location.href
       };
 
       try {
