@@ -561,6 +561,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "size-option";
+        button.dataset.size = option.label;
         button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
         button.textContent = option.label;
         button.addEventListener("click", () => {
@@ -637,6 +638,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "colour-option";
+        button.dataset.colour = label;
         button.setAttribute("aria-label", `Colour ${label}`);
         button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
         button.title = label;
@@ -669,6 +671,22 @@
         optionsContainer.appendChild(button);
       });
       document.getElementById("selected-colour-label").textContent = `Selected: ${selectedColour}`;
+    }
+
+    function applyVariantFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const requestedColour = params.get("colour") || params.get("color");
+      const requestedSize = params.get("size");
+      if (requestedColour) {
+        const button = [...document.querySelectorAll("#colour-options .colour-option")]
+          .find(option => option.dataset.colour.toLowerCase() === requestedColour.toLowerCase());
+        button?.click();
+      }
+      if (requestedSize) {
+        const button = [...document.querySelectorAll("#size-options .size-option")]
+          .find(option => option.dataset.size.toLowerCase() === requestedSize.toLowerCase());
+        button?.click();
+      }
     }
 
     function escapeHTML(value = "") {
@@ -830,6 +848,7 @@
           document.getElementById("product-viewer-count").textContent = String(18 + Math.floor(Math.random() * 24));
           renderColourSelector(data.colourOptions || data.colorOptions || data.colours || data.colors || data.colour || data.color || "", data);
       renderSizeSelector(data);
+          applyVariantFromUrl();
 
           productImages = String(data.imageUrl || "logo_creativesouls.jpg").split(",").map(url => url.trim()).filter(Boolean);
           if (!productImages.length) productImages = ["logo_creativesouls.jpg"];
@@ -949,12 +968,16 @@
       const description = String(currentProduct?.description || "A custom handcrafted 3D printed piece by Creative Souls 3D.").replace(/\s+/g, " ").trim();
       const teaser = description.length > 150 ? `${description.slice(0, 147).trimEnd()}…` : description;
       const imageUrl = productImages[0] || "";
-      const productUrl = window.location.href;
+      const shareUrl = new URL(window.location.href);
+      if (selectedColour) shareUrl.searchParams.set("colour", selectedColour);
+      if (selectedSize) shareUrl.searchParams.set("size", selectedSize);
+      const productUrl = shareUrl.href;
       const shareData = {
         title: `${title} | Creative Souls 3D`,
-        text: `${title}\n\n${teaser}\n\nDiscover it at Creative Souls 3D:\n${productUrl}`,
+        text: `${title}\n\n${teaser}\n\nDiscover it at Creative Souls 3D:`,
         url: productUrl
       };
+      const shareMessage = `${shareData.text}\n${productUrl}`;
 
       try {
         if (navigator.share) {
@@ -970,21 +993,21 @@
           }
           if (payload.files?.length && navigator.clipboard?.writeText) {
             try {
-              await navigator.clipboard.writeText(shareData.text);
+              await navigator.clipboard.writeText(shareMessage);
               window.showToast?.("Share image ready. Caption copied so you can paste it in Instagram.", "success");
             } catch { /* Clipboard access is optional; the title and teaser are also on the image. */ }
           }
           await navigator.share(payload);
         } else if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(shareData.text);
+          await navigator.clipboard.writeText(shareMessage);
           window.showToast?.("Product title, description, and link copied to clipboard.", "success");
         } else {
-          window.prompt("Copy this product message:", shareData.text);
+          window.prompt("Copy this product message:", shareMessage);
         }
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("Could not share product link:", err);
-          window.prompt("Copy this product message:", shareData.text);
+          window.prompt("Copy this product message:", shareMessage);
         }
       }
     });
