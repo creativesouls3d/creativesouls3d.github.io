@@ -870,15 +870,90 @@
         });
     }
 
+    async function createShareCardFile(imageUrl, title, teaser, productUrl) {
+      if (!imageUrl || !window.File || !HTMLCanvasElement.prototype.toBlob) return null;
+      const response = await fetch(imageUrl, { mode: "cors" });
+      if (!response.ok) throw new Error("Product image could not be loaded for sharing.");
+      const imageBlob = await response.blob();
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(imageBlob);
+      try {
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error("Product image could not be opened for sharing."));
+          image.src = objectUrl;
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = 1350;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#fffaf0";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        const imageArea = { x: 60, y: 45, width: 960, height: 750 };
+        const scale = Math.min(imageArea.width / image.naturalWidth, imageArea.height / image.naturalHeight);
+        const drawWidth = image.naturalWidth * scale;
+        const drawHeight = image.naturalHeight * scale;
+        context.drawImage(image, imageArea.x + (imageArea.width - drawWidth) / 2, imageArea.y + (imageArea.height - drawHeight) / 2, drawWidth, drawHeight);
+
+        const gradient = context.createLinearGradient(0, 820, 0, canvas.height);
+        gradient.addColorStop(0, "#fffaf0");
+        gradient.addColorStop(1, "#ffedd5");
+        context.fillStyle = gradient;
+        context.fillRect(0, 820, canvas.width, 530);
+        context.fillStyle = "#b45309";
+        context.font = "700 28px Arial, sans-serif";
+        context.fillText("CREATIVE SOULS 3D  ·  MADE TO MAKE YOU LOOK TWICE", 64, 875, 950);
+        context.fillStyle = "#111827";
+        context.font = "700 54px Arial, sans-serif";
+        const wrap = (text, font, maxWidth, maxLines) => {
+          context.font = font;
+          const words = String(text).split(/\s+/);
+          const lines = [];
+          let line = "";
+          words.forEach(word => {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && context.measureText(candidate).width > maxWidth) {
+              lines.push(line);
+              line = word;
+            } else line = candidate;
+          });
+          if (line) lines.push(line);
+          return lines.slice(0, maxLines);
+        };
+        const titleLines = wrap(title, "700 54px Arial, sans-serif", 950, 2);
+        let textY = 950;
+        titleLines.forEach(line => { context.fillText(line, 64, textY, 950); textY += 64; });
+        context.fillStyle = "#475569";
+        const teaserLines = wrap(teaser, "400 31px Arial, sans-serif", 950, 3);
+        teaserLines.forEach(line => { context.fillText(line, 64, textY + 7, 950); textY += 42; });
+        context.fillStyle = "#b45309";
+        context.font = "700 23px Arial, sans-serif";
+        context.fillText("VIEW PRODUCT", 64, 1285);
+        context.fillStyle = "#334155";
+        context.font = "400 21px Arial, sans-serif";
+        context.fillText(productUrl, 64, 1323, 950);
+
+        const cardBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
+        if (!cardBlob) return null;
+        const safeName = title.replace(/[^a-z0-9_-]/gi, "-").slice(0, 60) || "product";
+        return new File([cardBlob], `${safeName}-creative-souls.jpg`, { type: "image/jpeg" });
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
     shareProductBtn.addEventListener("click", async () => {
       const title = document.getElementById("product-name").textContent;
-      const description = String(currentProduct?.description || "A custom handcrafted 3D printed piece by Creative Souls 3D.").trim();
+      const description = String(currentProduct?.description || "A custom handcrafted 3D printed piece by Creative Souls 3D.").replace(/\s+/g, " ").trim();
       const teaser = description.length > 150 ? `${description.slice(0, 147).trimEnd()}…` : description;
       const imageUrl = productImages[0] || "";
+      const productUrl = window.location.href;
       const shareData = {
         title: `${title} | Creative Souls 3D`,
-        text: `${title}\n${teaser}\nTake a look at this piece from Creative Souls 3D:`,
-        url: window.location.href
+        text: `${title}\n\n${teaser}\n\nDiscover it at Creative Souls 3D:\n${productUrl}`,
+        url: productUrl
       };
 
       try {
@@ -886,29 +961,30 @@
           let payload = shareData;
           if (imageUrl && navigator.canShare && window.File) {
             try {
-              const response = await fetch(imageUrl);
-              if (response.ok) {
-                const blob = await response.blob();
-                const extension = (blob.type.split("/")[1] || "jpg").split(";")[0];
-                const imageFile = new File([blob], `${title.replace(/[^a-z0-9_-]/gi, "-")}.${extension}`, { type: blob.type || "image/jpeg" });
-                const withImage = { ...shareData, files: [imageFile] };
-                if (navigator.canShare(withImage)) payload = withImage;
-              }
+              const imageFile = await createShareCardFile(imageUrl, title, teaser, productUrl);
+              const withImage = { ...shareData, files: imageFile ? [imageFile] : [] };
+              if (imageFile && navigator.canShare(withImage)) payload = withImage;
             } catch (imageError) {
-              console.info("Product image could not be attached to the share:", imageError);
+              console.info("Share card could not be created; sharing the product link instead:", imageError);
             }
+          }
+          if (payload.files?.length && navigator.clipboard?.writeText) {
+            try {
+              await navigator.clipboard.writeText(shareData.text);
+              window.showToast?.("Share image ready. Caption copied so you can paste it in Instagram.", "success");
+            } catch { /* Clipboard access is optional; the title and teaser are also on the image. */ }
           }
           await navigator.share(payload);
         } else if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
+          await navigator.clipboard.writeText(shareData.text);
           window.showToast?.("Product title, description, and link copied to clipboard.", "success");
         } else {
-          window.prompt("Copy this product message:", `${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
+          window.prompt("Copy this product message:", shareData.text);
         }
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("Could not share product link:", err);
-          window.prompt("Copy this product message:", `${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
+          window.prompt("Copy this product message:", shareData.text);
         }
       }
     });
