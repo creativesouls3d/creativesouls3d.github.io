@@ -54,7 +54,7 @@ function renderProduct(data) {
 
   container.innerHTML = `
     <h1>${data.productName || "Untitled product"}</h1>
-    <img src="${data.imageUrl || "logo_creativesouls.jpg"}" alt="${data.productName || "Product image"}" />
+    <img src="${String(data.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg"}" alt="${data.productName || "Product image"}" />
     <p><strong>Price:</strong> ${formatPrice(data.price)}</p>
     <p><strong>Category:</strong> ${data.category || "Uncategorized"}</p>
     <p><strong>Color:</strong> ${data.color || "N/A"}</p>
@@ -89,7 +89,7 @@ function renderProduct(data) {
     addToCart({
       id: data.productId || data.id || productId,
       productName: data.productName || "Untitled product",
-      imageUrl: data.imageUrl || "",
+      imageUrl: String(data.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg",
       price: Number(data.price || 0),
       quantity: qty
     });
@@ -104,7 +104,7 @@ function renderProduct(data) {
     addToCart({
       id: data.productId || data.id || productId,
       productName: data.productName || "Untitled product",
-      imageUrl: data.imageUrl || "",
+      imageUrl: String(data.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg",
       price: Number(data.price || 0),
       quantity: qty
     });

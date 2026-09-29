@@ -233,7 +233,7 @@ function renderCart() {
     const div = document.createElement("div");
     div.className = "cart-item";
     div.innerHTML = `
-      <img src="${item.imageUrl || 'logo_creativesouls.jpg'}" alt="${item.productName || 'Product'}" class="cart-item-img" />
+      <img src="${escapeHTML(String(item.imageUrl || '').split(',').map(url => url.trim()).find(Boolean) || 'logo_creativesouls.jpg')}" alt="${escapeHTML(item.productName || 'Product')}" class="cart-item-img" />
       <div class="cart-item-info">
         <span class="cart-item-title">${item.productName || "Untitled product"}</span>
         ${item.colour ? `<span class="cart-item-colour">Colour: ${escapeHTML(item.colour)}</span>` : ""}

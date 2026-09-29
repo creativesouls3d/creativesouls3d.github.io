@@ -145,7 +145,7 @@ function setCartQuantity(product, quantity) {
     cart.push({
       id,
       productName: product.productName || "Untitled product",
-      imageUrl: product.imageUrl || "",
+      imageUrl: String(product.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg",
       price: Number(product.price || 0),
       colour,
       customizable: isProductCustomizable(product),
@@ -469,7 +469,7 @@ function renderProduct(data) {
 
   const id = encodeURIComponent(data.productId || data.id || "");
   const name = escapeHTML(data.productName || "Untitled product");
-  const firstImage = String(data.imageUrl || "logo_creativesouls.jpg").split(",")[0].trim();
+  const firstImage = String(data.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg";
   const image = escapeHTML(firstImage || "logo_creativesouls.jpg");
   const category = escapeHTML(data.category || "Custom Print");
 

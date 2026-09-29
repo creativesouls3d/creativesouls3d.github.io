@@ -2693,6 +2693,11 @@ footer .footer-badges {
 .colour-option[aria-pressed="true"] { border-color: var(--brand-dark); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24); }
 .colour-swatch { width: 28px; height: 28px; flex: 0 0 28px; border: 1px solid rgba(15, 23, 42, 0.2); border-radius: 50%; }
 .selected-colour-label { display: block; margin-top: 7px; color: var(--text-muted); font-size: 0.84rem; }
+.track-policy-notice { margin-top: 28px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-alt); text-align: center; }
+.track-policy-notice h2 { margin: 0 0 6px; font-size: 1rem; color: var(--text-primary); }
+.track-policy-notice p { margin: 0 0 10px; color: var(--text-secondary); font-size: 0.9rem; }
+.track-policy-notice nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; }
+.track-policy-notice a { color: var(--brand-dark); font-size: 0.88rem; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .size-selector { margin: 18px 0; }
 .size-selector > strong { display: block; margin-bottom: 9px; color: var(--text-primary); }
 .size-options { display: flex; flex-wrap: wrap; gap: 9px; }

@@ -1027,7 +1027,7 @@
         cart.push({
           id: productId,
           productName: currentProduct.productName || "Untitled product",
-          imageUrl: currentProduct.imageUrl || "",
+          imageUrl: productImages[0] || String(currentProduct.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg",
           price,
           colour: selectedColour,
           size: selectedSize,

@@ -197,7 +197,7 @@
             itemsHTML += `
               <div class="order-item-row" style="margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <img src="${escapeHTML(item.imageUrl || 'logo_creativesouls.jpg')}" alt="${escapeHTML(item.productName || 'Product')}" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: contain; background: #ffffff; border: 1px solid var(--border); padding: 4px;" />
+                  <img src="${escapeHTML(String(item.imageUrl || '').split(',').map(url => url.trim()).find(Boolean) || 'logo_creativesouls.jpg')}" alt="${escapeHTML(item.productName || 'Product')}" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: contain; background: #ffffff; border: 1px solid var(--border); padding: 4px;" />
                   <div>
                     <strong>${escapeHTML(item.productName || "Untitled product")}</strong>
                     ${item.colour ? `<span>Colour: ${escapeHTML(item.colour)}</span>` : ""}
@@ -277,6 +277,17 @@
                 🔍 Track Another Order
               </button>
             </div>
+
+            <section class="track-policy-notice" aria-labelledby="track-policy-title">
+              <h2 id="track-policy-title">Our Store Policies</h2>
+              <p>By placing your order with Creative Souls 3D, you agree to our store policies:</p>
+              <nav aria-label="Store policies">
+                <a href="https://creativesouls3d.github.io/shipping-policy.html">Shipping Policy</a>
+                <a href="https://creativesouls3d.github.io/return-refund-policy.html">Return &amp; Refund Policy</a>
+                <a href="https://creativesouls3d.github.io/privacy-policy.html">Privacy Policy</a>
+                <a href="https://creativesouls3d.github.io/terms-of-service.html">Terms of Service</a>
+              </nav>
+            </section>
           </div>
         `;
 

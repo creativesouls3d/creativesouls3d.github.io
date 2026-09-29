@@ -81,7 +81,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const itemsHTML = items.map(item => `
       <div class="order-item-row">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="${escapeHTML(item.imageUrl || 'logo_creativesouls.jpg')}" alt="${escapeHTML(item.productName || 'Item')}" style="width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: contain; background: #ffffff; border: 1px solid var(--border); padding: 4px;" />
+          <img src="${escapeHTML(String(item.imageUrl || '').split(',').map(url => url.trim()).find(Boolean) || 'logo_creativesouls.jpg')}" alt="${escapeHTML(item.productName || 'Item')}" style="width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: contain; background: #ffffff; border: 1px solid var(--border); padding: 4px;" />
           <div>
             <strong>${escapeHTML(item.productName || "Untitled product")}</strong>
             ${item.colour ? `<span>Colour: ${escapeHTML(item.colour)}</span>` : ""}
