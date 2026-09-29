@@ -237,6 +237,7 @@ function renderCart() {
       <div class="cart-item-info">
         <span class="cart-item-title">${item.productName || "Untitled product"}</span>
         ${item.colour ? `<span class="cart-item-colour">Colour: ${escapeHTML(item.colour)}</span>` : ""}
+        ${item.size ? `<span class="cart-item-colour">Size: ${escapeHTML(item.size)}</span>` : ""}
         <span class="cart-item-unit-price">${formatPrice(item.price)} each</span>
         ${item.customizable ? `<label class="cart-customization-field">Customization details<textarea data-cart-customization="${index}" rows="2" maxlength="500" placeholder="Name, text, colors, or other details">${escapeHTML(item.customization || "")}</textarea></label>` : item.customization ? `<span class="cart-item-colour">Customization: ${escapeHTML(item.customization)}</span>` : ""}
       </div>

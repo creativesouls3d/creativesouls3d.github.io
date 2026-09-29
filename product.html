@@ -248,6 +248,11 @@
         <div id="colour-options" class="colour-options" role="group" aria-label="Available colours"></div>
         <span id="selected-colour-label" class="selected-colour-label"></span>
       </div>
+      <div id="size-selector" class="size-selector" hidden>
+        <strong>Choose a size</strong>
+        <div id="size-options" class="size-options" role="group" aria-label="Available sizes"></div>
+        <span id="selected-size-label" class="selected-colour-label"></span>
+      </div>
 
       <button id="share-product" class="share-product-btn" type="button" aria-label="Share this product">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -502,6 +507,81 @@
     let currentUser = null;
     let currentUserPurchasedProduct = false;
     let selectedColour = "";
+    let selectedColourPrice = 0;
+    let selectedSize = "";
+    let selectedSizePrice = null;
+
+    function orderedMapEntries(map) {
+      return Object.entries(map).map(([label, value], index) => ({ label, value, index })).sort((a, b) => {
+        const aOrder = Number(a.value && typeof a.value === "object" ? a.value.order ?? a.value.position : NaN);
+        const bOrder = Number(b.value && typeof b.value === "object" ? b.value.order ?? b.value.position : NaN);
+        const aHasOrder = Number.isFinite(aOrder);
+        const bHasOrder = Number.isFinite(bOrder);
+        if (aHasOrder && bHasOrder) return aOrder - bOrder || a.index - b.index;
+        if (aHasOrder) return -1;
+        if (bHasOrder) return 1;
+        return a.label.localeCompare(b.label) || a.index - b.index;
+      });
+    }
+
+    function getSizeOptions(product) {
+      const raw = product.sizes ?? product.sizeOptions ?? product.size_options ?? product.availableSizes ?? product.available_sizes;
+      const prices = product.sizePrices ?? product.size_prices ?? product.pricesBySize ?? product.prices_by_size ?? {};
+      if (Array.isArray(raw)) return raw.map(entry => {
+        if (entry && typeof entry === "object") {
+          const label = String(entry.size ?? entry.label ?? entry.name ?? "").trim();
+          const price = Number(entry.price ?? entry.amount ?? prices[label]);
+          return label ? { label, price: Number.isFinite(price) && price > 0 ? price : null } : null;
+        }
+        const label = String(entry ?? "").trim();
+        const price = Number(prices[label]);
+        return label ? { label, price: Number.isFinite(price) && price > 0 ? price : null } : null;
+      }).filter(Boolean);
+      if (raw && typeof raw === "object") return orderedMapEntries(raw).map(({ label, value }) => {
+        const price = Number(value && typeof value === "object" ? value.price ?? value.amount : value);
+        return { label: String(label).trim(), price: Number.isFinite(price) && price > 0 ? price : null };
+      }).filter(option => option.label);
+      if (typeof raw === "string" && raw.trim()) return raw.split(",").map(label => {
+        label = label.trim(); const price = Number(prices[label]);
+        return { label, price: Number.isFinite(price) && price > 0 ? price : null };
+      }).filter(option => option.label);
+      return [];
+    }
+
+    function renderSizeSelector(product) {
+      const options = getSizeOptions(product).map((option, index) => ({ ...option, index }))
+        .sort((a, b) => (a.price ?? Number(product.price || 0)) - (b.price ?? Number(product.price || 0)) || a.index - b.index);
+      if (!options.length) return;
+      const selector = document.getElementById("size-selector");
+      const optionsContainer = document.getElementById("size-options");
+      selector.hidden = false;
+      selectedSize = options[0].label;
+      selectedSizePrice = options[0].price;
+      options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "size-option";
+        button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        button.textContent = option.label;
+        button.addEventListener("click", () => {
+          selectedSize = option.label;
+          selectedSizePrice = option.price;
+          optionsContainer.querySelectorAll(".size-option").forEach(item => item.setAttribute("aria-pressed", item === button ? "true" : "false"));
+          document.getElementById("selected-size-label").textContent = `Selected: ${option.label}`;
+          updateDisplayedPrice();
+        });
+        optionsContainer.appendChild(button);
+      });
+      document.getElementById("selected-size-label").textContent = `Selected: ${selectedSize}`;
+    }
+
+    function updateDisplayedPrice() {
+      if (!currentProduct) return;
+      const basePrice = selectedSizePrice ?? Number(currentProduct.price || 0);
+      const price = basePrice + (selectedColourPrice || 0);
+      document.getElementById("product-price").textContent = formatPrice(price);
+      document.getElementById("product-original-price").textContent = formatPrice(getOriginalPrice(price));
+    }
 
     function isCustomizable(product) {
       const value = product.customizable ?? product.isCustomizable ?? product.is_customizable;
@@ -520,18 +600,40 @@
       return Math.round(Number(value || 0) * 1.3);
     }
 
-    function renderColourSelector(rawValue) {
+    function renderColourSelector(rawValue, product = {}) {
       const selector = document.getElementById("colour-selector");
       const optionsContainer = document.getElementById("colour-options");
-      const raw = String(rawValue || "").trim();
-      const options = raw.includes(",")
-        ? raw.split(",").map(value => value.trim()).filter(Boolean)
-        : raw ? [raw] : [];
+      const raw = rawValue;
+      const priceMap = product.colourPrices ?? product.colorPrices ?? product.colour_prices ?? product.color_prices ?? product.pricesByColour ?? product.pricesByColor ?? {};
+      let options;
+      if (Array.isArray(raw)) {
+        options = raw.map(entry => {
+          const label = String(entry && typeof entry === "object" ? entry.colour ?? entry.color ?? entry.label ?? entry.name ?? "" : entry ?? "").trim();
+          const rawPrice = entry && typeof entry === "object" ? entry.additionalPrice ?? entry.additional_price ?? entry.price ?? entry.amount : priceMap[label];
+          const price = Number(rawPrice);
+          return label ? { label, price: Number.isFinite(price) && price >= 0 ? price : 0 } : null;
+        }).filter(Boolean);
+      } else if (raw && typeof raw === "object") {
+        options = orderedMapEntries(raw).map(({ label, value }) => {
+          const price = Number(value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value);
+          return { label: String(label).trim(), price: Number.isFinite(price) && price >= 0 ? price : 0 };
+        }).filter(option => option.label);
+      } else {
+        const labels = String(raw || "").trim().split(",").map(value => value.trim()).filter(Boolean);
+        options = labels.map(label => {
+          const mapped = priceMap[label];
+          const price = Number(mapped && typeof mapped === "object" ? mapped.additionalPrice ?? mapped.additional_price ?? mapped.price ?? mapped.amount : mapped);
+          return { label, price: Number.isFinite(price) && price >= 0 ? price : 0 };
+        });
+      }
 
       if (!options.length) return;
       selector.style.display = "block";
-      selectedColour = options[0];
-      options.forEach((label, index) => {
+      options = options.map((option, index) => ({ ...option, index }))
+        .sort((a, b) => a.price - b.price || a.index - b.index);
+      selectedColour = options[0].label;
+      selectedColourPrice = options[0].price;
+      options.forEach(({ label, price }, index) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "colour-option";
@@ -542,21 +644,27 @@
         const swatch = document.createElement("span");
         swatch.className = "colour-swatch";
         swatch.setAttribute("aria-hidden", "true");
+        if (/multi[ -]?colou?red|rainbow/i.test(label)) {
+          swatch.style.background = "linear-gradient(90deg, #ef4444 0 16.66%, #f97316 16.66% 33.33%, #eab308 33.33% 50%, #22c55e 50% 66.66%, #3b82f6 66.66% 83.33%, #a855f7 83.33% 100%)";
+        } else {
         const colours = label.split(/\s+/).filter(Boolean).slice(0, 2);
         const validColours = colours.map(colour => CSS.supports("color", colour) ? colour : "#cbd5e1");
         swatch.style.background = validColours.length > 1
           ? `linear-gradient(90deg, ${validColours[0]} 0 50%, ${validColours[1]} 50% 100%)`
           : validColours[0] || "#cbd5e1";
+        }
 
         const text = document.createElement("span");
         text.textContent = label;
         button.append(swatch, text);
         button.addEventListener("click", () => {
           selectedColour = label;
+          selectedColourPrice = price;
           optionsContainer.querySelectorAll(".colour-option").forEach(option => {
             option.setAttribute("aria-pressed", option === button ? "true" : "false");
           });
           document.getElementById("selected-colour-label").textContent = `Selected: ${label}`;
+          updateDisplayedPrice();
         });
         optionsContainer.appendChild(button);
       });
@@ -720,7 +828,8 @@
           const data = doc.data();
           currentProduct = { id: productId, ...data };
           document.getElementById("product-viewer-count").textContent = String(18 + Math.floor(Math.random() * 24));
-          renderColourSelector(data.colour || data.color || "");
+          renderColourSelector(data.colourOptions || data.colorOptions || data.colours || data.colors || data.colour || data.color || "", data);
+      renderSizeSelector(data);
 
           productImages = String(data.imageUrl || "logo_creativesouls.jpg").split(",").map(url => url.trim()).filter(Boolean);
           if (!productImages.length) productImages = ["logo_creativesouls.jpg"];
@@ -741,8 +850,7 @@
           selectProductImage(0);
           setProductShareMetadata(data);
           document.getElementById("product-name").textContent = data.productName || "Untitled product";
-          document.getElementById("product-price").textContent = formatPrice(data.price);
-          document.getElementById("product-original-price").textContent = formatPrice(getOriginalPrice(data.price));
+          updateDisplayedPrice();
           document.getElementById("product-description").textContent = data.description || "Custom handcrafted 3D printed piece by Creative Souls 3D.";
           document.getElementById("product-customization-wrap").hidden = !isCustomizable(data);
           document.getElementById("product-category").textContent = data.category || "Custom 3D Print";
@@ -792,7 +900,8 @@
       let cart = JSON.parse(localStorage.getItem("cart")) || [];
       const customizable = isCustomizable(currentProduct);
       const customization = customizable ? document.getElementById("product-customization").value.trim() : "";
-      const existing = cart.find(item => item.id === productId && (item.colour || "") === selectedColour && (item.customization || "") === customization);
+      const price = selectedSizePrice ?? Number(currentProduct.price || 0);
+      const existing = cart.find(item => item.id === productId && (item.colour || "") === selectedColour && (item.size || "") === selectedSize && (item.customization || "") === customization);
 
       if (existing) {
         existing.quantity += qty;
@@ -801,8 +910,9 @@
           id: productId,
           productName: currentProduct.productName || "Untitled product",
           imageUrl: currentProduct.imageUrl || "",
-          price: Number(currentProduct.price || 0),
+          price,
           colour: selectedColour,
+          size: selectedSize,
           customizable,
           customization,
           quantity: qty

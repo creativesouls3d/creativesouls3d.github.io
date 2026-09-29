@@ -469,7 +469,8 @@ function renderProduct(data) {
 
   const id = encodeURIComponent(data.productId || data.id || "");
   const name = escapeHTML(data.productName || "Untitled product");
-  const image = escapeHTML(data.imageUrl || "logo_creativesouls.jpg");
+  const firstImage = String(data.imageUrl || "logo_creativesouls.jpg").split(",")[0].trim();
+  const image = escapeHTML(firstImage || "logo_creativesouls.jpg");
   const category = escapeHTML(data.category || "Custom Print");
 
   // Read from Firestore — default to 0 if field doesn't exist

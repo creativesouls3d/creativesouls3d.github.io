@@ -85,6 +85,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
           <div>
             <strong>${escapeHTML(item.productName || "Untitled product")}</strong>
             ${item.colour ? `<span>Colour: ${escapeHTML(item.colour)}</span>` : ""}
+            ${item.size ? `<span>Size: ${escapeHTML(item.size)}</span>` : ""}
             ${item.customization ? `<span>Customization: ${escapeHTML(item.customization)}</span>` : ""}
             <span>Quantity: ${Number(item.quantity || 0)} &times; ${formatPrice(item.price)}</span>
           </div>
@@ -100,7 +101,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }) : "-";
     const invoiceItemsHTML = items.map(item => `
       <tr>
-        <td>${escapeHTML(item.productName || "Untitled product")}${item.colour ? `<br><small>Colour: ${escapeHTML(item.colour)}</small>` : ""}${item.customization ? `<br><small>Customization: ${escapeHTML(item.customization)}</small>` : ""}</td>
+        <td>${escapeHTML(item.productName || "Untitled product")}${item.colour ? `<br><small>Colour: ${escapeHTML(item.colour)}</small>` : ""}${item.size ? `<br><small>Size: ${escapeHTML(item.size)}</small>` : ""}${item.customization ? `<br><small>Customization: ${escapeHTML(item.customization)}</small>` : ""}</td>
         <td>${Number(item.quantity || 0)}</td>
         <td>${formatPrice(item.price)}</td>
         <td>${formatPrice(Number(item.price || 0) * Number(item.quantity || 0))}</td>

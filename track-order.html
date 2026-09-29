@@ -201,6 +201,7 @@
                   <div>
                     <strong>${escapeHTML(item.productName || "Untitled product")}</strong>
                     ${item.colour ? `<span>Colour: ${escapeHTML(item.colour)}</span>` : ""}
+                    ${item.size ? `<span>Size: ${escapeHTML(item.size)}</span>` : ""}
                     <span>Quantity: ${item.quantity} &times; ${formatPrice(item.price)}</span>
                   </div>
                 </div>
