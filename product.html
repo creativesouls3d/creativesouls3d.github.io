@@ -871,25 +871,44 @@
     }
 
     shareProductBtn.addEventListener("click", async () => {
+      const title = document.getElementById("product-name").textContent;
+      const description = String(currentProduct?.description || "A custom handcrafted 3D printed piece by Creative Souls 3D.").trim();
+      const teaser = description.length > 150 ? `${description.slice(0, 147).trimEnd()}…` : description;
+      const imageUrl = productImages[0] || "";
       const shareData = {
-        title: document.getElementById("product-name").textContent,
-        text: `Check out ${document.getElementById("product-name").textContent} at Creative Souls 3D`,
+        title: `${title} | Creative Souls 3D`,
+        text: `${title}\n${teaser}\nTake a look at this piece from Creative Souls 3D:`,
         url: window.location.href
       };
 
       try {
         if (navigator.share) {
-          await navigator.share(shareData);
+          let payload = shareData;
+          if (imageUrl && navigator.canShare && window.File) {
+            try {
+              const response = await fetch(imageUrl);
+              if (response.ok) {
+                const blob = await response.blob();
+                const extension = (blob.type.split("/")[1] || "jpg").split(";")[0];
+                const imageFile = new File([blob], `${title.replace(/[^a-z0-9_-]/gi, "-")}.${extension}`, { type: blob.type || "image/jpeg" });
+                const withImage = { ...shareData, files: [imageFile] };
+                if (navigator.canShare(withImage)) payload = withImage;
+              }
+            } catch (imageError) {
+              console.info("Product image could not be attached to the share:", imageError);
+            }
+          }
+          await navigator.share(payload);
         } else if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(shareData.url);
-          window.showToast?.("Product link copied to clipboard.", "success");
+          await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
+          window.showToast?.("Product title, description, and link copied to clipboard.", "success");
         } else {
-          window.prompt("Copy this product link:", shareData.url);
+          window.prompt("Copy this product message:", `${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
         }
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("Could not share product link:", err);
-          window.prompt("Copy this product link:", shareData.url);
+          window.prompt("Copy this product message:", `${shareData.text}\n${shareData.url}${imageUrl ? `\n${imageUrl}` : ""}`);
         }
       }
     });
@@ -900,7 +919,7 @@
       let cart = JSON.parse(localStorage.getItem("cart")) || [];
       const customizable = isCustomizable(currentProduct);
       const customization = customizable ? document.getElementById("product-customization").value.trim() : "";
-      const price = selectedSizePrice ?? Number(currentProduct.price || 0);
+      const price = (selectedSizePrice ?? Number(currentProduct.price || 0)) + (selectedColourPrice || 0);
       const existing = cart.find(item => item.id === productId && (item.colour || "") === selectedColour && (item.size || "") === selectedSize && (item.customization || "") === customization);
 
       if (existing) {
