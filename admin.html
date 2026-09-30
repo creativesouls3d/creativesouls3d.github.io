@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Creative Souls 3D</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .admin-page{width:min(1120px,calc(100% - 32px));margin:36px auto 72px;font-family:'Outfit',sans-serif}
+    .admin-heading,.admin-toolbar,.admin-row,.admin-actions{display:flex;align-items:center;gap:12px}
+    .admin-heading{justify-content:space-between;flex-wrap:wrap;margin-bottom:22px}
+    .admin-heading h1{margin:0}.admin-note{padding:14px 16px;border-radius:14px;background:#fff7ed;color:#7c2d12;margin:16px 0;line-height:1.5}
+    .admin-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;margin:18px 0;box-shadow:var(--shadow-sm)}
+    .admin-toolbar{flex-wrap:wrap;margin:14px 0}.admin-toolbar input{flex:1;min-width:190px}
+    .admin-toolbar input,.admin-toolbar select{box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem 'Outfit',sans-serif}
+    .admin-row{justify-content:space-between;border-top:1px solid var(--border);padding:14px 0;align-items:flex-start}
+    .admin-row-main{min-width:0;overflow-wrap:anywhere}.admin-row-main strong{display:block}.admin-row-main small{color:var(--text-muted)}
+    .admin-table-wrap{width:100%;overflow:auto;border:1px solid var(--border);border-radius:12px}
+    .admin-orders-table{width:100%;min-width:1260px;border-collapse:collapse;text-align:left;font-size:.9rem}
+    .admin-orders-table th,.admin-orders-table td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+    .admin-orders-table th{background:var(--surface-alt);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap}
+    .admin-orders-table tbody tr:last-child td{border-bottom:0}.admin-orders-table td strong{display:block;color:var(--text-primary)}
+    .admin-order-secondary{display:block;color:var(--text-muted);font-size:.82rem;margin-top:4px;max-width:220px;overflow-wrap:anywhere}
+    .admin-order-items{max-width:230px;white-space:pre-line}.admin-order-status{display:inline-block;padding:5px 9px;border-radius:999px;background:#fef3c7;font-weight:700;white-space:nowrap}
+    .admin-orders-table .admin-actions{justify-content:flex-start;flex-wrap:nowrap}.admin-orders-table .admin-actions button{padding:8px 10px;white-space:nowrap}
+    .admin-order-id{border:0;background:none;padding:0;color:var(--brand-dark);font:800 .98rem 'Outfit',sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+    .admin-order-detail{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;box-sizing:border-box;width:min(850px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:0;border-radius:18px;padding:24px;box-shadow:0 24px 70px #0f172a55;font-family:'Outfit',sans-serif}
+    .admin-order-detail::backdrop{background:#0f172a99}.admin-detail-section{border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
+    .admin-detail-section h3{margin:0 0 12px}.admin-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .admin-detail-value{min-width:0;overflow-wrap:anywhere}.admin-detail-value strong{display:block;color:var(--text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+    .admin-detail-item{border-top:1px solid var(--border);padding:12px 0}.admin-detail-item:first-of-type{border-top:0;padding-top:0}
+    .admin-actions{flex-wrap:wrap;justify-content:flex-end}.admin-actions button,.admin-toolbar button,.admin-dialog button{box-sizing:border-box;min-height:42px;border:0;border-radius:10px;padding:10px 14px;font:600 .95rem 'Outfit',sans-serif;cursor:pointer;background:var(--brand-gradient);color:#1f2937}
+    .admin-actions .danger{background:#fee2e2;color:#991b1b}.admin-dialog{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;box-sizing:border-box;width:min(720px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:0;border-radius:18px;padding:24px;box-shadow:0 24px 70px #0f172a55;font-family:'Outfit',sans-serif}
+    .admin-dialog::backdrop{background:#0f172a99}.admin-dialog textarea{width:100%;min-height:320px;font: .92rem/1.5 ui-monospace,monospace;padding:12px;border:1px solid var(--border);border-radius:10px}
+    .admin-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.admin-dialog-head h2{margin:0}.admin-status{min-height:24px;color:var(--text-secondary)}
+    .admin-dialog-head>button,.admin-order-detail .admin-dialog-head>button{width:40px;height:40px;flex:0 0 40px;padding:0!important;border-radius:50%!important;background:var(--surface-alt)!important;color:var(--text-primary)!important;font-size:1.25rem!important}
+    .admin-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+    .admin-field{display:grid;gap:6px;min-width:0}.admin-field label{font-weight:700;color:var(--text-primary)}
+    .admin-field-label{display:flex;justify-content:space-between;align-items:center;gap:8px}.admin-field-label label{margin:0}.admin-field-label button{border:0;background:transparent;color:#b91c1c;font:600 .8rem 'Outfit',sans-serif;cursor:pointer;padding:2px 4px}
+    .admin-field input,.admin-field select{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font:500 1rem 'Outfit',sans-serif;color:var(--text-primary);background:#fff}
+    .admin-field-help,.admin-helper{font-size:.86rem;color:var(--text-muted);line-height:1.45}.admin-add-field{margin:4px 0 18px}.admin-advanced{margin:18px 0;border-top:1px solid var(--border);padding-top:12px}.admin-advanced summary{font-weight:700;cursor:pointer}.admin-advanced textarea{margin-top:12px}
+    [hidden]{display:none!important}
+    @media(max-width:600px){.admin-panel{padding:16px}.admin-row{display:block}.admin-actions{justify-content:flex-start;margin-top:12px}.admin-dialog{padding:18px}.admin-field-grid{grid-template-columns:1fr}.admin-add-field{display:grid;grid-template-columns:minmax(0,1fr) 96px auto;gap:8px}.admin-add-field input{min-width:0}.admin-add-field button{padding-inline:10px}}
+    @media(max-width:600px){.admin-detail-grid{grid-template-columns:1fr}.admin-order-detail{padding:18px}}
+    /* Refined admin workspace layout */
+    body:has(.admin-page){background:#f5f7fb}
+    .admin-page{width:min(1320px,calc(100% - 40px));margin:32px auto 72px}
+    .admin-heading{padding:clamp(22px,4vw,36px);border:1px solid #e7ebf2;border-radius:22px;background:linear-gradient(125deg,#fff 5%,#fff8e8 100%);box-shadow:0 12px 34px rgba(15,23,42,.055)}
+    .admin-heading>div{max-width:720px}.admin-heading .eyebrow{margin:0 0 6px;color:var(--brand-dark);letter-spacing:.12em;font-size:.76rem;font-weight:800}
+    .admin-heading h1{font-size:clamp(1.8rem,4vw,2.55rem);line-height:1.1;letter-spacing:-.035em}
+    #admin-identity{margin:8px 0 0;color:var(--text-secondary)}
+    .admin-note{display:flex;gap:10px;align-items:flex-start;margin:18px 0;padding:14px 18px;border:1px solid #f4d6a2;border-radius:14px;background:#fff9ed;color:#854d0e;font-size:.9rem}
+    .admin-status{margin:12px 2px;color:var(--text-secondary);font-weight:600}
+    #admin-tools{display:grid;gap:22px;margin-top:20px}
+    .admin-panel{min-width:0;margin:0;padding:clamp(18px,2.5vw,28px);border:1px solid #e7ebf2;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.045)}
+    .admin-panel h2{margin:0;color:#172033;font-size:1.35rem;letter-spacing:-.02em}
+    .admin-panel>p{margin:6px 0 0;color:var(--text-muted);max-width:760px}
+    .admin-toolbar{gap:10px;margin:18px 0}
+    .admin-toolbar button,.admin-actions button{min-height:42px;padding:10px 16px;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+    .admin-toolbar button:hover,.admin-actions button:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(180,83,9,.14)}
+    .admin-table-wrap{max-height:70vh;border-color:#e5e9f0;border-radius:14px;scrollbar-color:#cbd5e1 transparent}
+    .admin-orders-table{min-width:1320px;font-size:.88rem}
+    .admin-orders-table th{position:sticky;top:0;z-index:1;padding:13px 14px;background:#f8fafc;color:#64748b}
+    .admin-orders-table td{padding:15px 14px;line-height:1.45}
+    .admin-orders-table tbody tr{transition:background .15s ease}
+    .admin-orders-table tbody tr:hover{background:#fffbf2}
+    .admin-orders-table td strong{font-weight:700}
+    .admin-order-secondary{max-width:240px;line-height:1.45}
+    .admin-order-id{text-align:left!important;text-decoration:none;border-bottom:1px solid #d97706}
+    .admin-order-id:hover{color:#92400e}
+    .admin-order-status{background:#fff3cd;color:#854d0e;font-size:.82rem}
+    .admin-orders-table .admin-actions{margin:0;gap:7px}
+    .admin-orders-table .admin-actions button{min-height:34px;padding:7px 11px;font-size:.84rem}
+    .admin-page{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:24px clamp(12px,1.6vw,30px) 64px}
+    .admin-heading{width:100%}.admin-panel{width:100%}
+    #admin-tools{width:100%;grid-template-columns:minmax(0,1fr)}
+    .admin-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 2px}
+    .admin-stat-card{min-width:0;padding:18px 20px;border:1px solid #e7ebf2;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+    .admin-stat-card span{display:block;color:var(--text-muted);font-size:.85rem;font-weight:650}
+    .admin-stat-card small{display:block;margin-top:9px;color:#64748b;font-size:.75rem;line-height:1.45}
+    .admin-stat-card strong{display:block;margin-top:7px;color:#172033;font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.1;font-variant-numeric:tabular-nums}
+    .admin-analytics-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+    .admin-date-tools{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+    .admin-date-tools label{display:grid;gap:5px;color:var(--text-muted);font-size:.78rem;font-weight:700}
+    .admin-date-tools input{box-sizing:border-box;min-height:42px;padding:9px 11px;border:1px solid #dbe1ea;border-radius:10px;background:#fff;font:500 .9rem 'Outfit',sans-serif;color:var(--text-primary)}
+    .admin-date-tools button{min-height:42px;border:1px solid #dbe1ea;border-radius:10px;padding:9px 13px;background:#fff;color:#334155;font:600 .9rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-date-preset{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+    .admin-date-preset button{min-height:34px;padding:6px 10px;border:1px solid #dbe1ea;border-radius:999px;background:#fff;color:#475569;font:600 .8rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-date-preset button:hover,.admin-date-preset button[aria-pressed="true"]{border-color:#f59e0b;background:#fff7ed;color:#92400e}
+    .admin-attention-list{display:grid;gap:9px;margin-top:14px}
+    .admin-attention-details>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;list-style:none}
+    .admin-attention-details>summary::-webkit-details-marker{display:none}
+    .admin-attention-details>summary::after{content:'＋';flex:none;color:#92400e;font-size:1.2rem;font-weight:800}
+    .admin-attention-details[open]>summary::after{content:'−'}
+    .admin-attention-heading strong{display:block;color:#172033;font-size:1.35rem;letter-spacing:-.02em}
+    .admin-attention-heading small{display:block;margin-top:6px;color:var(--text-muted);font-size:.9rem;font-weight:400}
+    .admin-attention-count{flex:none;padding:5px 10px;border-radius:999px;background:#fff1d6;color:#92400e;font-size:.8rem;font-weight:800}
+    .admin-attention-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;border:1px solid #fde1b2;border-radius:12px;background:#fffbf3}
+    .admin-attention-item strong,.admin-attention-item span{display:block}.admin-attention-item span{margin-top:3px;color:#64748b;font-size:.84rem}
+    .admin-attention-item button{flex:none;min-height:36px;padding:7px 12px;border:1px solid #f3c97e;border-radius:9px;background:#fff;color:#92400e;font:700 .84rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-attention-empty{padding:18px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;text-align:center}
+    .admin-chart-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px}
+    .admin-chart-card{min-width:0;padding:18px;border:1px solid #e7ebf2;border-radius:16px;background:linear-gradient(180deg,#fff,#fbfcfe)}
+    .admin-chart-card h3{margin:0;font-size:1rem;color:#273449}.admin-chart-card p{margin:4px 0 14px;color:var(--text-muted);font-size:.82rem}
+    .admin-chart{width:100%;min-height:240px;overflow:hidden}.admin-chart svg{display:block;width:100%;height:240px;overflow:visible}.admin-chart svg.admin-pie-svg{height:auto;max-height:340px}
+    .admin-chart-empty{display:grid;place-items:center;min-height:220px;color:var(--text-muted);font-size:.9rem;text-align:center}
+    .admin-chart svg text{font-family:'Outfit',sans-serif;fill:#64748b;font-size:11px}
+    .admin-chart-gridline{stroke:#e9edf3;stroke-width:1}.admin-chart-bar{fill:#f59e0b}.admin-chart-bar:hover{fill:#d97706}
+    .admin-status-bar{fill:#f59e0b}.admin-status-bar-label{font-size:11px!important}
+    .admin-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap}
+    .admin-section-head>div:first-child{min-width:min(100%,360px)}
+    .admin-order-tools{display:flex;align-items:center;gap:10px;flex:1 1 520px;justify-content:flex-end}
+    .admin-order-tools input[type="search"]{box-sizing:border-box;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;font:500 .94rem 'Outfit',sans-serif;flex:1 1 260px;min-width:180px}
+    .admin-status-filter{position:relative;flex:0 1 210px;min-width:190px}
+    .admin-ignored-customers{position:relative;flex:none;min-width:145px}
+    .admin-ignored-customers>summary{box-sizing:border-box;display:flex;align-items:center;gap:6px;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;color:#334155;font-size:.9rem;font-weight:600;cursor:pointer;list-style:none;white-space:nowrap}
+    .admin-ignored-customers>summary::-webkit-details-marker{display:none}
+    .admin-ignored-customers>summary::after{content:'▾';margin-left:auto;color:#64748b}
+    .admin-ignored-customer-list{position:absolute;z-index:7;top:calc(100% + 7px);right:0;width:max(100%,280px);max-height:320px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.16)}
+    .admin-ignored-customer-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px;border-bottom:1px solid #f1f5f9;color:#334155;font-size:.84rem}
+    .admin-ignored-customer-item:last-child{border-bottom:0}
+    .admin-ignored-customer-item button{min-height:32px;padding:5px 9px;border:1px solid #dbe1ea;border-radius:8px;background:#fff;color:#334155;font:600 .8rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-ignored-customer-empty{padding:10px;color:#64748b;font-size:.84rem}
+    .admin-status-filter>summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;color:#334155;font-size:.94rem;font-weight:600;cursor:pointer;list-style:none;white-space:nowrap}
+    .admin-status-filter>summary::-webkit-details-marker{display:none}
+    .admin-status-filter>summary::after{content:'▾';color:#64748b}
+    .admin-status-options{position:absolute;z-index:5;top:calc(100% + 7px);right:0;width:max(100%,245px);max-height:320px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.16)}
+    .admin-status-options label{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#334155;font-size:.88rem;cursor:pointer}
+    .admin-status-options label:hover{background:#fff8e8}
+    .admin-status-options input{width:16px;height:16px;min-height:0;margin:0;accent-color:#d97706}
+    .admin-status-filter-clear{width:100%;margin-top:5px;padding:9px 10px;border:0;border-top:1px solid #edf0f5;background:#fff;color:#92400e;font:600 .85rem 'Outfit',sans-serif;text-align:left;cursor:pointer}
+    .admin-order-tools button{min-height:44px;white-space:nowrap}
+    #order-count-label{margin:0 0 10px;color:var(--text-muted);font-size:.85rem;font-weight:600}
+    .admin-chart-filter-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;padding:10px 13px;border:1px solid #f3d29a;border-radius:10px;background:#fffaf0;color:#854d0e;font-size:.86rem}
+    .admin-chart-filter-notice button{border:0;background:transparent;color:#92400e;font:700 .84rem 'Outfit',sans-serif;text-decoration:underline;cursor:pointer}
+    .admin-chart-mark-interactive{cursor:pointer;outline-offset:3px}
+    .admin-chart-mark-interactive:focus{outline:2px solid #92400e}
+    rect.admin-chart-mark-interactive:hover{filter:brightness(.9)}
+    .admin-table-wrap{width:100%;max-height:calc(100vh - 330px);min-height:240px;overscroll-behavior:contain}
+    .admin-orders-table{width:100%;min-width:1660px;table-layout:auto}
+    .admin-orders-table th:nth-child(1),.admin-orders-table td:nth-child(1){width:54px;min-width:54px;text-align:center}
+    .admin-orders-table th:nth-child(2),.admin-orders-table td:nth-child(2){min-width:150px}
+    .admin-orders-table th:nth-child(3),.admin-orders-table td:nth-child(3){min-width:210px}
+    .admin-orders-table th:nth-child(4),.admin-orders-table td:nth-child(4){min-width:140px}
+    .admin-orders-table th:nth-child(5),.admin-orders-table td:nth-child(5){min-width:230px}
+    .admin-orders-table th:nth-child(6),.admin-orders-table td:nth-child(6){min-width:250px}
+    .admin-orders-table th:nth-child(7),.admin-orders-table td:nth-child(7){min-width:180px}
+    .admin-orders-table th:nth-child(8),.admin-orders-table td:nth-child(8){min-width:170px}
+    .admin-orders-table th:nth-child(9),.admin-orders-table td:nth-child(9){min-width:125px}
+    .admin-orders-table th:nth-child(10),.admin-orders-table td:nth-child(10){min-width:150px}
+    .admin-orders-table input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#d97706;cursor:pointer}
+    .admin-bulk-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border:1px solid #e7ebf2;border-radius:12px;background:#f8fafc}
+    .admin-bulk-toolbar span{color:var(--text-secondary);font-size:.88rem;font-weight:600}
+    .admin-bulk-toolbar button{min-height:40px;padding:9px 14px;border:0;border-radius:9px;background:#fee2e2;color:#991b1b;font:700 .9rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-bulk-toolbar button:disabled{opacity:.5;cursor:not-allowed}
+    .admin-bulk-toolbar select,.admin-pagination select{box-sizing:border-box;min-height:40px;padding:8px 10px;border:1px solid #dbe1ea;border-radius:9px;background:#fff;color:#334155;font:600 .86rem 'Outfit',sans-serif}
+    .admin-bulk-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .admin-bulk-toolbar .admin-secondary-action{border:1px solid #dbe1ea;background:#fff;color:#334155}
+    .admin-bulk-toolbar .admin-status-action{background:#fef3c7;color:#854d0e}
+    .admin-sort-button{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;white-space:nowrap}
+    .admin-sort-button:hover{color:#92400e}
+    .admin-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;color:var(--text-secondary);font-size:.86rem}
+    .admin-pagination-controls{display:flex;align-items:center;gap:8px}
+    .admin-pagination button{min-height:38px;padding:8px 12px;border:1px solid #dbe1ea;border-radius:9px;background:#fff;color:#334155;font:600 .86rem 'Outfit',sans-serif;cursor:pointer}
+    .admin-pagination button:disabled{opacity:.45;cursor:not-allowed}
+    .admin-order-tools{min-width:min(100%,760px)}
+    .admin-order-tools input[type="search"]{min-width:260px}
+    .admin-section-head{align-items:center}
+    .admin-empty-state{display:grid;place-items:center;min-height:220px;padding:30px;text-align:center;color:var(--text-muted);background:#fbfcfe;border:1px dashed #dbe1ea;border-radius:14px}
+    .admin-empty-state strong{display:block;color:#334155;font-size:1.05rem;margin-bottom:5px}
+    #collection-list{margin-top:8px}
+    .admin-row{padding:16px 12px;border-top:1px solid #edf0f5;align-items:center}
+    .admin-row:hover{background:#fffbf2}
+    .admin-row-main strong{font-weight:700}
+    .admin-row-main small{display:block;margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
+    .admin-row .admin-actions{margin:0}
+    .admin-dialog,.admin-order-detail{background:#fff;color:var(--text-primary)}
+    #document-editor{width:min(1000px,calc(100vw - 36px))}
+    .admin-dialog-head{padding-bottom:14px;border-bottom:1px solid #edf0f5}
+    .admin-dialog-head .eyebrow{margin:0;color:var(--brand-dark);font-size:.72rem;letter-spacing:.1em;font-weight:800}
+    .admin-dialog-head h2{font-size:1.35rem;line-height:1.2}
+    .admin-field-grid{gap:16px;margin:18px 0 20px}
+    .admin-field{align-content:start}
+    .admin-dialog-head{position:sticky;top:-24px;z-index:3;padding-top:2px;background:#fff}
+    .admin-editor-location{margin:12px 0 4px;font-size:.78rem;overflow-wrap:anywhere}
+    .admin-editor-intro{margin:8px 0 16px;color:#475569}
+    .admin-editor-section{margin:16px 0;padding:16px;border:1px solid #e7ebf2;border-radius:15px;background:#fff}
+    .admin-editor-section-heading h3{margin:0;color:#273449;font-size:1rem}
+    .admin-editor-section-heading p{margin:4px 0 0;color:var(--text-muted);font-size:.84rem;line-height:1.45}
+    .admin-editor-section-fields{margin:12px 0 0;gap:12px}
+    .order-item-builder{margin:18px 0;padding:18px;border:1px solid #e7ebf2;border-radius:15px;background:#f8fafc}
+    .order-item-builder h3{margin:0;color:#273449;font-size:1rem}.order-item-builder-heading p{margin:4px 0 14px;color:var(--text-muted);font-size:.84rem}
+    .order-product-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}
+    .order-product-picker label,.order-item-row-fields label{display:grid;gap:6px;color:var(--text-secondary);font-size:.8rem;font-weight:750}
+    .order-product-picker select,.order-item-row-fields input{box-sizing:border-box;width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem 'Outfit',sans-serif;color:var(--text-primary)}
+    .order-item-rows{display:grid;gap:9px;margin-top:12px}.order-item-row-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,auto);align-items:center;gap:12px;padding:12px;border:1px solid #e7ebf2;border-radius:12px;background:#fff}.order-item-row-editor>strong{overflow-wrap:anywhere}
+    .order-item-row-fields{display:flex;align-items:end;gap:9px}.order-item-row-fields label{width:110px}.order-item-row-fields label:first-child{width:76px}
+    .order-item-row-fields .order-item-remove{min-height:42px;background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;padding:8px 11px}
+    .order-item-subtotal{display:block;margin-top:14px;text-align:right;color:#273449}
+    .admin-dialog .admin-actions{position:sticky;bottom:-24px;z-index:2;margin:14px -24px -24px;padding:14px 24px;background:rgba(255,255,255,.97);border-top:1px solid #edf0f5;backdrop-filter:blur(8px)}
+    #editor-error{margin:12px 0;color:#b91c1c;font-weight:700}
+    .admin-field label{font-size:.92rem}
+    .admin-field input,.admin-field select{min-height:46px;box-sizing:border-box}
+    .admin-add-field{padding:14px;border:1px dashed #d8dee9;border-radius:14px;background:#f8fafc}
+    .admin-advanced{padding-top:16px}
+    .admin-advanced summary{padding:4px 0;color:#334155}
+    .admin-dialog textarea{box-sizing:border-box;min-height:220px}
+    .admin-field textarea{width:100%;box-sizing:border-box;min-height:96px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font:500 1rem 'Outfit',sans-serif;color:var(--text-primary);background:#fff;resize:vertical}
+    .admin-detail-section{margin:12px 0;padding:18px;background:#fff;border-color:#e9edf3}
+    .admin-detail-section h3{font-size:1rem;color:#273449}
+    .admin-detail-grid{gap:6px 20px}
+    .admin-detail-value{padding:9px 0;border-bottom:1px solid #f1f3f7;line-height:1.45}
+    .admin-detail-value strong{font-size:.72rem;letter-spacing:.06em}
+    .admin-order-detail>.admin-actions{position:sticky;bottom:-18px;margin:12px -18px -18px;padding:14px 18px;background:rgba(255,255,255,.96);border-top:1px solid #edf0f5;backdrop-filter:blur(8px)}
+    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid rgba(245,158,11,.42);outline-offset:2px}
+    @media(max-width:700px){.admin-page{width:100%;padding:16px 12px 48px}.admin-heading{border-radius:17px}.admin-note{font-size:.84rem}.admin-panel{border-radius:16px}.admin-toolbar:not(.admin-add-field){display:grid;grid-template-columns:1fr 1fr}.admin-toolbar:not(.admin-add-field) input{grid-column:1/-1;width:100%;min-width:0}.admin-dialog,.admin-order-detail{max-height:calc(100dvh - 20px);width:calc(100vw - 20px);padding:18px}#document-editor{width:calc(100vw - 20px)}.admin-dialog .admin-dialog-head{top:-18px}.admin-dialog .admin-actions{bottom:-18px;margin:14px -18px -18px;padding:14px 18px}.admin-editor-section{padding:13px;margin:12px 0}.order-item-builder{padding:13px}.order-product-picker{grid-template-columns:minmax(0,1fr)}.order-product-picker button{width:100%}.order-item-row-editor{grid-template-columns:minmax(0,1fr)}.order-item-row-fields{display:grid;grid-template-columns:70px minmax(0,1fr) auto}.order-item-row-fields label,.order-item-row-fields label:first-child{width:auto}.admin-detail-grid{grid-template-columns:1fr}.admin-order-detail>.admin-actions{bottom:-18px}}
+    @media(max-width:390px){.admin-toolbar:not(.admin-add-field){grid-template-columns:1fr}.admin-toolbar:not(.admin-add-field) input{grid-column:auto}.admin-toolbar button{width:100%}.admin-add-field{grid-template-columns:1fr 88px}.admin-add-field input{grid-column:1/-1}.admin-add-field button{grid-column:1/-1}}
+    @media(max-width:900px){.admin-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-order-tools{flex-basis:100%;min-width:0;justify-content:flex-start}.admin-table-wrap{max-height:70vh}}
+    @media(max-width:900px){.admin-chart-grid{grid-template-columns:1fr}}
+    @media(max-width:600px){.admin-page{padding:14px 10px 40px}.admin-overview{gap:10px}.admin-stat-card{padding:14px}.admin-order-tools{display:grid;grid-template-columns:1fr 1fr;width:100%;min-width:0}.admin-order-tools input[type="search"]{grid-column:1/-1;width:100%;min-width:0}.admin-status-filter{width:100%;min-width:0;max-width:none}.admin-status-filter>summary{width:100%}.admin-status-options{left:0;right:auto;width:100%;box-sizing:border-box}.admin-order-tools button{width:100%;padding-inline:9px}.admin-table-wrap{max-height:65vh}.admin-orders-table{min-width:1660px}}
+  </style>
+</head>
+<body>
+  <header><button class="back-nav" type="button" data-back data-fallback="index.html">← Back</button><div class="logo-section" onclick="window.location.href='index.html'"><img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo"/><span>Creative Souls <strong>3D</strong></span></div><nav class="cart-link" aria-label="Main navigation"><a href="index.html" class="nav-pill">Shop</a><a href="orders.html" class="nav-pill">Orders</a><a href="cart.html" class="nav-pill">Cart</a></nav></header>
+  <main class="admin-page">
+    <div class="admin-heading"><div><p class="eyebrow">STORE MANAGEMENT</p><h1>Admin Dashboard</h1><p id="admin-identity">Checking administrator access…</p></div><button id="admin-login" type="button" hidden>Sign in with Google</button></div>
+    <div class="admin-note"><strong>Database access notice:</strong> this page checks the signed-in email in the browser. Firestore Security Rules must independently restrict writes to this administrator account. Browser-side checks alone do not secure database access.</div>
+    <p id="admin-status" class="admin-status" role="status"></p>
+    <section id="admin-tools" hidden>
+      <div class="admin-overview" aria-label="Order overview">
+        <article class="admin-stat-card"><span>Total orders</span><strong id="stat-total-orders">—</strong></article>
+        <article class="admin-stat-card"><span>Orders needing action</span><strong id="stat-open-orders">—</strong><small>Placed · payment pending · requests · confirmed · production · dispatch · other</small></article>
+        <article class="admin-stat-card"><span>Delivered</span><strong id="stat-delivered-orders">—</strong></article>
+        <article class="admin-stat-card"><span>Order value</span><strong id="stat-order-value">—</strong></article>
+      </div>
+      <article class="admin-panel">
+        <div class="admin-analytics-head"><div><h2>Sales &amp; order analytics</h2><p>Track order volume and status mix for the selected dates.</p></div>
+          <div class="admin-date-tools"><label>From<input id="orders-date-from" type="date" aria-label="Filter orders from date"/></label><label>To<input id="orders-date-to" type="date" aria-label="Filter orders to date"/></label><button id="clear-order-dates" type="button">Clear dates</button></div>
+        </div>
+        <div class="admin-date-preset" role="group" aria-label="Quick date ranges"><span class="admin-helper">Quick range:</span><button type="button" data-date-preset="7">7 days</button><button type="button" data-date-preset="30">30 days</button><button type="button" data-date-preset="90">90 days</button><button type="button" data-date-preset="all" aria-pressed="true">All dates</button></div>
+        <div class="admin-chart-grid">
+          <section class="admin-chart-card" aria-labelledby="orders-trend-heading"><h3 id="orders-trend-heading">Orders over time</h3><p id="orders-trend-caption">Order volume · all dates</p><div id="orders-trend-chart" class="admin-chart" role="group" aria-label="Order volume chart"></div></section>
+          <section class="admin-chart-card" aria-labelledby="orders-status-heading"><h3 id="orders-status-heading">Orders by status</h3><p>Grouped into the dashboard status categories</p><div id="orders-status-chart" class="admin-chart" role="group" aria-label="Orders by status chart"></div></section>
+          <section class="admin-chart-card" aria-labelledby="orders-status-pie-heading"><h3 id="orders-status-pie-heading">Order status share</h3><p>Share of orders by status</p><div id="orders-status-pie-chart" class="admin-chart" role="group" aria-label="Pie chart showing the share of orders by status"></div></section>
+          <section class="admin-chart-card" aria-labelledby="revenue-trend-heading"><h3 id="revenue-trend-heading">Revenue over time</h3><p id="revenue-trend-caption">Revenue from orders in the selected dates</p><div id="revenue-trend-chart" class="admin-chart" role="group" aria-label="Revenue over time chart"></div></section>
+          <section class="admin-chart-card" aria-labelledby="top-products-heading"><h3 id="top-products-heading">Top products</h3><p>Units ordered in the selected dates</p><div id="top-products-chart" class="admin-chart" role="group" aria-label="Top products by units ordered chart"></div></section>
+          <section class="admin-chart-card" aria-labelledby="payment-methods-heading"><h3 id="payment-methods-heading">Payment methods</h3><p>Order count by recorded payment method</p><div id="payment-methods-chart" class="admin-chart" role="group" aria-label="Payment methods chart"></div></section>
+        </div>
+      </article>
+      <article class="admin-panel"><details class="admin-attention-details"><summary><span class="admin-attention-heading"><strong>Needs attention</strong><small>Open orders older than three days or missing delivery contact details.</small></span><span id="admin-attention-count" class="admin-attention-count">0</span></summary><div id="admin-attention-queue" class="admin-attention-list" aria-live="polite"></div></details></article>
+      <article class="admin-panel">
+        <div class="admin-section-head"><div><h2>Orders</h2><p>Search, filter, review, and manage customer orders.</p></div>
+          <div class="admin-order-tools"><input id="order-search" type="search" aria-label="Search orders" placeholder="Search order, customer, email, phone…"/><details id="order-status-filter" class="admin-status-filter"><summary id="order-status-filter-label">All statuses</summary><div id="order-status-options" class="admin-status-options"></div></details><details id="ignored-customers-control" class="admin-ignored-customers"><summary>Ignored <span id="ignored-customer-count">0</span></summary><div id="ignored-customer-list" class="admin-ignored-customer-list"></div></details><button id="export-orders" type="button">Export CSV</button></div>
+        </div>
+        <div class="admin-toolbar"><button id="refresh-orders" type="button">Refresh orders</button><button id="create-order" type="button">Create order</button></div>
+        <div class="admin-bulk-toolbar"><span id="bulk-selection-label" aria-live="polite">No orders selected</span><button id="select-all-matching-orders" class="admin-secondary-action" type="button">Select all matching</button><button id="clear-order-selection" class="admin-secondary-action" type="button" disabled>Clear selection</button><div class="admin-bulk-status"><select id="bulk-order-status" aria-label="New status for selected orders"><option value="">Change status to…</option><option>Order Placed</option><option>Payment Pending</option><option>Request Received</option><option>Confirmed</option><option>In Production</option><option>Ready for Dispatch</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option><option>Rejected</option></select><button id="apply-bulk-status" class="admin-status-action" type="button" disabled>Update selected</button></div><button id="delete-selected-orders" type="button" disabled>Delete selected (0)</button></div>
+        <p id="order-count-label" aria-live="polite">Loading orders…</p>
+        <p id="chart-filter-notice" class="admin-chart-filter-notice" hidden><span>Chart filter: <strong id="chart-filter-label"></strong></span><button id="clear-chart-filter" type="button">Clear chart filter</button></p>
+        <div id="orders-list"></div>
+        <div class="admin-pagination" aria-label="Order table pagination"><span id="orders-page-info">Page 1</span><div class="admin-pagination-controls"><label for="orders-page-size">Rows</label><select id="orders-page-size" aria-label="Rows per page"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select><button id="orders-previous-page" type="button">Previous</button><button id="orders-next-page" type="button">Next</button></div></div>
+      </article>
+      <article class="admin-panel"><h2>Firestore data explorer</h2><p>Enter a collection path to browse documents, including nested paths such as <code>products/PRODUCT_ID/reviews</code>. Firestore’s browser SDK does not provide a way to automatically enumerate every collection name.</p><div class="admin-toolbar"><input id="collection-name" value="products" aria-label="Firestore collection path" placeholder="Collection path"/><button id="browse-collection" type="button">Browse</button><button id="create-document" type="button">Create document</button></div><div id="collection-list"></div></article>
+    </section>
+  </main>
+  <dialog id="document-editor" class="admin-dialog" aria-labelledby="editor-title"><div class="admin-dialog-head"><div><p class="eyebrow" id="editor-eyebrow">RECORD DETAILS</p><h2 id="editor-title">Edit details</h2></div><button type="button" id="editor-close" aria-label="Close">×</button></div><p id="editor-location" class="admin-helper admin-editor-location"></p><p id="editor-intro" class="admin-helper admin-editor-intro">Update the labeled fields below. Changes are saved to this Firestore document.</p><div id="order-item-builder" class="order-item-builder" hidden><div class="order-item-builder-heading"><div><h3>Products in this order</h3><p>Add catalog products and adjust their quantity or order price.</p></div></div><div class="order-product-picker"><label for="order-product-select">Product</label><select id="order-product-select"><option value="">Choose a product</option></select><button type="button" id="add-order-product">Add product</button></div><div id="order-item-rows" class="order-item-rows"></div><strong id="order-item-subtotal" class="order-item-subtotal">Items subtotal: ₹0</strong></div><div id="editor-fields" class="admin-field-grid"></div><div class="admin-toolbar admin-add-field"><input id="new-field-name" aria-label="New field name" placeholder="New field (e.g. productName)"/><select id="new-field-type" aria-label="New field type"><option value="text">Text</option><option value="number">Number</option><option value="boolean">Yes / No</option></select><button type="button" id="add-editor-field">Add field</button></div><details id="advanced-editor" class="admin-advanced"><summary id="advanced-editor-summary">Advanced: edit full document data</summary><p id="advanced-editor-help" class="admin-helper">Use this for nested data such as order items or complex product options.</p><textarea id="document-json" spellcheck="false" aria-label="Advanced document data"></textarea></details><p id="editor-error" class="admin-status" role="alert"></p><div class="admin-actions"><button type="button" id="editor-save">Save changes</button><button type="button" id="editor-cancel">Cancel</button></div></dialog>
+  <dialog id="order-detail-dialog" class="admin-order-detail" aria-labelledby="order-detail-title"><div class="admin-dialog-head"><div><p class="eyebrow">ORDER DETAILS</p><h2 id="order-detail-title"></h2></div><button type="button" id="order-detail-close" aria-label="Close order details">×</button></div><div id="order-detail-content"></div><div class="admin-actions"><button type="button" id="order-detail-edit">Edit this order</button><button type="button" id="order-detail-done">Done</button></div></dialog>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="navigation.js"></script><script src="admin.js"></script>
+</body>
+</html>

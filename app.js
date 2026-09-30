@@ -33,6 +33,8 @@ function renderCustomerReviewSlider(reviews) {
 
   reviews = reviews.filter(review => String(review.comment || "").trim() && review.ownReview !== true);
   if (!reviews.length) return;
+  const progressTrack = section.querySelector(".review-progress-track");
+  if (progressTrack) progressTrack.hidden = reviews.length <= 1;
 
   for (let i = reviews.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -40,6 +42,47 @@ function renderCustomerReviewSlider(reviews) {
   }
 
   let currentIndex = 0;
+  const intervalDuration = 6500;
+  let remainingTime = intervalDuration;
+  let reviewTimer = null;
+  let timerStartedAt = 0;
+  let isPaused = false;
+  let isHovered = false;
+  let isPressed = false;
+  let isFocused = false;
+  const getProgressBar = () => section.querySelector("#review-progress-bar");
+
+  const startReviewTimer = (reset = true) => {
+    if (reviews.length <= 1) return;
+    window.clearTimeout(reviewTimer);
+    if (reset) remainingTime = intervalDuration;
+    timerStartedAt = performance.now();
+    const progressBar = getProgressBar();
+    if (progressBar && reset) {
+      progressBar.style.animation = "none";
+      void progressBar.offsetWidth;
+      progressBar.style.animation = `review-countdown ${intervalDuration}ms linear forwards`;
+      progressBar.style.animationPlayState = isPaused ? "paused" : "running";
+    } else if (progressBar && !isPaused) {
+      progressBar.style.animationPlayState = "running";
+    }
+    if (!isPaused) reviewTimer = window.setTimeout(() => moveReview(1), remainingTime);
+  };
+
+  const updateReviewPauseState = () => {
+    const shouldPause = isHovered || isPressed || isFocused;
+    if (shouldPause === isPaused || reviews.length <= 1) return;
+    isPaused = shouldPause;
+    if (isPaused) {
+      window.clearTimeout(reviewTimer);
+      remainingTime = Math.max(0, remainingTime - (performance.now() - timerStartedAt));
+      const progressBar = getProgressBar();
+      if (progressBar) progressBar.style.animationPlayState = "paused";
+    } else {
+      startReviewTimer(false);
+    }
+  };
+
   const renderReview = () => {
     const review = reviews[currentIndex];
     const rating = Math.max(1, Math.min(5, Math.round(Number(review.rating || 5))));
@@ -51,9 +94,11 @@ function renderCustomerReviewSlider(reviews) {
         <div class="customer-review-stars" aria-label="${rating} out of 5 stars">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</div>
         <blockquote>“${escapeHTML(review.comment)}”</blockquote>
         <div class="customer-review-byline"><strong>${escapeHTML(reviewer)}</strong><span>on ${escapeHTML(review.productName)}</span></div>
+        <div class="review-progress-track" aria-hidden="true"><span id="review-progress-bar"></span></div>
       </article>
       <div class="review-slider-position">${currentIndex + 1} / ${reviews.length}</div>
     `;
+    startReviewTimer();
   };
 
   const moveReview = direction => {
@@ -63,9 +108,24 @@ function renderCustomerReviewSlider(reviews) {
 
   document.getElementById("review-prev")?.addEventListener("click", () => moveReview(-1));
   document.getElementById("review-next")?.addEventListener("click", () => moveReview(1));
+  content.addEventListener("pointerenter", event => {
+    if (event.pointerType === "mouse" || event.pointerType === "pen") { isHovered = true; updateReviewPauseState(); }
+  });
+  content.addEventListener("pointerleave", event => {
+    if (event.pointerType === "mouse" || event.pointerType === "pen") { isHovered = false; updateReviewPauseState(); }
+  });
+  content.addEventListener("pointerdown", () => { isPressed = true; updateReviewPauseState(); });
+  window.addEventListener("pointerup", () => { isPressed = false; updateReviewPauseState(); });
+  window.addEventListener("pointercancel", () => { isPressed = false; updateReviewPauseState(); });
+  content.addEventListener("focusin", () => { isFocused = true; updateReviewPauseState(); });
+  content.addEventListener("focusout", event => {
+    if (!content.contains(event.relatedTarget)) {
+      isFocused = false;
+      updateReviewPauseState();
+    }
+  });
   section.style.display = "block";
   renderReview();
-  if (reviews.length > 1) window.setInterval(() => moveReview(1), 6500);
 }
 
 function formatPrice(value) {
@@ -428,7 +488,8 @@ firebase.auth().onAuthStateChanged((user) => {
     userNameEl.textContent = user.displayName || "User";
     userPhotoEl.src = user.photoURL || "default-user.png";
     loginBtn.style.display = "none";
-    logoutBtn.style.display = "block";
+    // Logout lives in the shared profile/account popup, not as a separate header button.
+    logoutBtn.style.display = "none";
   } else {
     userNameEl.textContent = "Guest";
     userPhotoEl.src = "https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg";
@@ -448,12 +509,14 @@ logoutBtn.onclick = () => {
 
 userPhotoEl.onclick = (e) => {
   e.stopPropagation();
-  dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
+  if (window.toggleAccountPopup) window.toggleAccountPopup();
+  else dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
 };
 
 document.body.addEventListener("click", (e) => {
-  if (!userPhotoEl.contains(e.target) && !dropdownMenu.contains(e.target)) {
-    dropdownMenu.style.display = "none";
+  if (!userPhotoEl.contains(e.target) && !dropdownMenu.contains(e.target) && !e.target.closest(".account-nav-link")) {
+    if (window.toggleAccountPopup) window.toggleAccountPopup(false);
+    else dropdownMenu.style.display = "none";
   }
 });
 
@@ -638,6 +701,13 @@ function displayProducts(products) {
   }
   updateColorFilterOptions(products);
   const state = readCatalogState();
+  const homeHero = document.getElementById("home-hero");
+  const catalogHeading = document.getElementById("catalog-heading");
+  const searchTerm = state.query.trim();
+  if (homeHero) homeHero.hidden = Boolean(searchTerm);
+  if (catalogHeading) catalogHeading.textContent = searchTerm
+    ? `Showing results for “${searchTerm}”`
+    : "Handcrafted Collection";
   const q = normalizeTerm(state.query);
   const filtered = products.filter(product => {
     const price = Number(product.price || 0);

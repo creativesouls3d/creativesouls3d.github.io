@@ -125,7 +125,7 @@
   </section>
 
   <!-- Hero Section -->
-  <section class="hero">
+  <section class="hero" id="home-hero">
     <div class="hero-content">
       <span class="eyebrow">Custom 3D printed gifts</span>
       <h1>Creative Souls 3D</h1>
@@ -146,21 +146,17 @@
     </div>
   </section>
 
-  <section id="recommended-section" class="recommendation-section" aria-labelledby="recommended-heading" hidden>
-    <div class="section-heading"><div><h2 id="recommended-heading">Recommended for you</h2><p>Based on products you’ve viewed</p></div></div>
-    <div id="recommended-products" class="product-grid recommendation-grid"></div>
-  </section>
-
   <div class="catalog-layout">
   <!-- Section Heading -->
   <section class="section-heading" aria-label="Products">
     <div>
-      <h2>Handcrafted Collection</h2>
+      <h2 id="catalog-heading">Handcrafted Collection</h2>
       <p>Browse personalized gifts, miniatures, and custom 3D prints</p>
     </div>
   </section>
 
-  <section class="catalog-filters" aria-label="Filter and sort products">
+  <details class="catalog-filters" aria-label="Filter and sort products">
+    <summary>Catalog filters</summary>
     <div class="catalog-filter-field">
       <label for="filter-category">Category</label>
       <select id="filter-category"><option value="">All Categories</option><option>Keychains</option><option>Home Decor</option><option>Idols</option><option>Desk Accessories</option><option>Gifts</option><option>Car Accessories</option><option>Custom Products</option><option>Other</option></select>
@@ -194,7 +190,7 @@
       <select id="sort-by"><option value="featured">Featured</option><option value="newest">Newest</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="popular">Popular</option></select>
     </div>
     <button id="clear-filters" class="clear-filter-button" type="button">Clear filters</button>
-  </section>
+  </details>
 
   <!-- Product Grid -->
   <div id="product-list" class="product-grid">
@@ -238,6 +234,11 @@
     <p>No products available right now.</p>
   </div>
   </div>
+
+  <section id="recommended-section" class="recommendation-section" aria-labelledby="recommended-heading" hidden>
+    <div class="section-heading"><div><h2 id="recommended-heading">Recommended for you</h2><p>Based on products you’ve viewed</p></div></div>
+    <div id="recommended-products" class="product-grid recommendation-grid"></div>
+  </section>
 
   <section class="service-options-section" aria-labelledby="service-options-heading">
     <div class="service-options-heading">

@@ -713,21 +713,38 @@
       });
     }
 
+    function normalizeEmail(email) {
+      return String(email || "").trim().replace(/\\/g, "").toLowerCase();
+    }
+
+    function reviewDocumentId(email) {
+      return normalizeEmail(email);
+    }
+
     function getReviewsRef() {
       return db.collection("products").doc(productId).collection("reviews");
     }
 
     function orderContainsProduct(order) {
       return (order.items || []).some(item => {
-        const itemId = String(item.id || item.productId || "");
+        const itemId = String(item.id || item.productId || item.product_id || "");
         return itemId === productId;
       });
     }
 
+    function isDelivered(order) {
+      return String(order.status || "").toLowerCase().includes("delivered");
+    }
+
     async function hasPurchasedProduct(user) {
       if (!user || !productId) return false;
+      const email = normalizeEmail(user.email);
+      if (!email) return false;
       const snapshot = await db.collection("orders").where("email", "==", user.email).get();
-      return snapshot.docs.some(doc => orderContainsProduct(doc.data()));
+      return snapshot.docs.some(doc => {
+        const order = doc.data();
+        return normalizeEmail(order.email) === email && isDelivered(order) && orderContainsProduct(order);
+      });
     }
 
     function renderReviews(reviews) {
@@ -749,6 +766,7 @@
         const rating = Math.max(1, Math.min(5, Math.round(Number(review.rating || 5))));
         const starsText = "★".repeat(rating) + "☆".repeat(5 - rating);
         const userInitial = (review.userName || "U")[0].toUpperCase();
+        const isOwner = currentUser && normalizeEmail(review.email) === normalizeEmail(currentUser.email);
 
         return `
           <div class="review-card">
@@ -763,6 +781,7 @@
               <div class="review-rating">${starsText}</div>
             </div>
             <p style="color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">${escapeHTML(review.comment || "")}</p>
+            ${isOwner ? `<button type="button" class="review-delete-btn" data-review-email="${escapeHTML(review.email || "")}" style="margin-top:10px;">Delete my review</button>` : ""}
           </div>
         `;
       }).join("");
@@ -774,20 +793,25 @@
       try {
         const snapshot = await getReviewsRef().orderBy("timestamp", "desc").get();
         const reviews = [];
-        snapshot.forEach(doc => reviews.push(doc.data()));
+        snapshot.forEach(doc => reviews.push({ ...doc.data(), _docId: doc.id }));
         renderReviews(reviews);
 
+        let ownReview = null;
         if (currentUser) {
-          const ownReview = reviews.find(review => review.email === currentUser.email);
+          ownReview = reviews.find(review => normalizeEmail(review.email) === normalizeEmail(currentUser.email) || normalizeEmail(review._docId) === normalizeEmail(currentUser.email));
           if (ownReview) {
             reviewRating.value = String(ownReview.rating || 5);
             reviewComment.value = ownReview.comment || "";
-            reviewMessage.textContent = "You can update your existing review.";
+            reviewMessage.textContent = "You have already reviewed this item. Delete your review before submitting a new one.";
+            reviewForm.querySelector("button[type='submit']").disabled = true;
             if (starPicker) {
               const stars = starPicker.querySelectorAll("span");
               stars.forEach(s => s.classList.toggle("selected", Number(s.dataset.value) <= (ownReview.rating || 5)));
             }
           }
+        }
+        if (currentUserPurchasedProduct && currentUser) {
+          reviewForm.style.display = ownReview ? "none" : "grid";
         }
       } catch (err) {
         console.error("Error loading reviews:", err);
@@ -809,7 +833,8 @@
 
           if (currentUserPurchasedProduct) {
             reviewAuthMessage.textContent = `Reviewing as ${user.displayName || user.email}`;
-            reviewForm.style.display = "grid";
+            const ownReview = await getReviewsRef().doc(reviewDocumentId(user.email)).get();
+            reviewForm.style.display = ownReview.exists ? "none" : "grid";
           } else {
             reviewAuthMessage.textContent = "Verified buyers only: order this item to write a review.";
           }
@@ -831,6 +856,36 @@
       firebase.auth().signInWithPopup(provider).catch(err => {
         reviewAuthMessage.textContent = "Login failed: " + err.message;
       });
+    });
+
+    reviewsList.addEventListener("click", async event => {
+      const button = event.target.closest(".review-delete-btn");
+      if (!button) return;
+      if (!currentUser || !currentUser.email) {
+        reviewAuthMessage.textContent = "Login with the account that wrote this review to delete it.";
+        return;
+      }
+
+      const reviewEmail = button.dataset.reviewEmail;
+      if (normalizeEmail(reviewEmail) !== normalizeEmail(currentUser.email)) return;
+      button.disabled = true;
+      try {
+        const reviewRef = getReviewsRef().doc(reviewDocumentId(reviewEmail));
+        const reviewDoc = await reviewRef.get();
+        if (!reviewDoc.exists || normalizeEmail(reviewDoc.data().email) !== normalizeEmail(currentUser.email)) {
+          throw new Error("Review ownership could not be verified.");
+        }
+        await reviewRef.delete();
+        reviewForm.querySelector("button[type='submit']").disabled = false;
+        reviewComment.value = "";
+        reviewRating.value = "5";
+        await loadReviews();
+        reviewMessage.textContent = "Your review was deleted.";
+      } catch (err) {
+        console.error("Error deleting review:", err);
+        button.disabled = false;
+        reviewMessage.textContent = "Could not delete the review. Please try again.";
+      }
     });
 
     document.getElementById("rating-jump")?.addEventListener("click", () => {
@@ -1097,6 +1152,12 @@
         return;
       }
 
+      const existingReview = await getReviewsRef().doc(reviewDocumentId(currentUser.email)).get();
+      if (existingReview.exists) {
+        reviewMessage.textContent = "You already reviewed this item. Delete your review before submitting another.";
+        return;
+      }
+
       const comment = reviewComment.value.trim();
       const rating = Number(reviewRating.value);
 
@@ -1108,7 +1169,7 @@
       reviewMessage.textContent = "Saving review...";
 
       try {
-        await getReviewsRef().doc(currentUser.email).set({
+        await getReviewsRef().doc(reviewDocumentId(currentUser.email)).set({
           comment,
           email: currentUser.email,
           ownReview: false,
