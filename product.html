@@ -363,6 +363,11 @@
     </article>
   </section>
 
+  <section id="related-products-section" class="recommendation-section" aria-labelledby="related-products-heading" hidden>
+    <div class="section-heading"><div><h2 id="related-products-heading">Related products</h2><p>More items that match your interests</p></div></div>
+    <div id="related-products" class="product-grid recommendation-grid"></div>
+  </section>
+
   <!-- Footer -->
   <footer>
     <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts & Keepsakes</p>
@@ -373,6 +378,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="navigation.js"></script>
+  <script src="recommendations.js"></script>
 
   <script>
     const loading = document.getElementById("loading");
@@ -845,6 +851,19 @@
 
           const data = doc.data();
           currentProduct = { id: productId, ...data };
+          window.ProductRecommendations?.record(currentProduct);
+          const renderRelatedProducts = products => window.ProductRecommendations?.render(
+            document.getElementById("related-products"),
+            products,
+            { currentId: productId, limit: 4, anchorProduct: currentProduct }
+          );
+          try {
+            const cachedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+            if (Array.isArray(cachedProducts) && cachedProducts.length) renderRelatedProducts(cachedProducts);
+          } catch { /* Fetch below supplies the product list if the local cache is invalid. */ }
+          db.collection("products").get().then(snapshot => {
+            renderRelatedProducts(snapshot.docs.map(item => ({ id: item.id, productId: item.id, ...item.data() })));
+          }).catch(err => console.warn("Could not refresh related products:", err));
           document.getElementById("product-viewer-count").textContent = String(18 + Math.floor(Math.random() * 24));
           renderColourSelector(data.colourOptions || data.colorOptions || data.colours || data.colors || data.colour || data.color || "", data);
       renderSizeSelector(data);

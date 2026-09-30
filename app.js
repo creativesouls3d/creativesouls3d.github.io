@@ -630,6 +630,12 @@ function productDateValue(product) {
 }
 
 function displayProducts(products) {
+  const recommendationHistory = window.ProductRecommendations?.readHistory() || [];
+  if (recommendationHistory.length) {
+    const section = document.getElementById("recommended-section");
+    if (section) section.hidden = false;
+    window.ProductRecommendations?.render(document.getElementById("recommended-products"), products, { limit: 4, excludeViewed: true });
+  }
   updateColorFilterOptions(products);
   const state = readCatalogState();
   const q = normalizeTerm(state.query);
