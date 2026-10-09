@@ -34,6 +34,39 @@ function escapeHTML(value = "") {
   })[character]);
 }
 
+function generateRandom6Digit() {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return String(100000 + (buffer[0] % 900000));
+  }
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+async function generateUniqueOrderId() {
+  const maxAttempts = 20;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const digits = generateRandom6Digit();
+    const candidateId = `#${digits}`;
+
+    try {
+      const [docWithHash, docWithoutHash] = await Promise.all([
+        db.collection("orders").doc(candidateId).get(),
+        db.collection("orders").doc(digits).get()
+      ]);
+
+      if (!docWithHash.exists && !docWithoutHash.exists) {
+        return candidateId;
+      }
+    } catch (err) {
+      console.warn("Error checking order ID existence:", err);
+      return candidateId;
+    }
+  }
+
+  return `#${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
     cartSummary.innerHTML = `
@@ -128,16 +161,7 @@ document.getElementById("place-order").addEventListener("click", async () => {
   `;
 
   try {
-    const ordersSnapshot = await db.collection("orders").orderBy("timestamp", "desc").limit(1).get();
-    let lastId = 253750;
-
-    if (!ordersSnapshot.empty) {
-      const lastOrder = ordersSnapshot.docs[0].data();
-      const parsed = parseInt(String(lastOrder.order_id || "").replace("#", ""), 10);
-      if (!isNaN(parsed)) lastId = parsed;
-    }
-
-    const newId = "#" + (lastId + 1);
+    const newId = await generateUniqueOrderId();
     const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
     const finalTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
 

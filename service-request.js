@@ -64,8 +64,37 @@ firebase.auth().onAuthStateChanged(async user => {
   }
 });
 
-function cleanOrderNumber(value) {
-  return parseInt(String(value || "").replace(/^#/, ""), 10);
+function generateRandom6Digit() {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return String(100000 + (buffer[0] % 900000));
+  }
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+async function generateUniqueOrderId() {
+  const maxAttempts = 20;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const digits = generateRandom6Digit();
+    const candidateId = `#${digits}`;
+
+    try {
+      const [docWithHash, docWithoutHash] = await Promise.all([
+        db.collection("orders").doc(candidateId).get(),
+        db.collection("orders").doc(digits).get()
+      ]);
+
+      if (!docWithHash.exists && !docWithoutHash.exists) {
+        return candidateId;
+      }
+    } catch (err) {
+      console.warn("Error checking order ID existence:", err);
+      return candidateId;
+    }
+  }
+
+  return `#${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
 requestForm.addEventListener("submit", async event => {
@@ -120,9 +149,7 @@ requestForm.addEventListener("submit", async event => {
   requestMessage.textContent = "";
 
   try {
-    const latest = await db.collection("orders").orderBy("timestamp", "desc").limit(1).get();
-    const previous = latest.empty ? 253750 : cleanOrderNumber(latest.docs[0].data().order_id) || 253750;
-    const orderId = `#${previous + 1}`;
+    const orderId = await generateUniqueOrderId();
     const name = document.getElementById("request-name").value.trim();
     const phone = document.getElementById("request-phone").value.trim();
     const address = isPickup ? pickupAddress : requestAddress.value.trim();

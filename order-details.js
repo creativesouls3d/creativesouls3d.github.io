@@ -51,7 +51,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
   }
 
   try {
-    const doc = await db.collection("orders").doc(orderId).get();
+    let doc = await db.collection("orders").doc(orderId).get();
+    if (!doc.exists) {
+      const cleanId = orderId.replace(/^#/, "");
+      doc = await db.collection("orders").doc(cleanId).get();
+    }
 
     if (!doc.exists) {
       container.innerHTML = `

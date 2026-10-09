@@ -4,267 +4,1158 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard | Creative Souls 3D</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <style>
-    .admin-page{width:min(1120px,calc(100% - 32px));margin:36px auto 72px;font-family:'Outfit',sans-serif}
-    .admin-heading,.admin-toolbar,.admin-row,.admin-actions{display:flex;align-items:center;gap:12px}
-    .admin-heading{justify-content:space-between;flex-wrap:wrap;margin-bottom:22px}
-    .admin-heading h1{margin:0}.admin-note{padding:14px 16px;border-radius:14px;background:#fff7ed;color:#7c2d12;margin:16px 0;line-height:1.5}
-    .admin-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;margin:18px 0;box-shadow:var(--shadow-sm)}
-    .admin-toolbar{flex-wrap:wrap;margin:14px 0}.admin-toolbar input{flex:1;min-width:190px}
-    .admin-toolbar input,.admin-toolbar select{box-sizing:border-box;min-height:42px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem 'Outfit',sans-serif}
-    .admin-row{justify-content:space-between;border-top:1px solid var(--border);padding:14px 0;align-items:flex-start}
-    .admin-row-main{min-width:0;overflow-wrap:anywhere}.admin-row-main strong{display:block}.admin-row-main small{color:var(--text-muted)}
-    .admin-table-wrap{width:100%;overflow:auto;border:1px solid var(--border);border-radius:12px}
-    .admin-orders-table{width:100%;min-width:1260px;border-collapse:collapse;text-align:left;font-size:.9rem}
-    .admin-orders-table th,.admin-orders-table td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-    .admin-orders-table th{background:var(--surface-alt);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap}
-    .admin-orders-table tbody tr:last-child td{border-bottom:0}.admin-orders-table td strong{display:block;color:var(--text-primary)}
-    .admin-order-secondary{display:block;color:var(--text-muted);font-size:.82rem;margin-top:4px;max-width:220px;overflow-wrap:anywhere}
-    .admin-order-items{max-width:230px;white-space:pre-line}.admin-order-status{display:inline-block;padding:5px 9px;border-radius:999px;background:#fef3c7;font-weight:700;white-space:nowrap}
-    .admin-orders-table .admin-actions{justify-content:flex-start;flex-wrap:nowrap}.admin-orders-table .admin-actions button{padding:8px 10px;white-space:nowrap}
-    .admin-order-id{border:0;background:none;padding:0;color:var(--brand-dark);font:800 .98rem 'Outfit',sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-    .admin-order-detail{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;box-sizing:border-box;width:min(850px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:0;border-radius:18px;padding:24px;box-shadow:0 24px 70px #0f172a55;font-family:'Outfit',sans-serif}
-    .admin-order-detail::backdrop{background:#0f172a99}.admin-detail-section{border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
-    .admin-detail-section h3{margin:0 0 12px}.admin-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .admin-detail-value{min-width:0;overflow-wrap:anywhere}.admin-detail-value strong{display:block;color:var(--text-muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
-    .admin-detail-item{border-top:1px solid var(--border);padding:12px 0}.admin-detail-item:first-of-type{border-top:0;padding-top:0}
-    .admin-actions{flex-wrap:wrap;justify-content:flex-end}.admin-actions button,.admin-toolbar button,.admin-dialog button{box-sizing:border-box;min-height:42px;border:0;border-radius:10px;padding:10px 14px;font:600 .95rem 'Outfit',sans-serif;cursor:pointer;background:var(--brand-gradient);color:#1f2937}
-    .admin-actions .danger{background:#fee2e2;color:#991b1b}.admin-dialog{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;box-sizing:border-box;width:min(720px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:0;border-radius:18px;padding:24px;box-shadow:0 24px 70px #0f172a55;font-family:'Outfit',sans-serif}
-    .admin-dialog::backdrop{background:#0f172a99}.admin-dialog textarea{width:100%;min-height:320px;font: .92rem/1.5 ui-monospace,monospace;padding:12px;border:1px solid var(--border);border-radius:10px}
-    .admin-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.admin-dialog-head h2{margin:0}.admin-status{min-height:24px;color:var(--text-secondary)}
-    .admin-dialog-head>button,.admin-order-detail .admin-dialog-head>button{width:40px;height:40px;flex:0 0 40px;padding:0!important;border-radius:50%!important;background:var(--surface-alt)!important;color:var(--text-primary)!important;font-size:1.25rem!important}
-    .admin-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
-    .admin-field{display:grid;gap:6px;min-width:0}.admin-field label{font-weight:700;color:var(--text-primary)}
-    .admin-field-label{display:flex;justify-content:space-between;align-items:center;gap:8px}.admin-field-label label{margin:0}.admin-field-label button{border:0;background:transparent;color:#b91c1c;font:600 .8rem 'Outfit',sans-serif;cursor:pointer;padding:2px 4px}
-    .admin-field input,.admin-field select{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font:500 1rem 'Outfit',sans-serif;color:var(--text-primary);background:#fff}
-    .admin-field-help,.admin-helper{font-size:.86rem;color:var(--text-muted);line-height:1.45}.admin-add-field{margin:4px 0 18px}.admin-advanced{margin:18px 0;border-top:1px solid var(--border);padding-top:12px}.admin-advanced summary{font-weight:700;cursor:pointer}.admin-advanced textarea{margin-top:12px}
-    [hidden]{display:none!important}
-    @media(max-width:600px){.admin-panel{padding:16px}.admin-row{display:block}.admin-actions{justify-content:flex-start;margin-top:12px}.admin-dialog{padding:18px}.admin-field-grid{grid-template-columns:1fr}.admin-add-field{display:grid;grid-template-columns:minmax(0,1fr) 96px auto;gap:8px}.admin-add-field input{min-width:0}.admin-add-field button{padding-inline:10px}}
-    @media(max-width:600px){.admin-detail-grid{grid-template-columns:1fr}.admin-order-detail{padding:18px}}
-    /* Refined admin workspace layout */
-    body:has(.admin-page){background:#f5f7fb}
-    .admin-page{width:min(1320px,calc(100% - 40px));margin:32px auto 72px}
-    .admin-heading{padding:clamp(22px,4vw,36px);border:1px solid #e7ebf2;border-radius:22px;background:linear-gradient(125deg,#fff 5%,#fff8e8 100%);box-shadow:0 12px 34px rgba(15,23,42,.055)}
-    .admin-heading>div{max-width:720px}.admin-heading .eyebrow{margin:0 0 6px;color:var(--brand-dark);letter-spacing:.12em;font-size:.76rem;font-weight:800}
-    .admin-heading h1{font-size:clamp(1.8rem,4vw,2.55rem);line-height:1.1;letter-spacing:-.035em}
-    #admin-identity{margin:8px 0 0;color:var(--text-secondary)}
-    .admin-note{display:flex;gap:10px;align-items:flex-start;margin:18px 0;padding:14px 18px;border:1px solid #f4d6a2;border-radius:14px;background:#fff9ed;color:#854d0e;font-size:.9rem}
-    .admin-status{margin:12px 2px;color:var(--text-secondary);font-weight:600}
-    #admin-tools{display:grid;gap:22px;margin-top:20px}
-    .admin-panel{min-width:0;margin:0;padding:clamp(18px,2.5vw,28px);border:1px solid #e7ebf2;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.045)}
-    .admin-panel h2{margin:0;color:#172033;font-size:1.35rem;letter-spacing:-.02em}
-    .admin-panel>p{margin:6px 0 0;color:var(--text-muted);max-width:760px}
-    .admin-toolbar{gap:10px;margin:18px 0}
-    .admin-toolbar button,.admin-actions button{min-height:42px;padding:10px 16px;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
-    .admin-toolbar button:hover,.admin-actions button:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(180,83,9,.14)}
-    .admin-table-wrap{max-height:70vh;border-color:#e5e9f0;border-radius:14px;scrollbar-color:#cbd5e1 transparent}
-    .admin-orders-table{min-width:1320px;font-size:.88rem}
-    .admin-orders-table th{position:sticky;top:0;z-index:1;padding:13px 14px;background:#f8fafc;color:#64748b}
-    .admin-orders-table td{padding:15px 14px;line-height:1.45}
-    .admin-orders-table tbody tr{transition:background .15s ease}
-    .admin-orders-table tbody tr:hover{background:#fffbf2}
-    .admin-orders-table td strong{font-weight:700}
-    .admin-order-secondary{max-width:240px;line-height:1.45}
-    .admin-order-id{text-align:left!important;text-decoration:none;border-bottom:1px solid #d97706}
-    .admin-order-id:hover{color:#92400e}
-    .admin-order-status{background:#fff3cd;color:#854d0e;font-size:.82rem}
-    .admin-orders-table .admin-actions{margin:0;gap:7px}
-    .admin-orders-table .admin-actions button{min-height:34px;padding:7px 11px;font-size:.84rem}
-    .admin-page{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:24px clamp(12px,1.6vw,30px) 64px}
-    .admin-heading{width:100%}.admin-panel{width:100%}
-    #admin-tools{width:100%;grid-template-columns:minmax(0,1fr)}
-    .admin-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 2px}
-    .admin-stat-card{min-width:0;padding:18px 20px;border:1px solid #e7ebf2;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.04)}
-    .admin-stat-card span{display:block;color:var(--text-muted);font-size:.85rem;font-weight:650}
-    .admin-stat-card small{display:block;margin-top:9px;color:#64748b;font-size:.75rem;line-height:1.45}
-    .admin-stat-card strong{display:block;margin-top:7px;color:#172033;font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.1;font-variant-numeric:tabular-nums}
-    .admin-analytics-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:18px}
-    .admin-date-tools{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
-    .admin-date-tools label{display:grid;gap:5px;color:var(--text-muted);font-size:.78rem;font-weight:700}
-    .admin-date-tools input{box-sizing:border-box;min-height:42px;padding:9px 11px;border:1px solid #dbe1ea;border-radius:10px;background:#fff;font:500 .9rem 'Outfit',sans-serif;color:var(--text-primary)}
-    .admin-date-tools button{min-height:42px;border:1px solid #dbe1ea;border-radius:10px;padding:9px 13px;background:#fff;color:#334155;font:600 .9rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-date-preset{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
-    .admin-date-preset button{min-height:34px;padding:6px 10px;border:1px solid #dbe1ea;border-radius:999px;background:#fff;color:#475569;font:600 .8rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-date-preset button:hover,.admin-date-preset button[aria-pressed="true"]{border-color:#f59e0b;background:#fff7ed;color:#92400e}
-    .admin-attention-list{display:grid;gap:9px;margin-top:14px}
-    .admin-attention-details>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;list-style:none}
-    .admin-attention-details>summary::-webkit-details-marker{display:none}
-    .admin-attention-details>summary::after{content:'＋';flex:none;color:#92400e;font-size:1.2rem;font-weight:800}
-    .admin-attention-details[open]>summary::after{content:'−'}
-    .admin-attention-heading strong{display:block;color:#172033;font-size:1.35rem;letter-spacing:-.02em}
-    .admin-attention-heading small{display:block;margin-top:6px;color:var(--text-muted);font-size:.9rem;font-weight:400}
-    .admin-attention-count{flex:none;padding:5px 10px;border-radius:999px;background:#fff1d6;color:#92400e;font-size:.8rem;font-weight:800}
-    .admin-attention-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;border:1px solid #fde1b2;border-radius:12px;background:#fffbf3}
-    .admin-attention-item strong,.admin-attention-item span{display:block}.admin-attention-item span{margin-top:3px;color:#64748b;font-size:.84rem}
-    .admin-attention-item button{flex:none;min-height:36px;padding:7px 12px;border:1px solid #f3c97e;border-radius:9px;background:#fff;color:#92400e;font:700 .84rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-attention-empty{padding:18px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;text-align:center}
-    .admin-chart-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px}
-    .admin-chart-card{min-width:0;padding:18px;border:1px solid #e7ebf2;border-radius:16px;background:linear-gradient(180deg,#fff,#fbfcfe)}
-    .admin-chart-card h3{margin:0;font-size:1rem;color:#273449}.admin-chart-card p{margin:4px 0 14px;color:var(--text-muted);font-size:.82rem}
-    .admin-chart{width:100%;min-height:240px;overflow:hidden}.admin-chart svg{display:block;width:100%;height:240px;overflow:visible}.admin-chart svg.admin-pie-svg{height:auto;max-height:340px}
-    .admin-chart-empty{display:grid;place-items:center;min-height:220px;color:var(--text-muted);font-size:.9rem;text-align:center}
-    .admin-chart svg text{font-family:'Outfit',sans-serif;fill:#64748b;font-size:11px}
-    .admin-chart-gridline{stroke:#e9edf3;stroke-width:1}.admin-chart-bar{fill:#f59e0b}.admin-chart-bar:hover{fill:#d97706}
-    .admin-status-bar{fill:#f59e0b}.admin-status-bar-label{font-size:11px!important}
-    .admin-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap}
-    .admin-section-head>div:first-child{min-width:min(100%,360px)}
-    .admin-order-tools{display:flex;align-items:center;gap:10px;flex:1 1 520px;justify-content:flex-end}
-    .admin-order-tools input[type="search"]{box-sizing:border-box;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;font:500 .94rem 'Outfit',sans-serif;flex:1 1 260px;min-width:180px}
-    .admin-status-filter{position:relative;flex:0 1 210px;min-width:190px}
-    .admin-ignored-customers{position:relative;flex:none;min-width:145px}
-    .admin-ignored-customers>summary{box-sizing:border-box;display:flex;align-items:center;gap:6px;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;color:#334155;font-size:.9rem;font-weight:600;cursor:pointer;list-style:none;white-space:nowrap}
-    .admin-ignored-customers>summary::-webkit-details-marker{display:none}
-    .admin-ignored-customers>summary::after{content:'▾';margin-left:auto;color:#64748b}
-    .admin-ignored-customer-list{position:absolute;z-index:7;top:calc(100% + 7px);right:0;width:max(100%,280px);max-height:320px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.16)}
-    .admin-ignored-customer-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px;border-bottom:1px solid #f1f5f9;color:#334155;font-size:.84rem}
-    .admin-ignored-customer-item:last-child{border-bottom:0}
-    .admin-ignored-customer-item button{min-height:32px;padding:5px 9px;border:1px solid #dbe1ea;border-radius:8px;background:#fff;color:#334155;font:600 .8rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-ignored-customer-empty{padding:10px;color:#64748b;font-size:.84rem}
-    .admin-status-filter>summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:10px 13px;border:1px solid #dbe1ea;border-radius:11px;background:#fff;color:#334155;font-size:.94rem;font-weight:600;cursor:pointer;list-style:none;white-space:nowrap}
-    .admin-status-filter>summary::-webkit-details-marker{display:none}
-    .admin-status-filter>summary::after{content:'▾';color:#64748b}
-    .admin-status-options{position:absolute;z-index:5;top:calc(100% + 7px);right:0;width:max(100%,245px);max-height:320px;overflow:auto;padding:8px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;box-shadow:0 14px 35px rgba(15,23,42,.16)}
-    .admin-status-options label{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#334155;font-size:.88rem;cursor:pointer}
-    .admin-status-options label:hover{background:#fff8e8}
-    .admin-status-options input{width:16px;height:16px;min-height:0;margin:0;accent-color:#d97706}
-    .admin-status-filter-clear{width:100%;margin-top:5px;padding:9px 10px;border:0;border-top:1px solid #edf0f5;background:#fff;color:#92400e;font:600 .85rem 'Outfit',sans-serif;text-align:left;cursor:pointer}
-    .admin-order-tools button{min-height:44px;white-space:nowrap}
-    #order-count-label{margin:0 0 10px;color:var(--text-muted);font-size:.85rem;font-weight:600}
-    .admin-chart-filter-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;padding:10px 13px;border:1px solid #f3d29a;border-radius:10px;background:#fffaf0;color:#854d0e;font-size:.86rem}
-    .admin-chart-filter-notice button{border:0;background:transparent;color:#92400e;font:700 .84rem 'Outfit',sans-serif;text-decoration:underline;cursor:pointer}
-    .admin-chart-mark-interactive{cursor:pointer;outline-offset:3px}
-    .admin-chart-mark-interactive:focus{outline:2px solid #92400e}
-    rect.admin-chart-mark-interactive:hover{filter:brightness(.9)}
-    .admin-table-wrap{width:100%;max-height:calc(100vh - 330px);min-height:240px;overscroll-behavior:contain}
-    .admin-orders-table{width:100%;min-width:1660px;table-layout:auto}
-    .admin-orders-table th:nth-child(1),.admin-orders-table td:nth-child(1){width:54px;min-width:54px;text-align:center}
-    .admin-orders-table th:nth-child(2),.admin-orders-table td:nth-child(2){min-width:150px}
-    .admin-orders-table th:nth-child(3),.admin-orders-table td:nth-child(3){min-width:210px}
-    .admin-orders-table th:nth-child(4),.admin-orders-table td:nth-child(4){min-width:140px}
-    .admin-orders-table th:nth-child(5),.admin-orders-table td:nth-child(5){min-width:230px}
-    .admin-orders-table th:nth-child(6),.admin-orders-table td:nth-child(6){min-width:250px}
-    .admin-orders-table th:nth-child(7),.admin-orders-table td:nth-child(7){min-width:180px}
-    .admin-orders-table th:nth-child(8),.admin-orders-table td:nth-child(8){min-width:170px}
-    .admin-orders-table th:nth-child(9),.admin-orders-table td:nth-child(9){min-width:125px}
-    .admin-orders-table th:nth-child(10),.admin-orders-table td:nth-child(10){min-width:150px}
-    .admin-orders-table input[type="checkbox"]{width:18px;height:18px;margin:0;accent-color:#d97706;cursor:pointer}
-    .admin-bulk-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border:1px solid #e7ebf2;border-radius:12px;background:#f8fafc}
-    .admin-bulk-toolbar span{color:var(--text-secondary);font-size:.88rem;font-weight:600}
-    .admin-bulk-toolbar button{min-height:40px;padding:9px 14px;border:0;border-radius:9px;background:#fee2e2;color:#991b1b;font:700 .9rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-bulk-toolbar button:disabled{opacity:.5;cursor:not-allowed}
-    .admin-bulk-toolbar select,.admin-pagination select{box-sizing:border-box;min-height:40px;padding:8px 10px;border:1px solid #dbe1ea;border-radius:9px;background:#fff;color:#334155;font:600 .86rem 'Outfit',sans-serif}
-    .admin-bulk-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .admin-bulk-toolbar .admin-secondary-action{border:1px solid #dbe1ea;background:#fff;color:#334155}
-    .admin-bulk-toolbar .admin-status-action{background:#fef3c7;color:#854d0e}
-    .admin-sort-button{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;white-space:nowrap}
-    .admin-sort-button:hover{color:#92400e}
-    .admin-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;color:var(--text-secondary);font-size:.86rem}
-    .admin-pagination-controls{display:flex;align-items:center;gap:8px}
-    .admin-pagination button{min-height:38px;padding:8px 12px;border:1px solid #dbe1ea;border-radius:9px;background:#fff;color:#334155;font:600 .86rem 'Outfit',sans-serif;cursor:pointer}
-    .admin-pagination button:disabled{opacity:.45;cursor:not-allowed}
-    .admin-order-tools{min-width:min(100%,760px)}
-    .admin-order-tools input[type="search"]{min-width:260px}
-    .admin-section-head{align-items:center}
-    .admin-empty-state{display:grid;place-items:center;min-height:220px;padding:30px;text-align:center;color:var(--text-muted);background:#fbfcfe;border:1px dashed #dbe1ea;border-radius:14px}
-    .admin-empty-state strong{display:block;color:#334155;font-size:1.05rem;margin-bottom:5px}
-    #collection-list{margin-top:8px}
-    .admin-row{padding:16px 12px;border-top:1px solid #edf0f5;align-items:center}
-    .admin-row:hover{background:#fffbf2}
-    .admin-row-main strong{font-weight:700}
-    .admin-row-main small{display:block;margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
-    .admin-row .admin-actions{margin:0}
-    .admin-dialog,.admin-order-detail{background:#fff;color:var(--text-primary)}
-    #document-editor{width:min(1000px,calc(100vw - 36px))}
-    .admin-dialog-head{padding-bottom:14px;border-bottom:1px solid #edf0f5}
-    .admin-dialog-head .eyebrow{margin:0;color:var(--brand-dark);font-size:.72rem;letter-spacing:.1em;font-weight:800}
-    .admin-dialog-head h2{font-size:1.35rem;line-height:1.2}
-    .admin-field-grid{gap:16px;margin:18px 0 20px}
-    .admin-field{align-content:start}
-    .admin-dialog-head{position:sticky;top:-24px;z-index:3;padding-top:2px;background:#fff}
-    .admin-editor-location{margin:12px 0 4px;font-size:.78rem;overflow-wrap:anywhere}
-    .admin-editor-intro{margin:8px 0 16px;color:#475569}
-    .admin-editor-section{margin:16px 0;padding:16px;border:1px solid #e7ebf2;border-radius:15px;background:#fff}
-    .admin-editor-section-heading h3{margin:0;color:#273449;font-size:1rem}
-    .admin-editor-section-heading p{margin:4px 0 0;color:var(--text-muted);font-size:.84rem;line-height:1.45}
-    .admin-editor-section-fields{margin:12px 0 0;gap:12px}
-    .order-item-builder{margin:18px 0;padding:18px;border:1px solid #e7ebf2;border-radius:15px;background:#f8fafc}
-    .order-item-builder h3{margin:0;color:#273449;font-size:1rem}.order-item-builder-heading p{margin:4px 0 14px;color:var(--text-muted);font-size:.84rem}
-    .order-product-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}
-    .order-product-picker label,.order-item-row-fields label{display:grid;gap:6px;color:var(--text-secondary);font-size:.8rem;font-weight:750}
-    .order-product-picker select,.order-item-row-fields input{box-sizing:border-box;width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem 'Outfit',sans-serif;color:var(--text-primary)}
-    .order-item-rows{display:grid;gap:9px;margin-top:12px}.order-item-row-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,auto);align-items:center;gap:12px;padding:12px;border:1px solid #e7ebf2;border-radius:12px;background:#fff}.order-item-row-editor>strong{overflow-wrap:anywhere}
-    .order-item-row-fields{display:flex;align-items:end;gap:9px}.order-item-row-fields label{width:110px}.order-item-row-fields label:first-child{width:76px}
-    .order-item-row-fields .order-item-remove{min-height:42px;background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;padding:8px 11px}
-    .order-item-subtotal{display:block;margin-top:14px;text-align:right;color:#273449}
-    .admin-dialog .admin-actions{position:sticky;bottom:-24px;z-index:2;margin:14px -24px -24px;padding:14px 24px;background:rgba(255,255,255,.97);border-top:1px solid #edf0f5;backdrop-filter:blur(8px)}
-    #editor-error{margin:12px 0;color:#b91c1c;font-weight:700}
-    .admin-field label{font-size:.92rem}
-    .admin-field input,.admin-field select{min-height:46px;box-sizing:border-box}
-    .admin-add-field{padding:14px;border:1px dashed #d8dee9;border-radius:14px;background:#f8fafc}
-    .admin-advanced{padding-top:16px}
-    .admin-advanced summary{padding:4px 0;color:#334155}
-    .admin-dialog textarea{box-sizing:border-box;min-height:220px}
-    .admin-field textarea{width:100%;box-sizing:border-box;min-height:96px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font:500 1rem 'Outfit',sans-serif;color:var(--text-primary);background:#fff;resize:vertical}
-    .admin-detail-section{margin:12px 0;padding:18px;background:#fff;border-color:#e9edf3}
-    .admin-detail-section h3{font-size:1rem;color:#273449}
-    .admin-detail-grid{gap:6px 20px}
-    .admin-detail-value{padding:9px 0;border-bottom:1px solid #f1f3f7;line-height:1.45}
-    .admin-detail-value strong{font-size:.72rem;letter-spacing:.06em}
-    .admin-order-detail>.admin-actions{position:sticky;bottom:-18px;margin:12px -18px -18px;padding:14px 18px;background:rgba(255,255,255,.96);border-top:1px solid #edf0f5;backdrop-filter:blur(8px)}
-    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid rgba(245,158,11,.42);outline-offset:2px}
-    @media(max-width:700px){.admin-page{width:100%;padding:16px 12px 48px}.admin-heading{border-radius:17px}.admin-note{font-size:.84rem}.admin-panel{border-radius:16px}.admin-toolbar:not(.admin-add-field){display:grid;grid-template-columns:1fr 1fr}.admin-toolbar:not(.admin-add-field) input{grid-column:1/-1;width:100%;min-width:0}.admin-dialog,.admin-order-detail{max-height:calc(100dvh - 20px);width:calc(100vw - 20px);padding:18px}#document-editor{width:calc(100vw - 20px)}.admin-dialog .admin-dialog-head{top:-18px}.admin-dialog .admin-actions{bottom:-18px;margin:14px -18px -18px;padding:14px 18px}.admin-editor-section{padding:13px;margin:12px 0}.order-item-builder{padding:13px}.order-product-picker{grid-template-columns:minmax(0,1fr)}.order-product-picker button{width:100%}.order-item-row-editor{grid-template-columns:minmax(0,1fr)}.order-item-row-fields{display:grid;grid-template-columns:70px minmax(0,1fr) auto}.order-item-row-fields label,.order-item-row-fields label:first-child{width:auto}.admin-detail-grid{grid-template-columns:1fr}.admin-order-detail>.admin-actions{bottom:-18px}}
-    @media(max-width:390px){.admin-toolbar:not(.admin-add-field){grid-template-columns:1fr}.admin-toolbar:not(.admin-add-field) input{grid-column:auto}.admin-toolbar button{width:100%}.admin-add-field{grid-template-columns:1fr 88px}.admin-add-field input{grid-column:1/-1}.admin-add-field button{grid-column:1/-1}}
-    @media(max-width:900px){.admin-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-order-tools{flex-basis:100%;min-width:0;justify-content:flex-start}.admin-table-wrap{max-height:70vh}}
-    @media(max-width:900px){.admin-chart-grid{grid-template-columns:1fr}}
-    @media(max-width:600px){.admin-page{padding:14px 10px 40px}.admin-overview{gap:10px}.admin-stat-card{padding:14px}.admin-order-tools{display:grid;grid-template-columns:1fr 1fr;width:100%;min-width:0}.admin-order-tools input[type="search"]{grid-column:1/-1;width:100%;min-width:0}.admin-status-filter{width:100%;min-width:0;max-width:none}.admin-status-filter>summary{width:100%}.admin-status-options{left:0;right:auto;width:100%;box-sizing:border-box}.admin-order-tools button{width:100%;padding-inline:9px}.admin-table-wrap{max-height:65vh}.admin-orders-table{min-width:1660px}}
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+
 </head>
 <body>
-  <header><button class="back-nav" type="button" data-back data-fallback="index.html">← Back</button><div class="logo-section" onclick="window.location.href='index.html'"><img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo"/><span>Creative Souls <strong>3D</strong></span></div><nav class="cart-link" aria-label="Main navigation"><a href="index.html" class="nav-pill">Shop</a><a href="orders.html" class="nav-pill">Orders</a><a href="cart.html" class="nav-pill">Cart</a></nav></header>
-  <main class="admin-page">
-    <div class="admin-heading"><div><p class="eyebrow">STORE MANAGEMENT</p><h1>Admin Dashboard</h1><p id="admin-identity">Checking administrator access…</p></div><button id="admin-login" type="button" hidden>Sign in with Google</button></div>
-    <div class="admin-note"><strong>Database access notice:</strong> this page checks the signed-in email in the browser. Firestore Security Rules must independently restrict writes to this administrator account. Browser-side checks alone do not secure database access.</div>
-    <p id="admin-status" class="admin-status" role="status"></p>
-    <section id="admin-tools" hidden>
-      <div class="admin-overview" aria-label="Order overview">
-        <article class="admin-stat-card"><span>Total orders</span><strong id="stat-total-orders">—</strong></article>
-        <article class="admin-stat-card"><span>Orders needing action</span><strong id="stat-open-orders">—</strong><small>Placed · payment pending · requests · confirmed · production · dispatch · other</small></article>
-        <article class="admin-stat-card"><span>Delivered</span><strong id="stat-delivered-orders">—</strong></article>
-        <article class="admin-stat-card"><span>Order value</span><strong id="stat-order-value">—</strong></article>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       SIGN-IN SCREEN
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="admin-signin-screen" class="admin-signin-screen" hidden>
+    <div class="admin-signin-card">
+      <div class="admin-signin-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure Admin Portal
       </div>
-      <article class="admin-panel">
-        <div class="admin-analytics-head"><div><h2>Sales &amp; order analytics</h2><p>Track order volume and status mix for the selected dates.</p></div>
-          <div class="admin-date-tools"><label>From<input id="orders-date-from" type="date" aria-label="Filter orders from date"/></label><label>To<input id="orders-date-to" type="date" aria-label="Filter orders to date"/></label><button id="clear-order-dates" type="button">Clear dates</button></div>
+      <div class="admin-signin-logo-wrap">
+        <img class="admin-signin-logo" src="logo_creativesouls.jpg" alt="Creative Souls 3D" />
+      </div>
+      <h1>Creative Souls 3D</h1>
+      <p class="signin-subtitle">Executive Store Operations &amp; Order Management</p>
+      
+      <p id="admin-identity">Sign in with the authorized administrator account.</p>
+
+      <button id="admin-login" type="button">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+          <path fill="#34A853" d="M6.3 14.7l7 5.1C15.2 17.2 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/>
+          <path fill="#FBBC05" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.7-5.5C29.9 36.8 27.1 38 24 38c-6 0-11.1-3.9-12.9-9.4l-7 5.4C7.7 41.3 15.3 46 24 46z"/>
+          <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.4-2.3 4.5-4.3 6l6.7 5.5C41.8 36.8 45 31 45 24c0-1.3-.2-2.7-.5-4z"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <p id="admin-status-signin" class="admin-status"></p>
+
+      <div class="admin-signin-notice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span><strong>Access Control:</strong> Administrative write permissions are guarded by Firestore Security Rules. Unauthorized sign-ins will be refused.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ADMIN SHELL
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="admin-shell" id="admin-shell" hidden>
+
+    <div class="admin-sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ── MOBILE BOTTOM NAV ────────────────────────────────────── -->
+    <nav class="admin-bottom-nav" aria-label="Mobile navigation">
+      <button class="admin-bottom-nav-item active" data-section="dashboard" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Home
+      </button>
+      <button class="admin-bottom-nav-item" data-section="orders" aria-label="Orders">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Orders
+      </button>
+      <button class="admin-bottom-nav-item" data-section="attention" aria-label="Needs Attention">
+        <span class="bnav-badge" id="bnav-attention-badge" hidden>0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Alerts
+      </button>
+      <button class="admin-bottom-nav-item" data-section="products" aria-label="Products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Products
+      </button>
+      <button class="admin-bottom-nav-item" data-section="analytics" aria-label="Analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </button>
+    </nav>
+
+    <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <button class="admin-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">‹</button>
+
+      <!-- Brand -->
+      <div class="admin-sidebar-brand">
+        <img src="logo_creativesouls.jpg" alt="Logo" />
+        <div class="admin-brand-text">
+          <strong>Creative Souls 3D</strong>
+          <span class="admin-brand-badge">Admin Suite</span>
         </div>
-        <div class="admin-date-preset" role="group" aria-label="Quick date ranges"><span class="admin-helper">Quick range:</span><button type="button" data-date-preset="7">7 days</button><button type="button" data-date-preset="30">30 days</button><button type="button" data-date-preset="90">90 days</button><button type="button" data-date-preset="all" aria-pressed="true">All dates</button></div>
-        <div class="admin-chart-grid">
-          <section class="admin-chart-card" aria-labelledby="orders-trend-heading"><h3 id="orders-trend-heading">Orders over time</h3><p id="orders-trend-caption">Order volume · all dates</p><div id="orders-trend-chart" class="admin-chart" role="group" aria-label="Order volume chart"></div></section>
-          <section class="admin-chart-card" aria-labelledby="orders-status-heading"><h3 id="orders-status-heading">Orders by status</h3><p>Grouped into the dashboard status categories</p><div id="orders-status-chart" class="admin-chart" role="group" aria-label="Orders by status chart"></div></section>
-          <section class="admin-chart-card" aria-labelledby="orders-status-pie-heading"><h3 id="orders-status-pie-heading">Order status share</h3><p>Share of orders by status</p><div id="orders-status-pie-chart" class="admin-chart" role="group" aria-label="Pie chart showing the share of orders by status"></div></section>
-          <section class="admin-chart-card" aria-labelledby="revenue-trend-heading"><h3 id="revenue-trend-heading">Revenue over time</h3><p id="revenue-trend-caption">Revenue from orders in the selected dates</p><div id="revenue-trend-chart" class="admin-chart" role="group" aria-label="Revenue over time chart"></div></section>
-          <section class="admin-chart-card" aria-labelledby="top-products-heading"><h3 id="top-products-heading">Top products</h3><p>Units ordered in the selected dates</p><div id="top-products-chart" class="admin-chart" role="group" aria-label="Top products by units ordered chart"></div></section>
-          <section class="admin-chart-card" aria-labelledby="payment-methods-heading"><h3 id="payment-methods-heading">Payment methods</h3><p>Order count by recorded payment method</p><div id="payment-methods-chart" class="admin-chart" role="group" aria-label="Payment methods chart"></div></section>
+        <button class="admin-sidebar-mobile-close" id="sidebar-mobile-close" aria-label="Close navigation">✕</button>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="admin-nav" role="navigation" aria-label="Admin navigation">
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Overview</div>
+          <button class="admin-nav-item active" data-section="dashboard" data-tip="Dashboard">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </span>
+            <span class="admin-nav-label">Dashboard</span>
+          </button>
         </div>
-      </article>
-      <article class="admin-panel"><details class="admin-attention-details"><summary><span class="admin-attention-heading"><strong>Needs attention</strong><small>Open orders older than three days or missing delivery contact details.</small></span><span id="admin-attention-count" class="admin-attention-count">0</span></summary><div id="admin-attention-queue" class="admin-attention-list" aria-live="polite"></div></details></article>
-      <article class="admin-panel">
-        <div class="admin-section-head"><div><h2>Orders</h2><p>Search, filter, review, and manage customer orders.</p></div>
-          <div class="admin-order-tools"><input id="order-search" type="search" aria-label="Search orders" placeholder="Search order, customer, email, phone…"/><details id="order-status-filter" class="admin-status-filter"><summary id="order-status-filter-label">All statuses</summary><div id="order-status-options" class="admin-status-options"></div></details><details id="ignored-customers-control" class="admin-ignored-customers"><summary>Ignored <span id="ignored-customer-count">0</span></summary><div id="ignored-customer-list" class="admin-ignored-customer-list"></div></details><button id="export-orders" type="button">Export CSV</button></div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Operations</div>
+          <button class="admin-nav-item" data-section="orders" data-tip="All Orders">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            </span>
+            <span class="admin-nav-label">All Orders</span>
+          </button>
+          <button class="admin-nav-item" data-section="attention" data-tip="Needs Attention">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <span class="admin-nav-label">Needs Attention</span>
+            <span class="nav-badge" id="nav-attention-badge">0</span>
+          </button>
         </div>
-        <div class="admin-toolbar"><button id="refresh-orders" type="button">Refresh orders</button><button id="create-order" type="button">Create order</button></div>
-        <div class="admin-bulk-toolbar"><span id="bulk-selection-label" aria-live="polite">No orders selected</span><button id="select-all-matching-orders" class="admin-secondary-action" type="button">Select all matching</button><button id="clear-order-selection" class="admin-secondary-action" type="button" disabled>Clear selection</button><div class="admin-bulk-status"><select id="bulk-order-status" aria-label="New status for selected orders"><option value="">Change status to…</option><option>Order Placed</option><option>Payment Pending</option><option>Request Received</option><option>Confirmed</option><option>In Production</option><option>Ready for Dispatch</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option><option>Rejected</option></select><button id="apply-bulk-status" class="admin-status-action" type="button" disabled>Update selected</button></div><button id="delete-selected-orders" type="button" disabled>Delete selected (0)</button></div>
-        <p id="order-count-label" aria-live="polite">Loading orders…</p>
-        <p id="chart-filter-notice" class="admin-chart-filter-notice" hidden><span>Chart filter: <strong id="chart-filter-label"></strong></span><button id="clear-chart-filter" type="button">Clear chart filter</button></p>
-        <div id="orders-list"></div>
-        <div class="admin-pagination" aria-label="Order table pagination"><span id="orders-page-info">Page 1</span><div class="admin-pagination-controls"><label for="orders-page-size">Rows</label><select id="orders-page-size" aria-label="Rows per page"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select><button id="orders-previous-page" type="button">Previous</button><button id="orders-next-page" type="button">Next</button></div></div>
-      </article>
-      <article class="admin-panel"><h2>Firestore data explorer</h2><p>Enter a collection path to browse documents, including nested paths such as <code>products/PRODUCT_ID/reviews</code>. Firestore’s browser SDK does not provide a way to automatically enumerate every collection name.</p><div class="admin-toolbar"><input id="collection-name" value="products" aria-label="Firestore collection path" placeholder="Collection path"/><button id="browse-collection" type="button">Browse</button><button id="create-document" type="button">Create document</button></div><div id="collection-list"></div></article>
-    </section>
-  </main>
-  <dialog id="document-editor" class="admin-dialog" aria-labelledby="editor-title"><div class="admin-dialog-head"><div><p class="eyebrow" id="editor-eyebrow">RECORD DETAILS</p><h2 id="editor-title">Edit details</h2></div><button type="button" id="editor-close" aria-label="Close">×</button></div><p id="editor-location" class="admin-helper admin-editor-location"></p><p id="editor-intro" class="admin-helper admin-editor-intro">Update the labeled fields below. Changes are saved to this Firestore document.</p><div id="order-item-builder" class="order-item-builder" hidden><div class="order-item-builder-heading"><div><h3>Products in this order</h3><p>Add catalog products and adjust their quantity or order price.</p></div></div><div class="order-product-picker"><label for="order-product-select">Product</label><select id="order-product-select"><option value="">Choose a product</option></select><button type="button" id="add-order-product">Add product</button></div><div id="order-item-rows" class="order-item-rows"></div><strong id="order-item-subtotal" class="order-item-subtotal">Items subtotal: ₹0</strong></div><div id="editor-fields" class="admin-field-grid"></div><div class="admin-toolbar admin-add-field"><input id="new-field-name" aria-label="New field name" placeholder="New field (e.g. productName)"/><select id="new-field-type" aria-label="New field type"><option value="text">Text</option><option value="number">Number</option><option value="boolean">Yes / No</option></select><button type="button" id="add-editor-field">Add field</button></div><details id="advanced-editor" class="admin-advanced"><summary id="advanced-editor-summary">Advanced: edit full document data</summary><p id="advanced-editor-help" class="admin-helper">Use this for nested data such as order items or complex product options.</p><textarea id="document-json" spellcheck="false" aria-label="Advanced document data"></textarea></details><p id="editor-error" class="admin-status" role="alert"></p><div class="admin-actions"><button type="button" id="editor-save">Save changes</button><button type="button" id="editor-cancel">Cancel</button></div></dialog>
-  <dialog id="order-detail-dialog" class="admin-order-detail" aria-labelledby="order-detail-title"><div class="admin-dialog-head"><div><p class="eyebrow">ORDER DETAILS</p><h2 id="order-detail-title"></h2></div><button type="button" id="order-detail-close" aria-label="Close order details">×</button></div><div id="order-detail-content"></div><div class="admin-actions"><button type="button" id="order-detail-edit">Edit this order</button><button type="button" id="order-detail-done">Done</button></div></dialog>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script><script src="navigation.js"></script><script src="admin.js"></script>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Reports &amp; Data</div>
+          <button class="admin-nav-item" data-section="analytics" data-tip="Sales Analytics">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            <span class="admin-nav-label">Sales Analytics</span>
+          </button>
+          <button class="admin-nav-item" data-section="explorer" data-tip="Data Explorer">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </span>
+            <span class="admin-nav-label">Data Explorer</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-divider"></div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Catalog</div>
+          <button class="admin-nav-item" data-section="products" data-tip="Product Catalog">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </span>
+            <span class="admin-nav-label">Products Catalog</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-divider"></div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Storefront</div>
+          <button class="admin-nav-item" onclick="window.open('index.html', '_blank')" data-tip="Live Storefront">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </span>
+            <span class="admin-nav-label">Live Store ↗</span>
+          </button>
+        </div>
+
+      </nav>
+
+      <!-- Footer & User -->
+      <div class="admin-sidebar-footer">
+        <div class="admin-user-pill">
+          <div class="admin-user-avatar" id="user-avatar-initials">A</div>
+          <div class="admin-user-info">
+            <strong id="user-email-display">Administrator</strong>
+            <span>Active Admin</span>
+          </div>
+        </div>
+        <button type="button" class="admin-sidebar-logout" id="admin-logout-btn" title="Sign out of Admin Dashboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ──────────────────────────────────────────────────── -->
+    <div class="admin-main">
+
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-topbar-hamburger" id="topbar-hamburger" aria-label="Open navigation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="admin-topbar-breadcrumb">
+            <h2 id="topbar-section-title">Dashboard</h2>
+            <span id="topbar-section-subtitle">Store overview &amp; live performance</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div class="admin-status-pill">
+            <span class="admin-status-dot"></span>
+            <span id="admin-status">Connected</span>
+          </div>
+          <button type="button" class="admin-topbar-btn" id="topbar-refresh-btn" onclick="document.getElementById('refresh-orders').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Refresh</span>
+          </button>
+          <button type="button" class="admin-topbar-btn" id="topbar-new-product-btn" onclick="document.getElementById('create-product').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Product</span>
+          </button>
+          <button type="button" class="admin-topbar-btn primary" id="topbar-new-order-btn" onclick="document.getElementById('create-order').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Order</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="admin-content">
+
+        <!-- ══════════════════════════════════════════════════════════
+             DASHBOARD SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section active" id="section-dashboard">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Real-Time Operations</p>
+              <h1>Executive Dashboard</h1>
+              <p class="sub">Key metrics, store health, and operational highlights.</p>
+            </div>
+          </div>
+
+          <!-- Stat Cards -->
+          <div class="admin-stats-grid" aria-label="Order overview">
+            <article class="admin-stat-card blue">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                </div>
+                <span class="admin-stat-tag">ALL TIME</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Total Orders</div>
+                <div class="admin-stat-value" id="stat-total-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Cumulative recorded customer orders</div>
+            </article>
+
+            <article class="admin-stat-card amber">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <span class="admin-stat-tag">ATTENTION</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Needs Action</div>
+                <div class="admin-stat-value" id="stat-open-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Pending production, dispatch &amp; approval</div>
+            </article>
+
+            <article class="admin-stat-card green">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <span class="admin-stat-tag">FULFILLED</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Delivered</div>
+                <div class="admin-stat-value" id="stat-delivered-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Successfully fulfilled to customers</div>
+            </article>
+
+            <article class="admin-stat-card purple">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                </div>
+                <span class="admin-stat-tag">REVENUE</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Gross Order Value</div>
+                <div class="admin-stat-value" id="stat-order-value">—</div>
+              </div>
+              <div class="admin-stat-sub">Combined value of placed orders</div>
+            </article>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="admin-action-grid">
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('orders')" onkeydown="if(event.key==='Enter')navigateTo('orders')">
+              <div class="admin-action-card-icon" style="background:#eff6ff; color:#2563eb">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+              </div>
+              <h3>Order Fulfillment</h3>
+              <p>Filter, edit, update fulfillment status, and generate invoices</p>
+              <div class="admin-action-card-arrow">Open orders table →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('analytics')" onkeydown="if(event.key==='Enter')navigateTo('analytics')">
+              <div class="admin-action-card-icon" style="background:#ecfdf5; color:#059669">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <h3>Sales Analytics</h3>
+              <p>Explore revenue trends, top-selling models, and status shares</p>
+              <div class="admin-action-card-arrow">View analytics →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('attention')" onkeydown="if(event.key==='Enter')navigateTo('attention')">
+              <div class="admin-action-card-icon" style="background:#fffbeb; color:#d97706">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <h3>Needs Attention</h3>
+              <p>Resolve orders open 3+ days or missing delivery contact info</p>
+              <div class="admin-action-card-arrow">Triage queue →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('explorer')" onkeydown="if(event.key==='Enter')navigateTo('explorer')">
+              <div class="admin-action-card-icon" style="background:#f5f3ff; color:#7c3aed">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <h3>Database Explorer</h3>
+              <p>Directly browse, query, and edit Firestore collections &amp; docs</p>
+              <div class="admin-action-card-arrow">Open database →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="document.getElementById('create-product').click()" onkeydown="if(event.key==='Enter')document.getElementById('create-product').click()">
+              <div class="admin-action-card-icon" style="background:#fdf2f8; color:#db2777">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <h3>Create Product</h3>
+              <p>Add a new catalog product with pricing, images, variants, and tags</p>
+              <div class="admin-action-card-arrow">New product →</div>
+            </div>
+          </div>
+          <!-- Recent Orders Card -->
+          <article class="admin-panel" style="margin-top: 18px;">
+            <div class="admin-panel-hdr">
+              <div>
+                <div class="admin-panel-title">Recent Customer Orders</div>
+                <div class="admin-panel-sub">Latest customer orders requiring production and delivery.</div>
+              </div>
+              <button type="button" class="btn-secondary" onclick="navigateTo('orders')">View All Orders →</button>
+            </div>
+            <div id="dashboard-recent-orders" class="admin-dashboard-recent-orders"></div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ANALYTICS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-analytics">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Performance &amp; Revenue</p>
+              <h1>Sales Analytics</h1>
+              <p class="sub">Filter orders by date to examine volume, revenue, and product trends.</p>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+            <div class="admin-analytics-head">
+              <div>
+                <div class="admin-panel-title">Revenue &amp; Volume Trends</div>
+                <div class="admin-panel-sub">Select a preset or custom date range to update all charts.</div>
+              </div>
+              <div class="admin-date-tools">
+                <label>From<input id="orders-date-from" type="date" aria-label="Filter orders from date"/></label>
+                <label>To<input id="orders-date-to" type="date" aria-label="Filter orders to date"/></label>
+                <button id="clear-order-dates" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="admin-date-preset" role="group" aria-label="Quick date ranges">
+              <span class="admin-helper">Range:</span>
+              <button type="button" data-date-preset="7">7 Days</button>
+              <button type="button" data-date-preset="30">30 Days</button>
+              <button type="button" data-date-preset="90">90 Days</button>
+              <button type="button" data-date-preset="all" aria-pressed="true">All Time</button>
+            </div>
+
+            <div class="admin-chart-grid">
+              <section class="admin-chart-card" aria-labelledby="orders-trend-heading">
+                <h3 id="orders-trend-heading">Orders Over Time</h3>
+                <p id="orders-trend-caption">Order volume · all dates</p>
+                <div id="orders-trend-chart" class="admin-chart" role="group" aria-label="Order volume chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="orders-status-heading">
+                <h3 id="orders-status-heading">Orders by Status</h3>
+                <p>Categorized lifecycle distribution</p>
+                <div id="orders-status-chart" class="admin-chart" role="group" aria-label="Orders by status chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="orders-status-pie-heading">
+                <h3 id="orders-status-pie-heading">Order Status Share</h3>
+                <p>Percentage share of active and fulfilled orders</p>
+                <div id="orders-status-pie-chart" class="admin-chart" role="group" aria-label="Status share pie chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="revenue-trend-heading">
+                <h3 id="revenue-trend-heading">Revenue Over Time</h3>
+                <p id="revenue-trend-caption">Calculated gross earnings in the selected window</p>
+                <div id="revenue-trend-chart" class="admin-chart" role="group" aria-label="Revenue chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="top-products-heading">
+                <h3 id="top-products-heading">Top Products</h3>
+                <p>Catalog units ordered in the selected timeframe</p>
+                <div id="top-products-chart" class="admin-chart" role="group" aria-label="Top products chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="payment-methods-heading">
+                <h3 id="payment-methods-heading">Payment Modes</h3>
+                <p>Breakdown of recorded customer payment types</p>
+                <div id="payment-methods-chart" class="admin-chart" role="group" aria-label="Payment modes chart"></div>
+              </section>
+            </div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ATTENTION SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-attention">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Action Required</p>
+              <h1>Needs Attention</h1>
+              <p class="sub">Triage overdue orders or orders missing essential customer delivery details.</p>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <details class="admin-attention-details" open>
+              <summary>
+                <span class="admin-attention-heading">
+                  <strong>Open orders requiring immediate review</strong>
+                  <small>Flagged orders open for 3+ business days or lacking phone/address.</small>
+                </span>
+                <span id="admin-attention-count" class="admin-attention-count">0</span>
+              </summary>
+              <div id="admin-attention-queue" class="admin-attention-list" aria-live="polite"></div>
+            </details>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ORDERS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-orders">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Store Management</p>
+              <h1>All Customer Orders</h1>
+              <p class="sub">Search, inspect, update status, issue invoices, and manage dispatch.</p>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+                      <!-- Quick Status Filter Pills -->
+          <div class="admin-quick-filters" id="orders-quick-filters" role="group" aria-label="Quick status filters">
+            <button type="button" class="admin-filter-pill active" data-quick-status="all">All Orders</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="action">⚠️ Needs Action</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="In Production">⚙️ In Production</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Ready for Dispatch">📦 Ready for Dispatch</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Shipped">🚚 Shipped</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Delivered">✅ Delivered</button>
+          </div>
+
+          <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="order-search" type="search" aria-label="Search orders" placeholder="Search by order ID, customer name, email, phone…"/>
+              </div>
+
+              <div class="admin-toolbar-actions">
+                <details id="order-status-filter" class="admin-status-filter">
+                  <summary id="order-status-filter-label">All Statuses</summary>
+                  <div id="order-status-options" class="admin-status-options"></div>
+                </details>
+
+                <details id="ignored-customers-control" class="admin-ignored-customers">
+                  <summary>Ignored (<span id="ignored-customer-count">0</span>)</summary>
+                  <div id="ignored-customer-list" class="admin-ignored-customer-list"></div>
+                </details>
+
+                <button id="export-orders" type="button" class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Export CSV
+                </button>
+
+                <button id="refresh-orders" type="button" class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  Refresh
+                </button>
+
+                <button id="create-order" type="button" class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  + Create Order
+                </button>
+              </div>
+            </div>
+
+            <!-- Bulk Toolbar -->
+            <div class="admin-bulk-toolbar">
+              <span id="bulk-selection-label" aria-live="polite">No orders selected</span>
+              <button id="select-all-matching-orders" class="admin-secondary-action" type="button">Select all matching</button>
+              <button id="clear-order-selection" class="admin-secondary-action" type="button" disabled>Clear selection</button>
+              <div class="admin-bulk-status">
+                <input type="text" id="bulk-order-status" aria-label="New status for selected orders" placeholder="Type new status…" />
+                <button id="apply-bulk-status" class="admin-status-action" type="button" disabled>Update status</button>
+              </div>
+              <button id="delete-selected-orders" type="button" disabled>Delete (0)</button>
+            </div>
+
+            <p id="order-count-label" aria-live="polite">Loading orders…</p>
+            <p id="chart-filter-notice" class="admin-chart-filter-notice" hidden>
+              <span>Chart filter active: <strong id="chart-filter-label"></strong></span>
+              <button id="clear-chart-filter" type="button">Clear filter</button>
+            </p>
+
+            <!-- Table -->
+            <div class="admin-table-scroll-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Swipe horizontally to view all order details and actions</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+            <div id="orders-list"></div>
+
+            <!-- Pagination -->
+            <div class="admin-pagination" aria-label="Order table pagination">
+              <span id="orders-page-info">Page 1</span>
+              <div class="admin-pagination-controls">
+                <label for="orders-page-size" style="font-weight:600;font-size:0.8rem">Rows:</label>
+                <select id="orders-page-size" aria-label="Rows per page">
+                  <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                </select>
+                <button id="orders-previous-page" type="button">← Previous</button>
+                <button id="orders-next-page" type="button">Next →</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             PRODUCTS CATALOG SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-products">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Store Management</p>
+              <h1>Products Catalog</h1>
+              <p class="sub">Browse, manage, and export your full product catalog as a PDF.</p>
+            </div>
+          </div>
+
+          <!-- Catalog Stats Strip -->
+          <div class="catalog-stats-strip" id="catalog-stats-strip" aria-label="Catalog overview">
+            <div class="catalog-stat-pill">
+              <span>Total Products</span>
+              <strong id="catalog-stat-total">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>In Stock</span>
+              <strong id="catalog-stat-instock">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Made to Order</span>
+              <strong id="catalog-stat-mto">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Out of Stock</span>
+              <strong id="catalog-stat-oos">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Customizable</span>
+              <strong id="catalog-stat-custom">—</strong>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+            <!-- Toolbar -->
+            <div class="catalog-toolbar-row">
+              <div class="catalog-toolbar-left">
+                <div class="admin-search-wrap catalog-search-wrap">
+                  <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input id="catalog-search" type="search" aria-label="Search products" placeholder="Search products by name, category, tags…"/>
+                </div>
+                <select id="catalog-category-filter" aria-label="Filter by category" class="catalog-filter-select">
+                  <option value="">All Categories</option>
+                  <option>Keychains</option>
+                  <option>Home Decor</option>
+                  <option>Idols</option>
+                  <option>Desk Accessories</option>
+                  <option>Gifts</option>
+                  <option>Car Accessories</option>
+                  <option>Custom Products</option>
+                  <option>Other</option>
+                </select>
+                <select id="catalog-availability-filter" aria-label="Filter by availability" class="catalog-filter-select">
+                  <option value="">All Availability</option>
+                  <option>In Stock</option>
+                  <option>Made to Order</option>
+                  <option>Out of Stock</option>
+                </select>
+              </div>
+              <div class="catalog-toolbar-actions">
+                <button type="button" class="btn-primary" onclick="document.getElementById('create-product').click()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  + Add Product
+                </button>
+                <button id="catalog-refresh" type="button" class="btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  Refresh
+                </button>
+                <button id="catalog-select-all" type="button" class="btn-secondary">Select All</button>
+                <button id="catalog-deselect-all" type="button" class="btn-secondary" disabled>Deselect All</button>
+                <button id="catalog-export-pdf" type="button">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                  Export Catalog PDF
+                </button>
+              </div>
+            </div>
+
+            <p id="catalog-count-label" class="catalog-count-label" aria-live="polite">Loading products…</p>
+
+            <!-- Product Grid -->
+            <div id="catalog-product-grid" class="catalog-product-grid" aria-live="polite"></div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             EXPLORER SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-explorer">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Database Administration</p>
+              <h1>Firestore Data Explorer</h1>
+              <p class="sub">Inspect, create, update, and manage documents across all collections.</p>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <div class="admin-explorer-presets">
+              <span>Quick collections:</span>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='orders'; byId('browse-collection').click()">orders</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='products'; byId('browse-collection').click()">products</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='service_requests'; byId('browse-collection').click()">service_requests</button>
+            </div>
+
+            <div class="admin-toolbar admin-explorer-toolbar">
+              <input id="collection-name" value="products" aria-label="Firestore collection path" placeholder="Collection path (e.g. products, orders)"/>
+              <button id="browse-collection" type="button">Browse Collection</button>
+              <button id="create-document" type="button">+ New Document</button>
+              <button id="create-product" type="button">+ New Product</button>
+            </div>
+            <div id="collection-list"></div>
+          </article>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       MODALS & DIALOGS
+  ════════════════════════════════════════════════════════════════ -->
+  <dialog id="document-editor" class="admin-dialog" aria-labelledby="editor-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow" id="editor-eyebrow">Record Details</p>
+        <h2 id="editor-title">Edit Details</h2>
+      </div>
+      <button type="button" id="editor-close" aria-label="Close dialog">✕</button>
+    </div>
+    
+    <div class="admin-modal-body">
+      <p id="editor-location" class="admin-helper admin-editor-location" style="font-family:var(--font-mono); color:var(--text-3);"></p>
+      <p id="editor-intro" class="admin-helper admin-editor-intro" style="margin:4px 0 12px; color:var(--text-2); font-size:0.86rem;"></p>
+      
+      <div id="order-item-builder" class="order-item-builder" hidden>
+        <div class="order-item-builder-heading">
+          <div><h3>Products in this Order</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Select catalog products and adjust quantities or prices.</p></div>
+        </div>
+        <div class="order-product-picker">
+          <label for="order-product-select">Select Product
+            <select id="order-product-select"><option value="">Choose a catalog product…</option></select>
+          </label>
+          <button type="button" id="add-order-product">+ Add Product</button>
+        </div>
+        <div id="order-item-rows" class="order-item-rows"></div>
+        <strong id="order-item-subtotal" class="order-item-subtotal">Items subtotal: ₹0</strong>
+      </div>
+
+      <div id="product-variant-builder" class="order-item-builder" hidden>
+        <div class="order-item-builder-heading">
+          <div><h3>Product Variants</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Optionally add colour and size choices. Each choice can carry an extra price on top of the base price.</p></div>
+        </div>
+        <div class="product-variant-group">
+          <div class="product-variant-head">
+            <strong>Colour options</strong>
+            <button type="button" id="add-product-colour" class="btn-secondary">+ Add Colour</button>
+          </div>
+          <div id="product-colour-rows" class="product-variant-rows"></div>
+        </div>
+        <div class="product-variant-group">
+          <div class="product-variant-head">
+            <strong>Size options</strong>
+            <button type="button" id="add-product-size" class="btn-secondary">+ Add Size</button>
+          </div>
+          <div id="product-size-rows" class="product-variant-rows"></div>
+        </div>
+      </div>
+
+      <div id="editor-fields" class="admin-field-grid"></div>
+
+      <div class="admin-toolbar admin-add-field">
+        <input id="new-field-name" aria-label="New field name" placeholder="New field name (e.g. trackingNumber)"/>
+        <select id="new-field-type" aria-label="New field type">
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+          <option value="boolean">Yes / No</option>
+        </select>
+        <button type="button" id="add-editor-field">Add Field</button>
+      </div>
+
+      <details id="advanced-editor" class="admin-advanced">
+        <summary id="advanced-editor-summary">Advanced: Edit Raw Document Data</summary>
+        <p id="advanced-editor-help" class="admin-helper" style="margin-top:4px;">Edit nested data structures or line items as JSON.</p>
+        <textarea id="document-json" spellcheck="false" aria-label="Advanced document data"></textarea>
+      </details>
+
+      <p id="editor-error" class="admin-status" role="alert"></p>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="editor-duplicate" class="btn-secondary" hidden>Duplicate</button>
+      <button type="button" id="editor-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="editor-save">Save Changes</button>
+    </div>
+  </dialog>
+
+  <!-- Order Detail Dialog -->
+  <dialog id="order-detail-dialog" class="admin-order-detail" aria-labelledby="order-detail-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Order Summary</p>
+        <h2 id="order-detail-title">Order Information</h2>
+      </div>
+      <button type="button" id="order-detail-close" aria-label="Close order details">✕</button>
+    </div>
+    
+    <div id="order-detail-content"></div>
+
+    <div class="admin-actions">
+      <button type="button" id="order-detail-ignore" class="btn-secondary btn-ignore">Ignore Customer</button>
+      <button type="button" id="order-detail-duplicate" class="btn-secondary">Duplicate Order</button>
+      <button type="button" id="order-detail-invoice" class="btn-secondary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        Download Invoice
+      </button>
+      <button type="button" id="order-detail-edit">Edit This Order</button>
+      <button type="button" id="order-detail-done" class="btn-secondary">Done</button>
+    </div>
+  </dialog>
+
+  <!-- Catalog PDF Export Dialog -->
+  <dialog id="catalog-pdf-dialog" class="admin-dialog" aria-labelledby="pdf-dialog-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Catalog Export</p>
+        <h2 id="pdf-dialog-title">Export Product Catalog PDF</h2>
+      </div>
+      <button type="button" id="pdf-dialog-close" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="admin-modal-body">
+      <!-- Filter info -->
+      <div class="pdf-filter-note" id="pdf-filter-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="pdf-filter-note-text">Exporting all <strong id="pdf-product-count">0</strong> products currently visible in the catalog.</span>
+      </div>
+
+      <!-- Layout -->
+      <p class="pdf-section-title">Layout Style</p>
+      <div class="pdf-layout-row" role="group" aria-label="PDF layout style">
+        <button type="button" class="pdf-layout-btn selected" data-layout="grid" id="layout-btn-grid">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Grid (2 per row)
+        </button>
+        <button type="button" class="pdf-layout-btn" data-layout="grid3" id="layout-btn-grid3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="5" height="7" rx="1"/><rect x="9.5" y="3" width="5" height="7" rx="1"/><rect x="17" y="3" width="5" height="7" rx="1"/><rect x="2" y="14" width="5" height="7" rx="1"/><rect x="9.5" y="14" width="5" height="7" rx="1"/><rect x="17" y="14" width="5" height="7" rx="1"/></svg>
+          Compact (3 per row)
+        </button>
+        <button type="button" class="pdf-layout-btn" data-layout="list" id="layout-btn-list">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Detailed List
+        </button>
+      </div>
+
+      <!-- Accent Colour -->
+      <p class="pdf-section-title">Accent Colour</p>
+      <div class="pdf-color-row" role="group" aria-label="Accent colour">
+        <div class="pdf-color-swatch active" data-color="#f59e0b" id="color-amber">
+          <div class="pdf-color-circle" style="background:#f59e0b;"></div>
+          <span>Amber</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#3b82f6" id="color-blue">
+          <div class="pdf-color-circle" style="background:#3b82f6;"></div>
+          <span>Blue</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#10b981" id="color-green">
+          <div class="pdf-color-circle" style="background:#10b981;"></div>
+          <span>Green</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#8b5cf6" id="color-violet">
+          <div class="pdf-color-circle" style="background:#8b5cf6;"></div>
+          <span>Violet</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#ef4444" id="color-red">
+          <div class="pdf-color-circle" style="background:#ef4444;"></div>
+          <span>Red</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#0f172a" id="color-dark">
+          <div class="pdf-color-circle" style="background:#0f172a;"></div>
+          <span>Dark</span>
+        </div>
+      </div>
+
+      <!-- Content Options -->
+      <p class="pdf-section-title">Content to Include</p>
+      <div class="pdf-options-grid">
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-cover" checked>
+          <div class="pdf-option-text">
+            <strong>Cover Page</strong>
+            <span>Brand header with catalog title, date, and product count</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-image" checked>
+          <div class="pdf-option-text">
+            <strong>Product Images</strong>
+            <span>Load and display product photos in the PDF</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-price" checked>
+          <div class="pdf-option-text">
+            <strong>Price</strong>
+            <span>Show selling price (and original price if discounted)</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-description">
+          <div class="pdf-option-text">
+            <strong>Description</strong>
+            <span>Include the product description text</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-category" checked>
+          <div class="pdf-option-text">
+            <strong>Category / Best For</strong>
+            <span>Show product category and target audience tags</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-availability" checked>
+          <div class="pdf-option-text">
+            <strong>Availability Status</strong>
+            <span>In Stock / Made to Order / Out of Stock badge</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-variants" checked>
+          <div class="pdf-option-text">
+            <strong>Colour &amp; Size Variants</strong>
+            <span>List available colour options and sizes</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-customizable">
+          <div class="pdf-option-text">
+            <strong>Customization Badge</strong>
+            <span>Show "Personalizable" label on applicable products</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-tags">
+          <div class="pdf-option-text">
+            <strong>Search Tags</strong>
+            <span>Display the comma-separated keyword tags</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-product-id">
+          <div class="pdf-option-text">
+            <strong>Product ID / SKU</strong>
+            <span>Print the internal Firestore document ID</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-groupby-category" checked>
+          <div class="pdf-option-text">
+            <strong>Group by Category</strong>
+            <span>Organize products under category headings</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-page-numbers" checked>
+          <div class="pdf-option-text">
+            <strong>Page Numbers</strong>
+            <span>Print page numbers in the footer of each page</span>
+          </div>
+        </label>
+      </div>
+
+      <!-- Summary -->
+      <div class="pdf-preview-info">
+        <span>Ready to export <strong id="pdf-export-count">0</strong> products</span>
+        <span style="color:var(--text-3); font-size:0.78rem;">Opens browser print dialog — save as PDF from there</span>
+      </div>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="pdf-dialog-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="pdf-generate-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Generate &amp; Print PDF
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
+  <div id="admin-toast-container" class="admin-toast-container"></div>
+
+  <!-- Compatibility shim: admin.js references #admin-tools to show/hide -->
+  <div id="admin-tools" hidden style="display:none!important"></div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="navigation.js"></script>
+
+  <!-- Toast Helper -->
+  <script>
+    window.showAdminToast = function(message, type = 'info') {
+      const container = document.getElementById('admin-toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `admin-toast ${type}`;
+      toast.style.cursor = 'pointer';
+      toast.innerHTML = `<span style="flex:1">${message}</span><button type="button" aria-label="Close" style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 0 0 8px;line-height:1;">✕</button>`;
+      container.appendChild(toast);
+      
+      const removeToast = () => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 250);
+      };
+      toast.addEventListener('click', removeToast);
+      setTimeout(removeToast, 3500);
+    };
+
+    // Auto-dismiss dropdowns when clicking outside
+    document.addEventListener('click', (event) => {
+      document.querySelectorAll('.admin-status-filter[open], .admin-ignored-customers[open]').forEach(details => {
+        if (!details.contains(event.target)) {
+          details.removeAttribute('open');
+        }
+      });
+    });
+
+    // Auto-dismiss dialogs when clicking on backdrop
+    ['document-editor', 'order-detail-dialog'].forEach(id => {
+      const dlg = document.getElementById(id);
+      if (!dlg) return;
+      dlg.addEventListener('click', (event) => {
+        const rect = dlg.getBoundingClientRect();
+        const clickedOutside = (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        );
+        if (clickedOutside) {
+          dlg.close();
+        }
+      });
+    });
+
+    // Escape key dismisses all open popups, dropdowns, dialogs, and mobile drawer
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.admin-status-filter[open], .admin-ignored-customers[open]').forEach(details => {
+          details.removeAttribute('open');
+        });
+        document.querySelectorAll('dialog[open]').forEach(dlg => dlg.close());
+        document.getElementById('admin-sidebar')?.classList.remove('mobile-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('visible');
+        document.body.classList.remove('drawer-open');
+      }
+    });
+  </script>
+
+  <!-- Sidebar & section navigation -->
+  <script>
+    (function () {
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      const hamburger = document.getElementById('topbar-hamburger');
+      const mobileClose = document.getElementById('sidebar-mobile-close');
+
+      const openDrawer = () => {
+        sidebar?.classList.add('mobile-open');
+        overlay?.classList.add('visible');
+        document.body.classList.add('drawer-open');
+      };
+
+      const closeDrawer = () => {
+        sidebar?.classList.remove('mobile-open');
+        overlay?.classList.remove('visible');
+        document.body.classList.remove('drawer-open');
+      };
+
+      // Restore collapse state
+      if (localStorage.getItem('adminSidebarCollapsed') === '1') sidebar?.classList.add('collapsed');
+
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.toggle('collapsed');
+        localStorage.setItem('adminSidebarCollapsed', sidebar?.classList.contains('collapsed') ? '1' : '0');
+      });
+
+      // Mobile drawer
+      hamburger?.addEventListener('click', () => {
+        if (sidebar?.classList.contains('mobile-open')) {
+          closeDrawer();
+        } else {
+          openDrawer();
+        }
+      });
+      mobileClose?.addEventListener('click', closeDrawer);
+      overlay?.addEventListener('click', closeDrawer);
+
+      const META = {
+        dashboard: { title: 'Dashboard',         sub: 'Store overview & live performance' },
+        analytics: { title: 'Sales Analytics',   sub: 'Revenue, volume & order trends' },
+        attention: { title: 'Needs Attention',   sub: 'Orders requiring immediate triage' },
+        orders:    { title: 'All Orders',         sub: 'Search, filter, update & dispatch orders' },
+        products:  { title: 'Products Catalog',  sub: 'Browse, manage & export your product catalog PDF' },
+        explorer:  { title: 'Data Explorer',     sub: 'Browse & edit Firestore collections' },
+      };
+
+      window.navigateTo = function (id) {
+        document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+        const navBtn = document.querySelector(`.admin-nav-item[data-section="${id}"]`);
+        const section = document.getElementById(`section-${id}`);
+        if (navBtn) navBtn.classList.add('active');
+        if (section) section.classList.add('active');
+        const m = META[id] || { title: id, sub: '' };
+        document.getElementById('topbar-section-title').textContent = m.title;
+        document.getElementById('topbar-section-subtitle').textContent = m.sub;
+        closeDrawer();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+      });
+
+      // Sync bottom nav active state whenever navigateTo is called
+      const _origNavigateTo = window.navigateTo;
+      window.navigateTo = function (id) {
+        _origNavigateTo(id);
+        document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(b => {
+          b.classList.toggle('active', b.dataset.section === id);
+        });
+      };
+
+      // Wire bottom nav buttons
+      document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+      });
+
+      // Logout button
+      const handleLogout = () => {
+        if (!window.firebase?.auth) return;
+        firebase.auth().signOut().then(() => {
+          window.location.reload();
+        });
+      };
+      document.getElementById('admin-logout-btn')?.addEventListener('click', handleLogout);
+    })();
+  </script>
+
+  <script src="admin.js"></script>
+
+  <!-- Auth state bridge -->
+  <script>
+    (function () {
+      const signinScreen = document.getElementById('admin-signin-screen');
+      const shell = document.getElementById('admin-shell');
+      const statusEl = document.getElementById('admin-status');
+      const statusSignin = document.getElementById('admin-status-signin');
+
+      firebase.auth().onAuthStateChanged(function (user) {
+        const ADMIN_EMAIL = 'luvs2006@gmail.com';
+        const isAdmin = String(user?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+
+        if (isAdmin) {
+          signinScreen.hidden = true;
+          shell.hidden = false;
+          const emailEl = document.getElementById('user-email-display');
+          const avatarEl = document.getElementById('user-avatar-initials');
+          if (emailEl) emailEl.textContent = user.email;
+          if (avatarEl) avatarEl.textContent = (user.email || 'A').charAt(0).toUpperCase();
+        } else {
+          signinScreen.hidden = false;
+          shell.hidden = true;
+          // Mirror status text to sign-in screen
+          if (statusEl && statusSignin) {
+            const obs = new MutationObserver(() => { statusSignin.textContent = statusEl.textContent; });
+            obs.observe(statusEl, { childList: true, characterData: true, subtree: true });
+          }
+        }
+
+        // Sync attention badge in sidebar and bottom nav
+        const countEl = document.getElementById('admin-attention-count');
+        const badge = document.getElementById('nav-attention-badge');
+        const bnavBadge = document.getElementById('bnav-attention-badge');
+        const syncBadge = () => {
+          const n = parseInt(countEl?.textContent || '0', 10);
+          if (badge) badge.textContent = countEl.textContent;
+          if (bnavBadge) {
+            bnavBadge.textContent = n;
+            bnavBadge.hidden = n < 1;
+          }
+        };
+        if (countEl) {
+          syncBadge();
+          new MutationObserver(syncBadge).observe(countEl, { childList: true, characterData: true, subtree: true });
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
