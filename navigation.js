@@ -27,8 +27,9 @@ if (primaryNav) {
     </button>`;
 
   const loginButton = primaryNav.querySelector(".nav-login-btn");
-  const existingLoginButton = document.getElementById("login-btn");
-  if (existingLoginButton) loginButton.remove();
+  // The home page also has a #login-btn inside .user-info, which is hidden on
+  // tablets/phones. Keep this nav login button too; CSS hides it on desktop so
+  // only one login button is ever visible.
   loginButton.addEventListener("click", () => {
     if (!window.firebase?.auth) return;
     firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
@@ -74,6 +75,7 @@ if (accountPopup) {
       <a href="orders.html"><span class="account-popup-icon" aria-hidden="true">▤</span><span>My Orders</span><span class="account-popup-arrow" aria-hidden="true">›</span></a>
       <a href="admin.html" class="admin-dashboard-link" hidden><span class="account-popup-icon" aria-hidden="true">⚙</span><span>Admin Dashboard</span><span class="account-popup-arrow" aria-hidden="true">›</span></a>
       <a href="cart.html"><span class="account-popup-icon" aria-hidden="true">▣</span><span>Your Cart</span><span class="account-popup-arrow" aria-hidden="true">›</span></a>
+      <a href="track-order.html"><span class="account-popup-icon" aria-hidden="true">◉</span><span>Track Order</span><span class="account-popup-arrow" aria-hidden="true">›</span></a>
     </div>
     <button type="button" class="popup-logout-btn"><span aria-hidden="true">↪</span> Log out</button>`;
   const popupLogoutButton = accountPopup.querySelector(".popup-logout-btn");
@@ -99,10 +101,11 @@ function toggleAccountPopup(forceOpen) {
   if (!accountPopup) return;
   const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : accountPopup.style.display !== "flex";
   const phonePopup = window.matchMedia("(max-width: 640px)").matches;
-  if (phonePopup && shouldOpen && accountPopup.parentElement !== document.documentElement) {
-    document.documentElement.appendChild(accountPopup);
-  } else if (phonePopup && !shouldOpen && accountPopup.parentElement !== accountPopupHome) {
-    accountPopupHome?.appendChild(accountPopup);
+  if (phonePopup && shouldOpen) {
+    if (accountPopup.parentElement !== document.documentElement) document.documentElement.appendChild(accountPopup);
+  } else if (accountPopupHome && accountPopup.parentElement !== accountPopupHome) {
+    // Closing, or the viewport grew past phone size (e.g. rotation): return to the header.
+    accountPopupHome.appendChild(accountPopup);
   }
   accountPopup.style.display = shouldOpen ? "flex" : "none";
   document.documentElement.classList.toggle("account-popup-open", phonePopup && shouldOpen);
@@ -114,8 +117,19 @@ primaryNav?.querySelector(".account-nav-link")?.addEventListener("click", event 
   event.preventDefault();
   toggleAccountPopup();
 });
+// Only close on keyboard focus leaving the menu. Touch taps can report a null
+// relatedTarget (iOS) or move focus to the popup, which lives outside
+// accountNavWrap on phones; closing there hides the popup before the tap's
+// click reaches the link, which made every menu option unclickable.
 accountNavWrap?.addEventListener("focusout", event => {
-  if (!accountNavWrap.contains(event.relatedTarget)) toggleAccountPopup(false);
+  const next = event.relatedTarget;
+  if (!next) return;
+  if (accountNavWrap.contains(next) || accountPopup?.contains(next)) return;
+  toggleAccountPopup(false);
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && accountPopup?.style.display === "flex") toggleAccountPopup(false);
 });
 
 // Touch browsers can synthesize hover and focus before click. Keep hover
