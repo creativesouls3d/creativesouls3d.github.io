@@ -544,7 +544,8 @@
         return label ? { label, price: Number.isFinite(price) && price > 0 ? price : null } : null;
       }).filter(Boolean);
       if (raw && typeof raw === "object") return orderedMapEntries(raw).map(({ label, value }) => {
-        const price = Number(value && typeof value === "object" ? value.price ?? value.amount : value);
+        const mapped = prices[label];
+        const price = Number((value && typeof value === "object" ? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.price ?? mapped.amount : mapped));
         return { label: String(label).trim(), price: Number.isFinite(price) && price > 0 ? price : null };
       }).filter(option => option.label);
       if (typeof raw === "string" && raw.trim()) return raw.split(",").map(label => {
@@ -622,7 +623,8 @@
         }).filter(Boolean);
       } else if (raw && typeof raw === "object") {
         options = orderedMapEntries(raw).map(({ label, value }) => {
-          const price = Number(value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value);
+          const mapped = priceMap[label];
+          const price = Number((value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.additionalPrice ?? mapped.additional_price ?? mapped.price ?? mapped.amount : mapped));
           return { label: String(label).trim(), price: Number.isFinite(price) && price >= 0 ? price : 0 };
         }).filter(option => option.label);
       } else {

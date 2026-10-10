@@ -1899,6 +1899,65 @@ button.btn-secondary:hover,
   font-size: 0.86rem;
 }
 
+.admin-tickets-table { width: 100%; border-collapse: collapse; }
+.admin-tickets-table th,
+.admin-tickets-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+.admin-tickets-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); }
+.admin-ticket-issue { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--text-2); font-size: 0.82rem; max-width: 280px; }
+.admin-ticket-status { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; }
+.admin-ticket-status.status-open { background: #fff7ed; color: #c2410c; }
+.admin-ticket-status.status-replied { background: #eff6ff; color: #1d4ed8; }
+.admin-ticket-status.status-resolved { background: #ecfdf5; color: #047857; }
+.ticket-products { display: grid; gap: 8px; }
+.ticket-product {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2);
+}
+.ticket-product img { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 6px; border: 1px solid var(--border); }
+.ticket-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.ticket-attachments a { display: block; color: inherit; text-decoration: none; }
+.ticket-attachments img,
+.ticket-attachments video { width: 100%; height: 90px; object-fit: cover; border-radius: 8px; background: #0f172a; }
+.ticket-attachments figcaption { font-size: 0.76rem; overflow-wrap: anywhere; margin-top: 4px; }
+.ticket-attachments figure { margin: 0; min-width: 0; }
+.ticket-media-selection { display: grid; gap: 4px; font-size: 0.78rem; color: var(--text-3); overflow-wrap: anywhere; }
+.ticket-media-upload { display: grid; gap: 8px; }
+.ticket-media-upload input { max-width: 100%; }
+.ticket-reply-box { display: grid; gap: 8px; }
+.ticket-reply-box textarea {
+  width: 100%; min-height: 120px; padding: 12px; border: 1px solid var(--border);
+  border-radius: 10px; font: inherit; resize: vertical;
+}
+.ticket-email-preview {
+  background: #f8fafc; border: 1px dashed var(--border); border-radius: 10px; padding: 12px;
+}
+.ticket-email-preview strong { display: block; margin-bottom: 8px; font-size: 0.78rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.ticket-email-preview pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font); font-size: 0.86rem; line-height: 1.55; color: var(--text-1);
+}
+.admin-page-hdr-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ticket-create-products { display: grid; gap: 8px; }
+.ticket-create-option {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff;
+}
+.ticket-create-option input { flex: 0 0 auto; width: 16px; height: 16px; }
+.ticket-create-option img { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 6px; border: 1px solid var(--border); }
+.ticket-create-option strong { display: block; font-size: 0.84rem; color: var(--text-1); }
+.ticket-create-option small { display: block; font-size: 0.76rem; color: var(--text-3); }
+.ticket-create-check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.84rem; color: var(--text-2); cursor: pointer; }
+.ticket-create-check input { width: 16px; height: 16px; }
+.ticket-reply-history { display: grid; gap: 10px; }
+.ticket-reply-item {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: 0.86rem;
+}
+.ticket-reply-item small { display: block; margin-bottom: 6px; color: var(--text-3); font-weight: 700; }
+
 /* ── 12. FIRESTORE DATA EXPLORER ─────────────────────────────────── */
 .admin-explorer-presets {
   display: flex;
@@ -2221,8 +2280,12 @@ dialog:not([open]) { display: none !important; }
   font-size: 0.8rem;
   background: #ffffff;
 }
-.product-variant-row input:first-child { flex: 2; }
-.product-variant-row input:nth-child(2) { flex: 1; }
+.product-variant-row > input { flex: 2; min-width: 0; }
+.product-variant-row > label { flex: 1; min-width: 0; display: grid; gap: 4px; font-size: 0.72rem; color: var(--text-3); }
+.product-variant-row > label input { width: 100%; min-width: 0; box-sizing: border-box; }
+#product-media-builder { display: grid; gap: 10px; }
+#product-media-builder[hidden] { display: none; }
+#product-media-builder input { max-width: 100%; }
 .order-item-remove {
   height: 34px !important;
   padding: 0 10px !important;

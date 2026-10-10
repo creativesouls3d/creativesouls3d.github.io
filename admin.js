@@ -76,7 +76,13 @@
   let orderItemsDraft = [];
   let productColourDraft = [];
   let productSizeDraft = [];
+  let productImageUrls = [];
+  let productGifUrl = "";
+  const productMediaUploads = new WeakMap();
   let orderDocuments = [];
+  let ticketDocuments = [];
+  let activeTicket = null;
+  let ticketFilter = "open";
   const selectedOrderIds = new Set();
   const reservedProductIds = new Set();
   let currentOrdersPage = 1;
@@ -204,6 +210,19 @@
     originalDocumentData = data ? JSON.parse(plainData(data)) : null;
     timestampExplicitlyEdited = false;
     editorModel = JSON.parse(plainData(data));
+    if (isProduct) {
+      editorModel = { productId: id, productName: "", price: 0, imageUrl: "", gifUrl: "", description: "", customizable: true, category: "", stock: 0, tags: "", color: "", ...editorModel };
+      editorModel.color = data.color ?? data.colour ?? "";
+      delete editorModel.colour;
+      editorModel.stock = Number.isFinite(Number(data.stock)) ? Number(data.stock) : 0;
+      productImageUrls = (Array.isArray(data.imageUrl) ? data.imageUrl : String(data.imageUrl || data.image_url || data.image || "").split(",")).map(url => String(url).trim()).filter(Boolean);
+      productGifUrl = String(data.gifUrl || "");
+      byId("product-image-files").value = "";
+      byId("product-gif-file").value = "";
+      byId("product-image-selection").replaceChildren();
+      renderProductMedia();
+    }
+    byId("product-media-builder").hidden = !isProduct;
     if (isOrder) {
       const orderDateVal = parseOrderDate(data?.timestamp || data?.createdAt || data?.created_at || data?.date || editorModel.timestamp) || new Date();
       editorModel.timestamp = { __firestoreType: "timestamp", value: orderDateVal.toISOString() };
@@ -255,6 +274,48 @@
   }
 
   // ── Product variant helpers (colour & size options) ────────────────────
+  function renderProductMedia() {
+    const preview = byId("product-image-preview");
+    preview.replaceChildren();
+    productImageUrls.forEach((url, index) => {
+      const figure = document.createElement("figure");
+      const image = document.createElement("img"); image.src = url; image.alt = `Product image ${index + 1}`;
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn-secondary"; remove.textContent = "Remove image";
+      remove.addEventListener("click", () => { productImageUrls.splice(index, 1); renderProductMedia(); });
+      figure.append(image, remove); preview.append(figure);
+    });
+    byId("product-gif-selection").textContent = productGifUrl ? "A GIF is saved for this product. Upload a file to replace it." : "No GIF selected.";
+    byId("product-remove-gif").hidden = !productGifUrl;
+  }
+  function validateProductMedia(files, gif = false) {
+    for (const file of files) {
+      if (gif ? file.type !== "image/gif" : !file.type.startsWith("image/")) throw new Error(`${file.name}: choose ${gif ? "a GIF" : "an image"} file.`);
+      if (file.size > IMAGEKIT_MAX_FILE_BYTES) throw new Error(`${file.name} is larger than 25 MB.`);
+    }
+  }
+  async function saveProductMedia(data, button) {
+    const images = [...byId("product-image-files").files];
+    const gifs = [...byId("product-gif-file").files];
+    validateProductMedia(images);
+    validateProductMedia(gifs, true);
+    const upload = async file => {
+      if (!productMediaUploads.has(file)) {
+        const result = await uploadFileToImageKit(file, "/Product");
+        if (!result.url) throw new Error("ImageKit did not return an image URL. Please retry.");
+        productMediaUploads.set(file, result.url);
+      }
+      return productMediaUploads.get(file);
+    };
+    const urls = [...productImageUrls];
+    for (let i = 0; i < images.length; i++) {
+      button.textContent = `Uploading image ${i + 1} of ${images.length}…`;
+      urls.push(await upload(images[i]));
+    }
+    data.imageUrl = urls.join(", ");
+    button.textContent = gifs.length ? "Uploading GIF…" : "Saving product…";
+    data.gifUrl = gifs.length ? await upload(gifs[0]) : productGifUrl;
+    delete data.image_url; delete data.image;
+  }
   function readColourVariantSource(data) {
     const map = data.colourPrices || data.colorPrices || data.colour_prices || data.color_prices || data.pricesByColour || data.pricesByColor;
     const raw = data.colourOptions ?? data.colorOptions ?? data.colours ?? data.colors ?? data.colour ?? data.color;
@@ -263,16 +324,17 @@
       raw.forEach(entry => {
         if (entry && typeof entry === "object") {
           const label = String(entry.colour ?? entry.color ?? entry.label ?? entry.name ?? "").trim();
-          const price = Number(entry.additionalPrice ?? entry.additional_price ?? entry.price ?? entry.amount);
+          const price = Number(entry.additionalPrice ?? entry.additional_price ?? entry.price ?? entry.amount ?? map?.[label]);
           if (label) entries.push({ label, price: Number.isFinite(price) && price > 0 ? price : 0 });
         } else {
           const label = String(entry ?? "").trim();
-          if (label) entries.push({ label, price: 0 });
+          if (label) entries.push({ label, price: Number(map?.[label]) || 0 });
         }
       });
     } else if (raw && typeof raw === "object") {
-      Object.entries(raw).forEach(([label, value]) => {
-        const price = Number(value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value);
+      Object.entries(raw).sort((a, b) => Number(a[1]?.order ?? 0) - Number(b[1]?.order ?? 0)).forEach(([label, value]) => {
+        const mapped = map?.[label];
+        const price = Number((value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.additionalPrice ?? mapped.price ?? mapped.amount : mapped));
         if (String(label).trim()) entries.push({ label: String(label).trim(), price: Number.isFinite(price) && price > 0 ? price : 0 });
       });
     } else if (typeof raw === "string" && raw.trim()) {
@@ -292,16 +354,17 @@
       raw.forEach(entry => {
         if (entry && typeof entry === "object") {
           const label = String(entry.size ?? entry.label ?? entry.name ?? "").trim();
-          const price = Number(entry.price ?? entry.amount);
+          const price = Number(entry.price ?? entry.amount ?? prices?.[label]);
           if (label) entries.push({ label, price: Number.isFinite(price) && price > 0 ? price : 0 });
         } else {
           const label = String(entry ?? "").trim();
-          if (label) entries.push({ label, price: 0 });
+          if (label) entries.push({ label, price: Number(prices?.[label]) || 0 });
         }
       });
     } else if (raw && typeof raw === "object") {
-      Object.entries(raw).forEach(([label, value]) => {
-        const price = Number(value && typeof value === "object" ? value.price ?? value.amount : value);
+      Object.entries(raw).sort((a, b) => Number(a[1]?.order ?? 0) - Number(b[1]?.order ?? 0)).forEach(([label, value]) => {
+        const mapped = prices?.[label];
+        const price = Number((value && typeof value === "object" ? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.price ?? mapped.amount : mapped));
         if (String(label).trim()) entries.push({ label: String(label).trim(), price: Number.isFinite(price) && price > 0 ? price : 0 });
       });
     } else if (typeof raw === "string" && raw.trim()) {
@@ -316,26 +379,27 @@
   function renderVariantRows(containerId, draft, labelPlaceholder, removeLabel) {
     const container = byId(containerId);
     container.replaceChildren();
-    const updateDrafts = () => {
-      if (containerId === "product-colour-rows") productColourDraft = readProductVariantRows(containerId);
-      else productSizeDraft = readProductVariantRows(containerId);
-    };
     draft.forEach((entry, index) => {
       const row = document.createElement("div"); row.className = "product-variant-row";
       const label = document.createElement("input"); label.type = "text"; label.value = entry.label || ""; label.placeholder = labelPlaceholder; label.dataset.variantLabel = "true"; label.setAttribute("aria-label", labelPlaceholder);
-      const price = document.createElement("input"); price.type = "number"; price.min = "0"; price.step = "1"; price.value = Number(entry.price) || 0; price.dataset.variantPrice = "true"; price.setAttribute("aria-label", "Extra price (INR)"); price.placeholder = "Extra price (INR)";
+      const priceLabel = containerId === "product-size-rows" ? "Full size price (INR)" : "Colour extra charge (INR)";
+      const price = document.createElement("input"); price.type = "number"; price.min = "0"; price.step = "any"; price.value = Number(entry.price) || 0; price.dataset.variantPrice = "true"; price.setAttribute("aria-label", priceLabel); price.placeholder = priceLabel;
+      const priceField = document.createElement("label"); priceField.textContent = priceLabel; priceField.append(price);
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "order-item-remove"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `${removeLabel} ${entry.label || index + 1}`);
-      remove.addEventListener("click", () => { updateDrafts(); draft.splice(index, 1); renderVariantRows(containerId, draft, labelPlaceholder, removeLabel); });
-      row.append(label, price, remove);
+      remove.addEventListener("click", () => { const rows = readProductVariantRows(containerId, false); rows.splice(index, 1); if (containerId === "product-colour-rows") productColourDraft = rows; else productSizeDraft = rows; renderVariantRows(containerId, rows, labelPlaceholder, removeLabel); });
+      row.append(label, priceField, remove);
       container.append(row);
     });
   }
 
-  function readProductVariantRows(containerId) {
-    return [...byId(containerId).querySelectorAll(".product-variant-row")].map(row => ({
-      label: row.querySelector("[data-variant-label]").value.trim(),
-      price: Math.max(0, Number(row.querySelector("[data-variant-price]").value) || 0)
-    })).filter(entry => entry.label);
+  function readProductVariantRows(containerId, validate = true) {
+    return [...byId(containerId).querySelectorAll(".product-variant-row")].map(row => {
+      const label = row.querySelector("[data-variant-label]").value.trim();
+      const value = row.querySelector("[data-variant-price]").value;
+      const price = Number(value);
+      if (validate && (!label || value === "" || !Number.isFinite(price) || price < 0)) throw new Error("Each variant needs a name and a valid non-negative price. Remove unused rows.");
+      return { label, price };
+    });
   }
 
   function renderProductVariantRows() {
@@ -356,12 +420,17 @@
     delete data.sizes; delete data.sizeOptions; delete data.size_options; delete data.availableSizes; delete data.available_sizes;
     delete data.sizePrices; delete data.size_prices; delete data.pricesBySize; delete data.prices_by_size;
 
+    data.colourOptions = {};
+    data.colourPrices = {};
+    data.sizes = {};
+    data.sizePrices = {};
+    data.color = String(data.color ?? data.colour ?? "").trim() || colours.map(entry => entry.label).join(", ");
+    delete data.colour;
     if (colours.length) {
       const colourOptions = {}; const colourPrices = {};
       colours.forEach(({ label, price }) => { colourOptions[label] = { order: Object.keys(colourOptions).length }; colourPrices[label] = price; });
       data.colourOptions = colourOptions;
       data.colourPrices = colourPrices;
-      if (!String(data.colour || data.color || "").trim()) data.colour = colours.map(entry => entry.label).join(", ");
     }
     if (sizes.length) {
       const sizeOptions = {}; const sizePrices = {};
@@ -459,6 +528,8 @@
     const labelRow = document.createElement("div"); labelRow.className = "admin-field-label";
     const label = document.createElement("label");
     label.textContent = key === "timestamp" && activeDocument?.collection === "orders" ? "Placed Date & Time" : humanize(key);
+    if (activeDocument?.collection === "products" && key === "price") label.textContent = "Base price (INR)";
+    if (activeDocument?.collection === "products" && key === "color") label.textContent = "Display colours (comma-separated)";
     label.htmlFor = `field-${key}`;
     const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Remove field";
     remove.addEventListener("click", () => {
@@ -468,6 +539,7 @@
     if (activeDocument?.collection === "orders" && ["order_id", "timestamp"].includes(key)) {
       remove.style.display = "none";
     }
+    if (activeDocument?.collection === "products" && ["productId", "productName", "price", "stock", "customizable"].includes(key)) remove.hidden = true;
     labelRow.append(label, remove); wrapper.append(labelRow);
 
     if (key === "timestamp" && activeDocument?.collection === "orders") {
@@ -564,12 +636,11 @@
         wrapper.append(productSelect(key, PRODUCT_AVAILABILITY, value, "Select availability"));
       } else if (activeDocument.collection === "products" && (key === "bestFor" || key === "best_for")) {
         wrapper.append(productSelect(key, PRODUCT_BEST_FOR, value, "Select an audience"));
-      } else if (activeDocument.collection === "products" && (key === "description" || key === "imageUrl" || key === "image_url" || key === "tags")) {
+      } else if (activeDocument.collection === "products" && (key === "description" || key === "tags")) {
         const textarea = document.createElement("textarea");
         textarea.dataset.field = key;
         textarea.value = value ?? "";
         textarea.rows = key === "description" ? 4 : 3;
-        if (key === "imageUrl" || key === "image_url") textarea.placeholder = "Comma-separated image URLs";
         if (key === "tags") textarea.placeholder = "Comma-separated tags";
         wrapper.append(textarea);
       } else {
@@ -585,6 +656,11 @@
     }
     const control = wrapper.querySelector("input, select, textarea");
     if (control) { control.id = `field-${key}`; control.name = key; }
+    if (activeDocument?.collection === "products" && key === "productId" && control) control.readOnly = true;
+    if (activeDocument?.collection === "products" && ["price", "stock"].includes(key) && control) {
+      control.min = "0";
+      control.step = key === "stock" ? "1" : "any";
+    }
     return wrapper;
   }
   function renderEditorFields() {
@@ -593,16 +669,17 @@
     const isOrder = collection === "orders";
     const isProduct = collection === "products";
     const variantKeys = new Set(["colourOptions", "colorOptions", "colours", "colors", "colourPrices", "colorPrices", "colour_prices", "color_prices", "pricesByColour", "pricesByColor", "sizes", "sizeOptions", "size_options", "availableSizes", "available_sizes", "sizePrices", "size_prices", "pricesBySize", "prices_by_size"]);
-    const entries = Object.entries(editorModel).filter(([key]) => !(isOrder && key === "items") && !(isProduct && variantKeys.has(key)));
+    const mediaKeys = new Set(["imageUrl", "image_url", "image", "gifUrl"]);
+    const entries = Object.entries(editorModel).filter(([key]) => !(isOrder && key === "items") && !(isProduct && (variantKeys.has(key) || mediaKeys.has(key))));
     if (!isOrder && !isProduct) {
       entries.forEach(([key, value]) => fields.append(displayField(key, value)));
       return;
     }
 
     const groups = isProduct ? [
-      { title: "Product basics", description: "Name, pricing, category, and the storefront description.", keys: ["productName", "price", "originalPrice", "category", "bestFor", "best_for", "useCase", "use_case"] },
-      { title: "Images and customization", description: "Product images (comma-separated URLs) and whether customers can request personalization.", keys: ["imageUrl", "image_url", "image", "customizable", "isCustomizable", "is_customizable"] },
-      { title: "Availability and stock", description: "Availability state shown to customers plus any stock note.", keys: ["availability", "stockStatus", "stock_status", "stock"] },
+      { title: "Product basics", description: "Name, base price (used without a size price), category, and the storefront description.", keys: ["productId", "productName", "price", "originalPrice", "category", "description", "bestFor", "best_for", "useCase", "use_case"] },
+      { title: "Customization", description: "Can customers request personalization?", keys: ["customizable", "isCustomizable", "is_customizable"] },
+      { title: "Availability and stock", description: "Enter stock as a whole-number quantity, not a stock note.", keys: ["availability", "stockStatus", "stock_status", "stock"] },
       { title: "Discovery and tags", description: "Colour label, search tags, and the best-for audience used by catalog filters.", keys: ["colour", "color", "tags"] }
     ] : [
       { title: "Order status", description: "Order reference, current status, and placement time.", keys: ["order_id", "status", "timestamp", "expected_delivery"] },
@@ -672,6 +749,9 @@
     nameInput.value = ""; byId("editor-error").textContent = ""; advancedEditorUsed = false; jsonInput.value = plainData(editorModel); renderEditorFields();
   });
   async function saveEditor() {
+    const saveButton = byId("editor-save");
+    if (saveButton.disabled) return;
+    const buttonText = saveButton.textContent;
     try {
       const data = restoreTypes(advancedEditorUsed ? JSON.parse(jsonInput.value) : readEditorFields());
       if (!data || Array.isArray(data) || typeof data !== "object") throw new Error("Document data must be a JSON object.");
@@ -701,7 +781,15 @@
         if (data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== "") data.originalPrice = Math.max(0, Number(data.originalPrice) || 0);
         if (data.rating !== undefined) data.rating = Math.max(0, Math.min(5, Number(data.rating) || 0));
         if (data.reviewCount !== undefined) data.reviewCount = Math.max(0, Math.floor(Number(data.reviewCount) || 0));
-        applyProductVariants(data);
+        const stock = Number(data.stock);
+        if (!Number.isInteger(stock) || stock < 0) throw new Error("Stock must be a non-negative whole number.");
+        data.stock = stock;
+        data.productId = String(activeDocument.id);
+        if (!advancedEditorUsed) applyProductVariants(data);
+        saveButton.disabled = true;
+        byId("product-image-files").disabled = true;
+        byId("product-gif-file").disabled = true;
+        await saveProductMedia(data, saveButton);
       }
       const ref = db.collection(activeDocument.collection).doc(activeDocument.id);
       await ref.set(data);
@@ -709,9 +797,15 @@
       status.textContent = "Document saved.";
       window.showAdminToast?.(activeDocument.collection === "products" && activeDocument.creating ? "Product created successfully." : "Document saved successfully.", "success");
       if (activeDocument.collection === "orders") await loadOrders();
+      if (activeDocument.collection === "products") await loadCatalogProducts();
       if (activeDocument.collection === byId("collection-name").value.trim()) await loadCollection();
     } catch (error) {
       byId("editor-error").textContent = error instanceof SyntaxError ? "The JSON is invalid. Check commas, quotes, and braces." : errorText(error);
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = buttonText;
+      byId("product-image-files").disabled = false;
+      byId("product-gif-file").disabled = false;
     }
   }
   jsonInput.addEventListener("input", () => { advancedEditorUsed = true; });
@@ -1784,23 +1878,18 @@
           productId: id,
           productName: "",
           price: 0,
-          originalPrice: 0,
           category: "",
-          bestFor: "",
           description: "",
           imageUrl: "",
+          gifUrl: "",
           customizable: true,
-          colour: "",
-          availability: "In Stock",
-          stock: "Made to order",
+          color: "",
+          stock: 0,
           tags: "",
-          rating: 0,
-          reviewCount: 0,
-          colourOptions: "",
+          colourOptions: {},
           colourPrices: {},
-          sizes: "",
-          sizePrices: {},
-          createdAt: firebase.firestore.Timestamp.now()
+          sizes: {},
+          sizePrices: {}
         }
       });
       status.textContent = `New product ${id} ready to create.`;
@@ -1888,7 +1977,7 @@
       status.textContent = `${snapshot.size} document${snapshot.size === 1 ? "" : "s"} in ${name}.`;
     } catch (error) { reportError(error); }
   }
-  byId("refresh-orders").addEventListener("click", loadOrders);
+  byId("refresh-orders").addEventListener("click", () => { loadOrders(); loadTickets(); });
   byId("order-search").addEventListener("input", () => { currentOrdersPage = 1; refreshVisibleOrders(); });
   byId("orders-list").addEventListener("click", event => {
     const button = event.target.closest("[data-sort-field]");
@@ -1991,13 +2080,16 @@
   });
   byId("order-item-rows").addEventListener("input", updateOrderItemPreview);
   byId("create-product").addEventListener("click", createAdminProduct);
+  byId("product-image-files").addEventListener("change", () => renderTicketMediaSelection(byId("product-image-files"), byId("product-image-selection")));
+  byId("product-gif-file").addEventListener("change", () => renderTicketMediaSelection(byId("product-gif-file"), byId("product-gif-selection")));
+  byId("product-remove-gif").addEventListener("click", () => { productGifUrl = ""; byId("product-gif-file").value = ""; renderProductMedia(); });
   byId("add-product-colour").addEventListener("click", () => {
-    productColourDraft = readProductVariantRows("product-colour-rows");
+    productColourDraft = readProductVariantRows("product-colour-rows", false);
     productColourDraft.push({ label: "", price: 0 });
     renderVariantRows("product-colour-rows", productColourDraft, "Colour (e.g. Black)", "Remove colour");
   });
   byId("add-product-size").addEventListener("click", () => {
-    productSizeDraft = readProductVariantRows("product-size-rows");
+    productSizeDraft = readProductVariantRows("product-size-rows", false);
     productSizeDraft.push({ label: "", price: 0 });
     renderVariantRows("product-size-rows", productSizeDraft, "Size (e.g. Small)", "Remove size");
   });
@@ -2420,11 +2512,788 @@
     status.textContent = `Catalog PDF generated for ${products.length} products.`;
   }
 
+  function escapeHtml(value = "") {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  function ticketDate(value) {
+    const date = parseOrderDate(value);
+    return date ? date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
+  }
+  function canonicalTicketStatus(value) {
+    const status = String(value || "Open").trim().toLowerCase();
+    if (status.includes("resolve")) return "Resolved";
+    if (status.includes("repl")) return "Replied";
+    return "Open";
+  }
+  function ticketFirstName(ticket) {
+    const name = String(ticket?.name || "").trim();
+    return name.split(/\s+/)[0] || "there";
+  }
+  function formatTicketReplyEmail(ticket, typedReply) {
+    const reply = String(typedReply || "").trim();
+    const firstName = ticketFirstName(ticket);
+    const alreadyGreets = /^(dear|hi\b|hello|hey\b)/i.test(reply);
+    const lastLines = reply.split(/\n+/).slice(-5).join("\n");
+    const alreadySigns = /(warm regards|kind regards|best regards|sincerely|creative souls 3d)/i.test(lastLines);
+    const mentionsOrder = /order|ticket/i.test(reply);
+    const parts = [];
+    if (!alreadyGreets) parts.push(`Dear ${firstName},`, "");
+    if (!mentionsOrder) {
+      parts.push("Thank you for writing to Creative Souls 3D.");
+      parts.push("");
+      parts.push(`We are writing in response to your support request for Order ${ticket.order_id || "your recent order"} (Ticket ${ticket.ticket_id || ""}).`);
+      parts.push("");
+    }
+    parts.push(reply);
+    parts.push("");
+    if (!alreadySigns) {
+      parts.push("Please reply to this email if you need anything further. We are here to help.");
+      parts.push("");
+      parts.push("Warm regards,");
+      parts.push("Creative Souls 3D");
+      parts.push("Customer Support");
+      parts.push("hello.creative.souls3d@gmail.com");
+      parts.push("Instagram: @creative.souls3d");
+    }
+    parts.push("");
+    parts.push("—");
+    parts.push(`Ticket ID: ${ticket.ticket_id || ""}`);
+    if (ticket.order_id) parts.push(`Order ID: ${ticket.order_id}`);
+    return parts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  function ticketEmailSubject(ticket) {
+    return `Re: Your Creative Souls 3D order ${ticket.order_id || ""} — Ticket ${ticket.ticket_id || ""}`.replace(/\s+/g, " ").trim();
+  }
+  async function openGmailCompose({ to, subject, body }) {
+    const base = "https://mail.google.com/mail/?view=cm&fs=1&tf=1&authuser=" + encodeURIComponent(ADMIN_EMAIL);
+    const fullUrl = `${base}&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (fullUrl.length > 1800) {
+      try { await navigator.clipboard.writeText(body); } catch {}
+      const shortUrl = `${base}&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}`;
+      window.open(shortUrl, "_blank", "noopener");
+      return "copied";
+    }
+    window.open(fullUrl, "_blank", "noopener");
+    return "opened";
+  }
+  function visibleTickets() {
+    const query = String(byId("ticket-search")?.value || "").trim().toLowerCase();
+    return ticketDocuments.filter(doc => {
+      const ticket = doc.data();
+      const status = canonicalTicketStatus(ticket.status);
+      if (ticketFilter !== "all" && status.toLowerCase() !== ticketFilter) return false;
+      if (!query) return true;
+      const haystack = [
+        ticket.ticket_id, doc.id, ticket.order_id, ticket.name, ticket.email, ticket.phone, ticket.issue,
+        ...(ticket.products || []).map(item => item.productName)
+      ].join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }
+  function updateTicketBadges() {
+    const openCount = ticketDocuments.filter(doc => canonicalTicketStatus(doc.data().status) === "Open").length;
+    ["nav-tickets-badge", "bnav-tickets-badge"].forEach(id => {
+      const badge = byId(id);
+      if (!badge) return;
+      badge.textContent = String(openCount);
+      badge.hidden = openCount === 0;
+    });
+  }
+  function renderDashboardOpenTickets() {
+    const container = byId("dashboard-open-tickets");
+    if (!container) return;
+    container.replaceChildren();
+    const openDocs = ticketDocuments.filter(doc => canonicalTicketStatus(doc.data().status) === "Open");
+    if (!openDocs.length) {
+      container.innerHTML = '<p class="admin-helper" style="padding:16px 0; color:var(--text-3); text-align:center;">No open support tickets.</p>';
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "admin-recent-orders-table";
+    table.innerHTML = "<thead><tr><th>Ticket</th><th>Customer</th><th>Order</th><th>Date</th><th></th></tr></thead><tbody></tbody>";
+    const tbody = table.querySelector("tbody");
+    openDocs.slice(0, 5).forEach(doc => {
+      const ticket = doc.data();
+      const tr = document.createElement("tr");
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "btn-table-action btn-secondary";
+      openBtn.style.cssText = "height:28px!important; padding:0 10px!important;";
+      openBtn.textContent = "Open";
+      openBtn.addEventListener("click", () => showTicketDetails(doc.id, ticket));
+      tr.innerHTML = `<td><strong>${escapeHtml(ticket.ticket_id || doc.id)}</strong></td><td>${escapeHtml(ticket.name || ticket.email || "Customer")}</td><td>${escapeHtml(ticket.order_id || "—")}</td><td style="color:var(--text-3); font-size:0.75rem;">${escapeHtml(ticketDate(ticket.created_at))}</td><td></td>`;
+      tr.lastElementChild.append(openBtn);
+      tbody.append(tr);
+    });
+    container.append(table);
+  }
+  function renderTickets() {
+    const container = byId("tickets-list");
+    const label = byId("ticket-count-label");
+    if (!container) return;
+    const docs = visibleTickets();
+    if (label) label.textContent = `${docs.length} ticket${docs.length === 1 ? "" : "s"} shown · ${ticketDocuments.length} total`;
+    container.replaceChildren();
+    if (!docs.length) {
+      const empty = document.createElement("div");
+      empty.className = "admin-empty-state";
+      empty.innerHTML = "<div><strong>No tickets in this view</strong><span>New customer issues will appear here.</span></div>";
+      container.append(empty);
+      return;
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "admin-table-wrap";
+    const table = document.createElement("table");
+    table.className = "admin-tickets-table";
+    table.innerHTML = "<thead><tr><th>Ticket</th><th>Customer</th><th>Order</th><th>Issue</th><th>Status</th><th>Actions</th></tr></thead>";
+    const body = document.createElement("tbody");
+    docs.forEach(doc => {
+      const ticket = doc.data();
+      const status = canonicalTicketStatus(ticket.status);
+      const row = document.createElement("tr");
+      const issue = document.createElement("div");
+      issue.className = "admin-ticket-issue";
+      issue.textContent = ticket.issue || "No description";
+      row.innerHTML = `<td><strong>${ticket.ticket_id || doc.id}</strong><div style="color:var(--text-3);font-size:0.74rem;">${ticketDate(ticket.created_at)}</div></td><td><strong>${ticket.name || "Customer"}</strong><div style="color:var(--text-3);font-size:0.74rem;">${ticket.email || ""}</div></td><td>${ticket.order_id || "—"}</td><td></td><td><span class="admin-ticket-status status-${status.toLowerCase()}">${status}</span></td><td></td>`;
+      row.children[3].append(issue);
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "btn-table-action btn-secondary";
+      openBtn.textContent = "Review & reply";
+      openBtn.addEventListener("click", () => showTicketDetails(doc.id, ticket));
+      row.lastElementChild.append(openBtn);
+      body.append(row);
+    });
+    table.append(body);
+    wrap.append(table);
+    container.append(wrap);
+  }
+  function updateTicketEmailPreview() {
+    const preview = byId("ticket-email-preview");
+    if (!preview || !activeTicket) return;
+    const typed = byId("ticket-reply-input")?.value || "";
+    preview.textContent = typed.trim()
+      ? formatTicketReplyEmail(activeTicket.data, typed)
+      : "Type a reply to preview the Gmail message.";
+  }
+  const ticketMediaUploads = new WeakMap();
+  function validateTicketMedia(files) {
+    for (const file of files) {
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        throw new Error(`${file.name} is not a photo or video. Please choose image or video files.`);
+      }
+      if (file.size > IMAGEKIT_MAX_FILE_BYTES) {
+        throw new Error(`${file.name} is larger than 25 MB. Please choose a smaller photo or video.`);
+      }
+    }
+  }
+  function renderTicketMediaSelection(input, preview) {
+    preview.replaceChildren();
+    [...input.files].forEach(file => {
+      const name = document.createElement("div");
+      name.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+      preview.append(name);
+    });
+  }
+  async function uploadAdminTicketMedia(files, folderId, button) {
+    validateTicketMedia(files);
+    const folder = `${IMAGEKIT_FOLDER}/${String(folderId).replace(/^#/, "")}`;
+    const attachments = [];
+    for (let i = 0; i < files.length; i++) {
+      button.textContent = `Uploading media ${i + 1} of ${files.length}…`;
+      let uploads = ticketMediaUploads.get(files[i]);
+      if (!uploads) {
+        uploads = new Map();
+        ticketMediaUploads.set(files[i], uploads);
+      }
+      // Reuse completed uploads when retrying after an upload or database failure.
+      if (!uploads.has(folder)) uploads.set(folder, await uploadFileToImageKit(files[i], folder));
+      attachments.push(uploads.get(folder));
+    }
+    return attachments;
+  }
+  async function addAdminTicketMedia() {
+    if (!activeTicket) return;
+    const currentTicket = activeTicket;
+    const input = byId("ticket-media-input");
+    const button = byId("ticket-media-save");
+    const message = byId("ticket-media-status");
+    if (button.disabled) return;
+    const files = [...input.files];
+    message.textContent = "";
+    try {
+      if (!files.length) throw new Error("Choose photos or videos to upload first.");
+      validateTicketMedia(files);
+      button.disabled = true;
+      input.disabled = true;
+      const attachments = await uploadAdminTicketMedia(files, currentTicket.data.order_id || currentTicket.id, button);
+      button.textContent = "Saving media…";
+      await db.collection("tickets").doc(currentTicket.id).update({
+        attachments: firebase.firestore.FieldValue.arrayUnion(...attachments)
+      });
+      window.showAdminToast?.("Photos and videos saved to the ticket in ImageKit.", "success");
+      await loadTickets();
+      if (activeTicket === currentTicket && byId("ticket-detail-dialog").open) {
+        const replyDraft = byId("ticket-reply-input")?.value || "";
+        await showTicketDetails(currentTicket.id, currentTicket.data);
+        byId("ticket-reply-input").value = replyDraft;
+        updateTicketEmailPreview();
+      }
+    } catch (error) {
+      message.textContent = errorText(error);
+      console.error("Could not add ticket media:", error);
+    } finally {
+      button.disabled = false;
+      input.disabled = false;
+      button.textContent = "Upload to ticket";
+    }
+  }
+  async function showTicketDetails(id, ticket) {
+    if (id) {
+      try {
+        const snap = await db.collection("tickets").doc(id).get();
+        if (snap.exists) ticket = { ...(ticket || {}), ...snap.data() };
+      } catch (err) {
+        console.warn("Could not fetch ticket:", err);
+      }
+    }
+    activeTicket = { id, data: ticket };
+    byId("ticket-detail-title").textContent = ticket.ticket_id || id;
+    const content = byId("ticket-detail-content");
+    content.replaceChildren();
+
+    const addSection = (title, builder) => {
+      const section = document.createElement("section");
+      section.className = "admin-detail-section";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      section.append(heading);
+      builder(section);
+      content.append(section);
+    };
+
+    addSection("Customer & order", section => {
+      const grid = document.createElement("div");
+      grid.className = "admin-detail-grid";
+      [
+        ["Ticket ID", ticket.ticket_id || id],
+        ["Status", canonicalTicketStatus(ticket.status)],
+        ["Customer", ticket.name || "—"],
+        ["Email", ticket.email || "—"],
+        ["Phone", ticket.phone || "—"],
+        ["Address", ticket.address || "—"],
+        ["Order", ticket.order_id || "—"],
+        ["Raised", ticketDate(ticket.created_at)]
+      ].forEach(([label, value]) => {
+        const item = document.createElement("div");
+        const dt = document.createElement("dt"); dt.textContent = label;
+        const dd = document.createElement("dd"); dd.textContent = value;
+        item.append(dt, dd); grid.append(item);
+      });
+      section.append(grid);
+      if (ticket.order_id || ticket.order_doc_id) {
+        const orderBtn = document.createElement("button");
+        orderBtn.type = "button";
+        orderBtn.className = "btn-secondary";
+        orderBtn.style.marginTop = "10px";
+        orderBtn.textContent = "Open related order";
+        orderBtn.addEventListener("click", () => {
+          const orderId = String(ticket.order_doc_id || ticket.order_id || "");
+          const match = orderDocuments.find(doc => doc.id === orderId || doc.id === orderId.replace(/^#/, "") || doc.data().order_id === ticket.order_id);
+          if (match) {
+            byId("ticket-detail-dialog").close();
+            showOrderDetails(match.id, match.data());
+          } else {
+            window.showAdminToast?.("Related order could not be found in the loaded orders.", "danger");
+          }
+        });
+        section.append(orderBtn);
+      }
+    });
+
+    addSection("Products in this issue", section => {
+      const products = ticket.products || [];
+      if (!products.length) {
+        const empty = document.createElement("p");
+        empty.className = "admin-helper";
+        empty.textContent = "No products were selected.";
+        section.append(empty);
+        return;
+      }
+      const list = document.createElement("div");
+      list.className = "ticket-products";
+      products.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "ticket-product";
+        const img = document.createElement("img");
+        img.src = item.imageUrl || "logo_creativesouls.jpg";
+        img.alt = "";
+        const text = document.createElement("div");
+        text.innerHTML = `<strong></strong><div style="color:var(--text-3);font-size:0.78rem;"></div>`;
+        text.firstElementChild.textContent = item.productName || "Product";
+        text.lastElementChild.textContent = [item.colour && `Colour: ${item.colour}`, item.size && `Size: ${item.size}`, `Qty: ${item.quantity || 1}`].filter(Boolean).join(" · ");
+        row.append(img, text);
+        list.append(row);
+      });
+      section.append(list);
+    });
+
+    addSection("Customer issue", section => {
+      const p = document.createElement("p");
+      p.style.whiteSpace = "pre-wrap";
+      p.textContent = ticket.issue || "No description provided.";
+      section.append(p);
+    });
+
+    addSection("Photos & videos", section => {
+      const files = ticket.attachments || [];
+      if (!files.length) {
+        const empty = document.createElement("p");
+        empty.className = "admin-helper";
+        empty.textContent = "No media was uploaded.";
+        section.append(empty);
+        return;
+      }
+      const grid = document.createElement("div");
+      grid.className = "ticket-attachments";
+      files.forEach(file => {
+        const link = document.createElement("a");
+        link.href = file.url || "#";
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        const isVideo = String(file.fileType || "").toLowerCase().includes("video") || /\.(mp4|webm|mov|m4v|avi|mkv|ogv)(?:[?#]|$)/i.test(file.url || "");
+        const figure = document.createElement("figure");
+        if (isVideo) {
+          const video = document.createElement("video");
+          video.src = file.url;
+          video.controls = true;
+          video.preload = "metadata";
+          figure.append(video);
+        } else {
+          const img = document.createElement("img");
+          img.src = file.thumbnailUrl || file.url;
+          img.alt = file.name || "Attachment";
+          figure.append(img);
+        }
+        const caption = document.createElement("figcaption");
+        link.textContent = file.name || "Open attachment";
+        caption.append(link);
+        figure.append(caption);
+        grid.append(figure);
+      });
+      section.append(grid);
+    });
+
+    addSection("Add photos & videos", section => {
+      const box = document.createElement("div");
+      box.className = "ticket-media-upload";
+      const label = document.createElement("label");
+      label.htmlFor = "ticket-media-input";
+      label.textContent = "Select photos or videos (maximum 25 MB per file). Stored in ImageKit.";
+      const input = document.createElement("input");
+      input.id = "ticket-media-input";
+      input.type = "file";
+      input.accept = "image/*,video/*";
+      input.multiple = true;
+      const preview = document.createElement("div");
+      preview.className = "ticket-media-selection";
+      preview.setAttribute("aria-live", "polite");
+      input.addEventListener("change", () => renderTicketMediaSelection(input, preview));
+      const button = document.createElement("button");
+      button.id = "ticket-media-save";
+      button.type = "button";
+      button.className = "btn-secondary";
+      button.textContent = "Upload to ticket";
+      button.addEventListener("click", addAdminTicketMedia);
+      const message = document.createElement("p");
+      message.id = "ticket-media-status";
+      message.className = "admin-status";
+      message.setAttribute("role", "alert");
+      box.append(label, input, preview, button, message);
+      section.append(box);
+    });
+
+    const replies = ticket.replies || [];
+    if (replies.length) {
+      addSection("Previous replies", section => {
+        const list = document.createElement("div");
+        list.className = "ticket-reply-history";
+        replies.forEach(reply => {
+          const item = document.createElement("div");
+          item.className = "ticket-reply-item";
+          const meta = document.createElement("small");
+          meta.textContent = `${reply.admin_email || "Admin"} · ${ticketDate(reply.created_at)}`;
+          const body = document.createElement("div");
+          body.style.whiteSpace = "pre-wrap";
+          body.textContent = reply.body || reply.formatted_body || "";
+          item.append(meta, body);
+          list.append(item);
+        });
+        section.append(list);
+      });
+    }
+
+    addSection("Reply to customer", section => {
+      const box = document.createElement("div");
+      box.className = "ticket-reply-box";
+      const label = document.createElement("p");
+      label.className = "admin-helper";
+      label.textContent = "Type the reply in your own words. We will format it into a professional Gmail draft.";
+      const textarea = document.createElement("textarea");
+      textarea.id = "ticket-reply-input";
+      textarea.placeholder = "Example: We checked the photos and will reprint the keychain. A replacement will be dispatched in 2 days.";
+      const preview = document.createElement("div");
+      preview.className = "ticket-email-preview";
+      preview.innerHTML = "<strong>Gmail message preview</strong>";
+      const pre = document.createElement("pre");
+      pre.id = "ticket-email-preview";
+      preview.append(pre);
+      textarea.addEventListener("input", updateTicketEmailPreview);
+      box.append(label, textarea, preview);
+      section.append(box);
+      updateTicketEmailPreview();
+    });
+
+    const resolvedBtn = byId("ticket-mark-resolved");
+    resolvedBtn.textContent = canonicalTicketStatus(ticket.status) === "Resolved" ? "Already resolved" : "Mark resolved";
+    resolvedBtn.disabled = canonicalTicketStatus(ticket.status) === "Resolved";
+    byId("ticket-detail-dialog").showModal();
+    updateTicketEmailPreview();
+  }
+
+  async function saveTicketReplyAndOpenGmail() {
+    if (!activeTicket) return;
+    const typed = String(byId("ticket-reply-input")?.value || "").trim();
+    if (!typed) {
+      window.showAdminToast?.("Type a reply first.", "danger");
+      return;
+    }
+    const ticket = activeTicket.data;
+    const to = String(ticket.email || "").trim();
+    if (!to || !to.includes("@")) {
+      window.showAdminToast?.("This ticket has no valid customer email.", "danger");
+      return;
+    }
+    const formatted = formatTicketReplyEmail(ticket, typed);
+    const button = byId("ticket-open-gmail");
+    button.disabled = true;
+    button.textContent = "Opening Gmail…";
+    try {
+      const result = await openGmailCompose({
+        to,
+        subject: ticketEmailSubject(ticket),
+        body: formatted
+      });
+      const reply = {
+        body: typed,
+        formatted_body: formatted,
+        admin_email: firebase.auth().currentUser?.email || ADMIN_EMAIL,
+        created_at: new Date().toISOString()
+      };
+      const existing = Array.isArray(ticket.replies) ? ticket.replies : [];
+      await db.collection("tickets").doc(activeTicket.id).update({
+        replies: [...existing, reply],
+        status: "Replied",
+        last_replied_at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      window.showAdminToast?.(
+        result === "copied"
+          ? "Gmail opened. The message was copied — paste it into the email if the body is empty, then click Send."
+          : "Gmail opened with the formatted reply. Click Send in Gmail.",
+        "success"
+      );
+      await loadTickets();
+      await showTicketDetails(activeTicket.id);
+    } catch (error) {
+      reportError(error);
+    } finally {
+      button.disabled = false;
+      button.textContent = "Open reply in Gmail";
+    }
+  }
+
+  async function markTicketResolved() {
+    if (!activeTicket) return;
+    try {
+      await db.collection("tickets").doc(activeTicket.id).update({
+        status: "Resolved",
+        resolved_at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      window.showAdminToast?.("Ticket marked as resolved.", "success");
+      await loadTickets();
+      byId("ticket-detail-dialog").close();
+    } catch (error) {
+      reportError(error);
+    }
+  }
+
+  async function loadTickets() {
+    const label = byId("ticket-count-label");
+    if (label) label.textContent = "Loading tickets…";
+    try {
+      const snapshot = await db.collection("tickets").get();
+      ticketDocuments = snapshot.docs.sort((a, b) => {
+        const time = value => {
+          const date = parseOrderDate(value);
+          return date ? date.getTime() : 0;
+        };
+        return time(b.data().created_at) - time(a.data().created_at);
+      });
+      updateTicketBadges();
+      renderDashboardOpenTickets();
+      renderTickets();
+    } catch (error) {
+      if (label) label.textContent = "Could not load tickets.";
+      reportError(error);
+    }
+  }
+
+  byId("tickets-quick-filters")?.addEventListener("click", event => {
+    const btn = event.target.closest("button[data-ticket-filter]");
+    if (!btn) return;
+    ticketFilter = btn.dataset.ticketFilter;
+    byId("tickets-quick-filters").querySelectorAll("button").forEach(item => item.classList.toggle("active", item === btn));
+    renderTickets();
+  });
+  byId("ticket-search")?.addEventListener("input", renderTickets);
+  byId("refresh-tickets")?.addEventListener("click", loadTickets);
+  byId("ticket-open-gmail")?.addEventListener("click", saveTicketReplyAndOpenGmail);
+  byId("ticket-mark-resolved")?.addEventListener("click", markTicketResolved);
+  byId("ticket-detail-close")?.addEventListener("click", () => byId("ticket-detail-dialog").close());
+  byId("ticket-detail-done")?.addEventListener("click", () => byId("ticket-detail-dialog").close());
+
+  // ── Admin: create a ticket on behalf of a customer ──────────────────────
+  const ticketCreateDialog = byId("ticket-create-dialog");
+  let ticketCreateOrder = null; // { id, data } of the matched order, if any
+
+  function randomSixDigits() {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const buffer = new Uint32Array(1);
+      window.crypto.getRandomValues(buffer);
+      return String(100000 + (buffer[0] % 900000));
+    }
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+  async function generateUniqueTicketId() {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const ticketId = `TKT-${randomSixDigits()}`;
+      try {
+        const snap = await db.collection("tickets").doc(ticketId).get();
+        if (!snap.exists) return ticketId;
+      } catch (err) {
+        console.warn("Error checking ticket ID existence:", err);
+        return ticketId;
+      }
+    }
+    return `TKT-${Date.now().toString().slice(-8)}`;
+  }
+  function ticketItemImage(item = {}) {
+    return String(item.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg";
+  }
+  function findOrderByInput(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+    const digits = raw.replace(/^#/, "");
+    return orderDocuments.find(doc => {
+      const data = doc.data();
+      return doc.id.replace(/^#/, "") === digits || String(data.order_id || "").replace(/^#/, "") === digits;
+    }) || null;
+  }
+  function setTicketCreateError(message) {
+    const el = byId("tc-error");
+    if (el) el.textContent = message || "";
+  }
+  function renderTicketCreateProducts(items) {
+    const wrap = byId("tc-products-wrap");
+    const list = byId("tc-products");
+    list.replaceChildren();
+    if (!items.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    items.forEach((item, index) => {
+      const label = document.createElement("label");
+      label.className = "ticket-create-option";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = String(index);
+      checkbox.checked = true;
+      const img = document.createElement("img");
+      img.src = ticketItemImage(item);
+      img.alt = "";
+      const text = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = item.productName || "Untitled product";
+      const meta = document.createElement("small");
+      meta.textContent = [
+        item.colour && `Colour: ${item.colour}`,
+        item.size && `Size: ${item.size}`,
+        `Qty: ${Number(item.quantity || 0)}`
+      ].filter(Boolean).join(" · ");
+      text.append(title, meta);
+      label.append(checkbox, img, text);
+      list.append(label);
+    });
+  }
+  function applyTicketCreateOrder() {
+    const input = byId("tc-order");
+    const hint = byId("tc-order-hint");
+    const match = findOrderByInput(input.value);
+    ticketCreateOrder = match ? { id: match.id, data: match.data() } : null;
+    if (!match) {
+      renderTicketCreateProducts([]);
+      hint.textContent = String(input.value || "").trim()
+        ? "No loaded order matches this ID. The ticket will still be linked to it as typed."
+        : "";
+      return;
+    }
+    const order = ticketCreateOrder.data;
+    hint.textContent = `Order found — ${order.name || "Customer"} · ${order.status || "Order Placed"}`;
+    byId("tc-name").value = order.name || "";
+    byId("tc-email").value = order.email || "";
+    byId("tc-phone").value = order.phone || "";
+    byId("tc-address").value = order.pickup_location || order.address || "";
+    renderTicketCreateProducts(Array.isArray(order.items) ? order.items : []);
+  }
+  function openTicketCreateDialog(prefillOrder) {
+    ["tc-order", "tc-name", "tc-email", "tc-phone", "tc-address", "tc-product-extra", "tc-issue", "tc-media"].forEach(id => { byId(id).value = ""; });
+    byId("tc-media-preview").replaceChildren();
+    byId("tc-send-email").checked = true;
+    byId("tc-order-hint").textContent = "";
+    byId("tc-products").replaceChildren();
+    byId("tc-products-wrap").hidden = true;
+    ticketCreateOrder = null;
+    setTicketCreateError("");
+    const options = byId("tc-order-options");
+    options.replaceChildren();
+    orderDocuments.slice(0, 300).forEach(doc => {
+      const data = doc.data();
+      const option = document.createElement("option");
+      option.value = data.order_id || doc.id;
+      option.label = [data.name, data.email].filter(Boolean).join(" · ");
+      options.append(option);
+    });
+    if (prefillOrder) {
+      byId("tc-order").value = prefillOrder;
+      applyTicketCreateOrder();
+    }
+    const saveBtn = byId("ticket-create-save");
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Create Ticket";
+    ticketCreateDialog.showModal();
+    byId("tc-order").focus();
+  }
+  async function saveAdminTicket() {
+    if (byId("ticket-create-save").disabled) return;
+    setTicketCreateError("");
+    const email = byId("tc-email").value.trim();
+    const issue = byId("tc-issue").value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setTicketCreateError("Enter a valid customer email address.");
+      return;
+    }
+    if (!issue) {
+      setTicketCreateError("Describe the customer's issue.");
+      return;
+    }
+    const orderInput = byId("tc-order").value.trim();
+    const orderData = ticketCreateOrder?.data || null;
+    const orderItems = Array.isArray(orderData?.items) ? orderData.items : [];
+    const selectedIndexes = [...byId("tc-products").querySelectorAll('input[type="checkbox"]:checked')].map(input => Number(input.value));
+    const products = selectedIndexes
+      .map(index => orderItems[index])
+      .filter(Boolean)
+      .map(item => ({
+        productName: item.productName || "",
+        quantity: Number(item.quantity || 0),
+        price: Number(item.price || 0),
+        colour: item.colour || "",
+        size: item.size || "",
+        customization: item.customization || "",
+        imageUrl: ticketItemImage(item)
+      }));
+    const extraProduct = byId("tc-product-extra").value.trim();
+    if (extraProduct) {
+      products.push({ productName: extraProduct, quantity: 1, price: 0, colour: "", size: "", customization: "", imageUrl: "logo_creativesouls.jpg" });
+    }
+
+    const saveBtn = byId("ticket-create-save");
+    const mediaInput = byId("tc-media");
+    const files = [...mediaInput.files];
+    try {
+      validateTicketMedia(files);
+    } catch (error) {
+      setTicketCreateError(error.message);
+      return;
+    }
+    saveBtn.disabled = true;
+    mediaInput.disabled = true;
+    saveBtn.textContent = "Creating…";
+    try {
+      const ticketId = await generateUniqueTicketId();
+      const attachments = await uploadAdminTicketMedia(files, orderData?.order_id || orderInput || ticketId, saveBtn);
+      saveBtn.textContent = "Saving ticket…";
+      const adminEmail = firebase.auth().currentUser?.email || ADMIN_EMAIL;
+      const ticket = {
+        ticket_id: ticketId,
+        order_id: orderData?.order_id || orderInput,
+        order_doc_id: ticketCreateOrder?.id || "",
+        email,
+        name: byId("tc-name").value.trim(),
+        phone: byId("tc-phone").value.trim(),
+        address: byId("tc-address").value.trim(),
+        fulfillment_type: orderData?.fulfillment_type || "",
+        products,
+        issue,
+        attachments,
+        status: "Open",
+        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+        user_uid: "",
+        created_by: "admin",
+        created_by_email: adminEmail
+      };
+      await db.collection("tickets").doc(ticketId).set(ticket);
+      const prefillReply = byId("tc-send-email").checked;
+      ticketCreateDialog.close();
+      window.showAdminToast?.(`Ticket ${ticketId} created.`, "success");
+      await loadTickets();
+      await showTicketDetails(ticketId, { ...ticket, created_at: new Date() });
+      if (prefillReply) {
+        const reply = byId("ticket-reply-input");
+        if (reply) {
+          reply.value = `We have raised a support ticket (${ticketId}) for your issue and our team is looking into it. We will get back to you shortly with an update.`;
+          updateTicketEmailPreview();
+        }
+      }
+    } catch (error) {
+      setTicketCreateError(errorText(error));
+      reportError(error);
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Create Ticket";
+    } finally {
+      mediaInput.disabled = false;
+    }
+  }
+
+  byId("create-ticket-btn")?.addEventListener("click", () => openTicketCreateDialog());
+  byId("tc-order")?.addEventListener("change", applyTicketCreateOrder);
+  byId("tc-order")?.addEventListener("input", () => { if (findOrderByInput(byId("tc-order").value)) applyTicketCreateOrder(); });
+  byId("ticket-create-save")?.addEventListener("click", saveAdminTicket);
+  byId("tc-media")?.addEventListener("change", () => renderTicketMediaSelection(byId("tc-media"), byId("tc-media-preview")));
+  byId("ticket-create-cancel")?.addEventListener("click", () => ticketCreateDialog.close());
+  byId("ticket-create-close")?.addEventListener("click", () => ticketCreateDialog.close());
+
   // ── Load catalog when section is activated ──────────────────────────────
   const _origNavigateTo = window.navigateTo;
-  window.navigateTo = function(id) {
-    _origNavigateTo(id);
-    if (id === "products" && catalogDocuments.length === 0) loadCatalogProducts();
+  window.navigateTo = function(id, options) {
+    const sectionId = _origNavigateTo(id, options);
+    const isAdmin = String(auth.currentUser?.email || "").trim().toLowerCase() === ADMIN_EMAIL;
+    if (isAdmin && sectionId === "products" && catalogDocuments.length === 0) loadCatalogProducts();
+    if (isAdmin && sectionId === "tickets") loadTickets();
+    return sectionId;
   };
 
   auth.onAuthStateChanged(user => {
@@ -2434,7 +3303,8 @@
     if (isAdmin) {
       identity.textContent = `Signed in as ${user.email}`;
       status.textContent = "Loading dashboard…";
-      loadOrders(); loadCollection();
+      loadOrders(); loadCollection(); loadTickets();
+      if (document.querySelector("#section-products.active")) loadCatalogProducts();
     } else if (user) {
       identity.textContent = `Signed in as ${user.email}. This account is not authorized for the admin dashboard.`;
       status.textContent = "Access denied.";

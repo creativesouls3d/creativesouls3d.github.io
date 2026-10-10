@@ -70,6 +70,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Alerts
       </button>
+      <button class="admin-bottom-nav-item" data-section="tickets" aria-label="Support Tickets">
+        <span class="bnav-badge" id="bnav-tickets-badge" hidden>0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Tickets
+      </button>
       <button class="admin-bottom-nav-item" data-section="products" aria-label="Products">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
         Products
@@ -121,6 +126,13 @@
             </span>
             <span class="admin-nav-label">Needs Attention</span>
             <span class="nav-badge" id="nav-attention-badge">0</span>
+          </button>
+          <button class="admin-nav-item" data-section="tickets" data-tip="Support Tickets">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <span class="admin-nav-label">Support Tickets</span>
+            <span class="nav-badge" id="nav-tickets-badge">0</span>
           </button>
         </div>
 
@@ -337,7 +349,26 @@
               <p>Add a new catalog product with pricing, images, variants, and tags</p>
               <div class="admin-action-card-arrow">New product →</div>
             </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('tickets')" onkeydown="if(event.key==='Enter')navigateTo('tickets')">
+              <div class="admin-action-card-icon" style="background:#fff7ed; color:#c2410c">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <h3>Support Tickets</h3>
+              <p>Review customer issues, inspect photos, and reply through Gmail</p>
+              <div class="admin-action-card-arrow">Open tickets →</div>
+            </div>
           </div>
+          <article class="admin-panel" style="margin-top: 18px;">
+            <div class="admin-panel-hdr">
+              <div>
+                <div class="admin-panel-title">Open Support Tickets</div>
+                <div class="admin-panel-sub">Customer issues waiting for a reply.</div>
+              </div>
+              <button type="button" class="btn-secondary" onclick="navigateTo('tickets')">View all tickets →</button>
+            </div>
+            <div id="dashboard-open-tickets" class="admin-dashboard-recent-orders"></div>
+          </article>
           <!-- Recent Orders Card -->
           <article class="admin-panel" style="margin-top: 18px;">
             <div class="admin-panel-hdr">
@@ -446,6 +477,41 @@
               </summary>
               <div id="admin-attention-queue" class="admin-attention-list" aria-live="polite"></div>
             </details>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             SUPPORT TICKETS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-tickets">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Customer Support</p>
+              <h1>Support Tickets</h1>
+              <p class="sub">Read order issues, review photos and videos, then reply in Gmail with one click. You can also raise a ticket on a customer's behalf.</p>
+            </div>
+            <div class="admin-page-hdr-actions">
+              <button id="create-ticket-btn" type="button" class="btn btn-primary">+ Create Ticket</button>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <div class="admin-quick-filters" id="tickets-quick-filters" role="group" aria-label="Ticket status filters">
+              <button type="button" class="admin-filter-pill active" data-ticket-filter="open">Open</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="replied">Replied</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="resolved">Resolved</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="all">All tickets</button>
+            </div>
+            <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="ticket-search" type="search" aria-label="Search tickets" placeholder="Search by ticket ID, order, customer, or issue…"/>
+              </div>
+              <div class="admin-toolbar-actions">
+                <button id="refresh-tickets" type="button" class="btn btn-secondary">Refresh</button>
+              </div>
+            </div>
+            <p id="ticket-count-label" aria-live="polite">Loading tickets…</p>
+            <div id="tickets-list"></div>
           </article>
         </section>
 
@@ -655,6 +721,7 @@
               <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='orders'; byId('browse-collection').click()">orders</button>
               <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='products'; byId('browse-collection').click()">products</button>
               <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='service_requests'; byId('browse-collection').click()">service_requests</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='tickets'; byId('browse-collection').click()">tickets</button>
             </div>
 
             <div class="admin-toolbar admin-explorer-toolbar">
@@ -703,7 +770,7 @@
 
       <div id="product-variant-builder" class="order-item-builder" hidden>
         <div class="order-item-builder-heading">
-          <div><h3>Product Variants</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Optionally add colour and size choices. Each choice can carry an extra price on top of the base price.</p></div>
+          <div><h3>Product Variants</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Colour prices are extra charges. Size prices are full product prices, not extra charges. Rows are saved in the order shown.</p></div>
         </div>
         <div class="product-variant-group">
           <div class="product-variant-head">
@@ -719,6 +786,19 @@
           </div>
           <div id="product-size-rows" class="product-variant-rows"></div>
         </div>
+      </div>
+
+      <div id="product-media-builder" class="order-item-builder" hidden>
+        <h3>Product images</h3>
+        <p class="admin-helper">Upload images directly to ImageKit. The first image is the main product image. Maximum 25 MB per file. New uploads are added after retained images.</p>
+        <label for="product-image-files">Choose product images</label>
+        <input id="product-image-files" type="file" accept="image/*" multiple />
+        <div id="product-image-preview" class="ticket-attachments"></div>
+        <div id="product-image-selection" class="ticket-media-selection" aria-live="polite"></div>
+        <label for="product-gif-file">Optional animated GIF</label>
+        <input id="product-gif-file" type="file" accept="image/gif" />
+        <div id="product-gif-selection" class="ticket-media-selection" aria-live="polite"></div>
+        <button id="product-remove-gif" type="button" class="btn-secondary" hidden>Remove GIF</button>
       </div>
 
       <div id="editor-fields" class="admin-field-grid"></div>
@@ -770,6 +850,96 @@
       </button>
       <button type="button" id="order-detail-edit">Edit This Order</button>
       <button type="button" id="order-detail-done" class="btn-secondary">Done</button>
+    </div>
+  </dialog>
+
+  <dialog id="ticket-detail-dialog" class="admin-order-detail" aria-labelledby="ticket-detail-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Support Ticket</p>
+        <h2 id="ticket-detail-title">Ticket</h2>
+      </div>
+      <button type="button" id="ticket-detail-close" aria-label="Close ticket">✕</button>
+    </div>
+    <div id="ticket-detail-content" class="admin-modal-body"></div>
+    <div class="admin-actions">
+      <button type="button" id="ticket-mark-resolved" class="btn-secondary">Mark resolved</button>
+      <button type="button" id="ticket-open-gmail" class="btn-primary">Open reply in Gmail</button>
+      <button type="button" id="ticket-detail-done" class="btn-secondary">Done</button>
+    </div>
+  </dialog>
+
+  <!-- Create Ticket Dialog (admin raises a ticket for a customer) -->
+  <dialog id="ticket-create-dialog" class="admin-dialog" aria-labelledby="ticket-create-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Support Ticket</p>
+        <h2 id="ticket-create-title">Create Ticket for Customer</h2>
+      </div>
+      <button type="button" id="ticket-create-close" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="admin-modal-body">
+      <p class="admin-helper" style="margin:0 0 12px; color:var(--text-2); font-size:0.86rem;">Enter an order ID to auto-fill the customer's details and pick the affected products, or fill in the details manually.</p>
+
+      <div class="admin-field-grid">
+        <div class="admin-field" style="grid-column:1 / -1;">
+          <div class="admin-field-label"><label for="tc-order">Order ID (optional)</label></div>
+          <input id="tc-order" list="tc-order-options" placeholder="e.g. #123456" autocomplete="off" />
+          <datalist id="tc-order-options"></datalist>
+          <span id="tc-order-hint" class="admin-field-help" style="font-size:0.74rem; color:var(--text-3);"></span>
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-name">Customer name</label></div>
+          <input id="tc-name" placeholder="Customer name" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-email">Customer email *</label></div>
+          <input id="tc-email" type="email" placeholder="customer@example.com" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-phone">Phone</label></div>
+          <input id="tc-phone" type="tel" placeholder="Phone number" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-address">Address</label></div>
+          <input id="tc-address" placeholder="Delivery / pickup address" autocomplete="off" />
+        </div>
+      </div>
+
+      <div id="tc-products-wrap" class="admin-detail-section" style="margin-top:12px;" hidden>
+        <h3>Products affected</h3>
+        <div id="tc-products" class="ticket-create-products"></div>
+      </div>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-product-extra">Other product (optional)</label></div>
+        <input id="tc-product-extra" placeholder="Product name, if not part of an order" autocomplete="off" />
+      </div>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-issue">Issue / description *</label></div>
+        <textarea id="tc-issue" style="min-height:110px;" placeholder="Describe the customer's issue (e.g. reported by phone / WhatsApp / Instagram)…"></textarea>
+      </div>
+
+      <label class="ticket-create-check">
+        <input type="checkbox" id="tc-send-email" checked />
+        <span>Pre-fill a confirmation reply with the ticket ID (send it from Gmail on the next screen)</span>
+      </label>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-media">Photos &amp; videos (optional)</label></div>
+        <input id="tc-media" type="file" accept="image/*,video/*" multiple aria-describedby="tc-media-help" />
+        <span id="tc-media-help" class="admin-field-help">Stored in ImageKit. Maximum 25 MB per file.</span>
+        <div id="tc-media-preview" class="ticket-media-selection" aria-live="polite"></div>
+      </div>
+
+      <p id="tc-error" class="admin-status" role="alert"></p>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="ticket-create-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="ticket-create-save" class="btn-primary">Create Ticket</button>
     </div>
   </dialog>
 
@@ -952,6 +1122,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <script src="imagekit-config.js"></script>
   <script src="navigation.js"></script>
 
   <!-- Toast Helper -->
@@ -984,7 +1156,7 @@
     });
 
     // Auto-dismiss dialogs when clicking on backdrop
-    ['document-editor', 'order-detail-dialog'].forEach(id => {
+    ['document-editor', 'order-detail-dialog', 'ticket-detail-dialog', 'ticket-create-dialog'].forEach(id => {
       const dlg = document.getElementById(id);
       if (!dlg) return;
       dlg.addEventListener('click', (event) => {
@@ -1059,13 +1231,29 @@
         dashboard: { title: 'Dashboard',         sub: 'Store overview & live performance' },
         analytics: { title: 'Sales Analytics',   sub: 'Revenue, volume & order trends' },
         attention: { title: 'Needs Attention',   sub: 'Orders requiring immediate triage' },
+        tickets:   { title: 'Support Tickets',    sub: 'Review issues and reply in Gmail' },
         orders:    { title: 'All Orders',         sub: 'Search, filter, update & dispatch orders' },
         products:  { title: 'Products Catalog',  sub: 'Browse, manage & export your product catalog PDF' },
         explorer:  { title: 'Data Explorer',     sub: 'Browse & edit Firestore collections' },
       };
 
-      window.navigateTo = function (id) {
+      const sectionFromURL = () => {
+        const id = window.location.search.slice(1);
+        return Object.prototype.hasOwnProperty.call(META, id) ? id : 'dashboard';
+      };
+
+      window.navigateTo = function (id, { historyMode = 'push' } = {}) {
+        if (!Object.prototype.hasOwnProperty.call(META, id)) id = 'dashboard';
+        const query = `?${id}`;
+        if (historyMode !== 'none' && window.location.search !== query) {
+          const url = `${window.location.pathname}${query}${window.location.hash}`;
+          if (historyMode === 'replace') window.history.replaceState(null, '', url);
+          else window.history.pushState(null, '', url);
+        }
         document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(b => {
+          b.classList.toggle('active', b.dataset.section === id);
+        });
         document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
         const navBtn = document.querySelector(`.admin-nav-item[data-section="${id}"]`);
         const section = document.getElementById(`section-${id}`);
@@ -1076,20 +1264,18 @@
         document.getElementById('topbar-section-subtitle').textContent = m.sub;
         closeDrawer();
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        return id;
       };
 
       document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
         btn.addEventListener('click', () => navigateTo(btn.dataset.section));
       });
 
-      // Sync bottom nav active state whenever navigateTo is called
-      const _origNavigateTo = window.navigateTo;
-      window.navigateTo = function (id) {
-        _origNavigateTo(id);
-        document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(b => {
-          b.classList.toggle('active', b.dataset.section === id);
-        });
-      };
+      // Restore the section on reload without adding a history entry.
+      window.navigateTo(sectionFromURL(), { historyMode: 'replace' });
+      window.addEventListener('popstate', () => {
+        window.navigateTo(sectionFromURL(), { historyMode: 'none' });
+      });
 
       // Wire bottom nav buttons
       document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(btn => {
