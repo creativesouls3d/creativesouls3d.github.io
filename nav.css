@@ -1,0 +1,65 @@
+/* ==========================================================================
+   NAV.CSS - Primary Navigation Bar (below the header)
+   ========================================================================== */
+
+/* Primary Navigation */
+.main-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px max(16px, calc((100% - var(--container)) / 2));
+  background: linear-gradient(180deg, #0f172a 0%, #131b2e 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  position: relative;
+  z-index: 999;
+}
+
+.main-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.main-nav a:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.main-nav a.active {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  font-weight: 700;
+}
+
+/* Mobile responsive */
+@media (max-width: 520px) {
+  .main-nav {
+    gap: 4px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    justify-content: flex-start;
+  }
+
+  .main-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-nav a {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+  }
+}

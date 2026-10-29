@@ -188,13 +188,24 @@
     function getProgressIndex(status) {
       if (!status) return 0;
       const normalized = String(status).toLowerCase();
-      if (normalized.includes("placed")) return 0;
-      if (normalized.includes("approved")) return 1;
-      if (normalized.includes("rejected")) return 1;
-      if (normalized.includes("printing")) return 2;
-      if (normalized.includes("delivery") && !normalized.includes("delivered")) return 3;
-      if (normalized.includes("delivered")) return 4;
+      if (normalized.includes("delivered")) return 5;
+      if (normalized.includes("delivery")) return 4;
+      if (normalized.includes("dispatch") || normalized.includes("shipped")) return 3;
+      if (normalized.includes("printing") || normalized.includes("production")) return 2;
+      if (normalized.includes("approved") || normalized.includes("confirmed")) return 1;
+      if (normalized.includes("placed") || normalized.includes("pending") || normalized.includes("request")) return 0;
       return 0;
+    }
+
+    function displayOrderStatus(status = "Order Placed") {
+      const value = String(status).toLowerCase();
+      if (value.includes("delivered")) return "Product Delivered";
+      if (value.includes("delivery")) return "Out For Delivery";
+      if (value.includes("dispatch") || value.includes("shipped")) return "Order Dispatched";
+      if (value.includes("printing") || value.includes("production")) return "Printing Product";
+      if (value.includes("approved") || value.includes("confirm")) return "Order Approved";
+      if (value.includes("placed") || value.includes("pending") || value.includes("request")) return "Order Placed";
+      return status || "Order Placed";
     }
 
     async function loadOrder(orderId = getOrderId()) {
@@ -229,7 +240,7 @@
         const currentStep = getProgressIndex(statusText);
         const isRejected = statusText.includes("rejected");
         const isWaitingPayment = String(data.payment_status || "").toLowerCase() === "pending";
-        const steps = ["Order Placed", "Order Approved", "Printing Product", "Put For Delivery", "Product Delivered"];
+        const steps = ["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Product Delivered"];
 
         let stepsHTML = "";
 
@@ -277,6 +288,7 @@
           dateStyle: "medium",
           timeStyle: "short"
         }) : "-";
+        const statusInfo = String(data.status_info || "").trim();
 
         container.innerHTML = `
           <div class="track-card">
@@ -290,7 +302,7 @@
                 statusText.includes("delivered") || statusText.includes("approved") ? "success" :
                 statusText.includes("printing") || statusText.includes("delivery") ? "active" :
                 "pending"
-              }">${escapeHTML(data.status || "Processing")}</div>
+              }">${escapeHTML(displayOrderStatus(data.status || "Processing"))}</div>
             </div>
 
             ${isWaitingPayment ? `
@@ -304,6 +316,13 @@
                    style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
               ${stepsHTML}
             </div>
+
+            ${statusInfo ? `
+              <section class="order-panel" style="margin-top: 20px;">
+                <h2>Status Update</h2>
+                <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${escapeHTML(statusInfo)}</p>
+              </section>
+            ` : ""}
 
             <div class="order-detail-grid" style="margin-top: 32px;">
               <article class="order-panel">

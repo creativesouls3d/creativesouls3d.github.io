@@ -2,6 +2,20 @@
   function initQuickStatusFilters() {
     const filterWrap = byId("orders-quick-filters");
     if (!filterWrap) return;
+    filterWrap.replaceChildren(...ORDER_WORKFLOW_STATUSES.map(stage => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "admin-filter-pill";
+      button.dataset.quickStatus = stage;
+      button.textContent = stage;
+      return button;
+    }));
+    const allButton = document.createElement("button");
+    allButton.type = "button";
+    allButton.className = "admin-filter-pill active";
+    allButton.dataset.quickStatus = "all";
+    allButton.textContent = "All Orders";
+    filterWrap.prepend(allButton);
     filterWrap.querySelectorAll("button[data-quick-status]").forEach(btn => {
       btn.addEventListener("click", () => {
         filterWrap.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -13,7 +27,7 @@
         if (target === "all") {
           checkboxes.forEach(cb => { cb.checked = false; });
         } else if (target === "action") {
-          const actionSet = new Set(["Order Placed", "Payment Pending", "Request Received", "Confirmed", "In Production", "Ready for Dispatch"]);
+          const actionSet = new Set(["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery"]);
           checkboxes.forEach(cb => { cb.checked = actionSet.has(cb.value); });
         } else {
           checkboxes.forEach(cb => { cb.checked = cb.value.toLowerCase() === target.toLowerCase(); });
@@ -48,7 +62,7 @@
       tr.innerHTML = "<td><button type='button' class='admin-order-id'>" + orderId + "</button></td>" +
         "<td><strong>" + (order.name || "Customer") + "</strong></td>" +
         "<td style='color:var(--text-3); font-size:0.75rem;'>" + orderDate(order.timestamp) + "</td>" +
-        "<td><span class='admin-order-status status-" + statusSlug + "'>" + (order.status || "Order Placed") + "</span></td>" +
+        "<td><span class='admin-order-status status-" + statusSlug + "'>" + canonical + "</span></td>" +
         "<td><strong>" + amount + "</strong></td>" +
         "<td style='text-align:right;'><button type='button' class='btn-table-action btn-secondary' style='height:28px!important; padding:0 10px!important;'>Manage</button></td>";
       tr.querySelector(".admin-order-id").addEventListener("click", () => showOrderDetails(doc.id, order));
@@ -59,6 +73,8 @@
   }
 
   const ADMIN_EMAIL = "luvs2006@gmail.com";
+const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // permitted admin emails
+  const NOTIFY_EMAIL = "hello.creative.souls3d@gmail.com"; // Always the sender for order & support emails
   const byId = id => document.getElementById(id);
   window.byId = byId;
   const identity = byId("admin-identity");
@@ -96,7 +112,9 @@
       return new Map(Array.isArray(stored) ? stored.filter(entry => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "string") : []);
     } catch { return new Map(); }
   })();
-  const ORDER_STATUS_CATEGORIES = ["Order Placed", "Payment Pending", "Request Received", "Confirmed", "In Production", "Ready for Dispatch", "Shipped", "Delivered", "Cancelled", "Rejected", "Other"];
+  const ORDER_WORKFLOW_STATUSES = ["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Product Delivered"];
+  const ORDER_STATUS_CATEGORIES = [...ORDER_WORKFLOW_STATUSES, "Cancelled", "Rejected", "Other"];
+  const orderStatusOptions = current => [...ORDER_WORKFLOW_STATUSES, "Cancelled", "Rejected"].map(item => `<option value="${item}"${item === current ? " selected" : ""}>${item}</option>`).join("");
   const PRODUCT_CATEGORIES = ["Keychains", "Home Decor", "Idols", "Desk Accessories", "Gifts", "Car Accessories", "Custom Products", "Other"];
   const PRODUCT_BEST_FOR = ["Gifts", "Return Gifts", "Home Decor", "Desk/Office", "Car", "Pooja/Festival"];
   const PRODUCT_AVAILABILITY = ["In Stock", "Made to Order", "Out of Stock"];
@@ -210,6 +228,7 @@
     originalDocumentData = data ? JSON.parse(plainData(data)) : null;
     timestampExplicitlyEdited = false;
     editorModel = JSON.parse(plainData(data));
+    if (isOrder) editorModel = { status_info: "", ...editorModel };
     if (isProduct) {
       editorModel = { productId: id, productName: "", price: 0, imageUrl: "", gifUrl: "", description: "", customizable: true, category: "", stock: 0, tags: "", color: "", ...editorModel };
       editorModel.color = data.color ?? data.colour ?? "";
@@ -614,9 +633,18 @@
       const input = document.createElement("input"); input.type = "text"; input.dataset.field = key; input.value = value ?? "";
       if (/email/i.test(key)) input.type = "email";
       else if (/phone|mobile/i.test(key)) input.type = "tel";
-      if (/status/i.test(key) && activeDocument.collection === "orders") {
-        const input = document.createElement("input"); input.type = "text"; input.dataset.field = key; input.value = value ?? "";
-        wrapper.append(input);
+      if (key === "status_info" && activeDocument.collection === "orders") {
+        wrapper.classList.add("admin-field-full");
+        const textarea = document.createElement("textarea");
+        textarea.dataset.field = key;
+        textarea.value = value ?? "";
+        textarea.rows = 3;
+        textarea.placeholder = "Add information about the current order status";
+        wrapper.append(textarea);
+      } else if (/status/i.test(key) && activeDocument.collection === "orders") {
+        const select = document.createElement("select"); select.dataset.field = key;
+        select.innerHTML = orderStatusOptions(canonicalOrderStatus(value));
+        wrapper.append(select);
       } else if (key === "fulfillment_type" && activeDocument.collection === "orders") {
         const select = document.createElement("select"); select.dataset.field = key;
         [["delivery", "Delivery"], ["pickup", "Pickup"]].forEach(([optionValue, text]) => {
@@ -625,6 +653,7 @@
         if (value) select.value = String(value).toLowerCase();
         wrapper.append(select);
       } else if (/address|note|expected.?delivery/i.test(key)) {
+        wrapper.classList.add("admin-field-full");
         const textarea = document.createElement("textarea");
         textarea.dataset.field = key;
         textarea.value = value ?? "";
@@ -637,6 +666,7 @@
       } else if (activeDocument.collection === "products" && (key === "bestFor" || key === "best_for")) {
         wrapper.append(productSelect(key, PRODUCT_BEST_FOR, value, "Select an audience"));
       } else if (activeDocument.collection === "products" && (key === "description" || key === "tags")) {
+        wrapper.classList.add("admin-field-full");
         const textarea = document.createElement("textarea");
         textarea.dataset.field = key;
         textarea.value = value ?? "";
@@ -682,7 +712,7 @@
       { title: "Availability and stock", description: "Enter stock as a whole-number quantity, not a stock note.", keys: ["availability", "stockStatus", "stock_status", "stock"] },
       { title: "Discovery and tags", description: "Colour label, search tags, and the best-for audience used by catalog filters.", keys: ["colour", "color", "tags"] }
     ] : [
-      { title: "Order status", description: "Order reference, current status, and placement time.", keys: ["order_id", "status", "timestamp", "expected_delivery"] },
+      { title: "Order status", description: "Order reference, current status, status update information, and placement time.", keys: ["order_id", "status", "status_info", "timestamp", "expected_delivery"] },
       { title: "Customer", description: "Contact details for this order.", keys: ["name", "email", "phone"] },
       { title: "Delivery or pickup", description: "Choose how the customer receives the order and update the address or pickup details.", keys: ["fulfillment_type", "address", "pickup_location"] },
       { title: "Payment and totals", description: "Payment verification and the amounts recorded for this order.", keys: ["payment_status", "payment_ref", "mop", "upi_id", "item_total", "delivery_charge", "discount", "coupon_code", "total"] },
@@ -795,10 +825,22 @@
       await ref.set(data);
       dialog.close();
       status.textContent = "Document saved.";
+      const wasCreatingOrder = activeDocument.collection === "orders" && activeDocument.creating;
       window.showAdminToast?.(activeDocument.collection === "products" && activeDocument.creating ? "Product created successfully." : "Document saved successfully.", "success");
       if (activeDocument.collection === "orders") await loadOrders();
       if (activeDocument.collection === "products") await loadCatalogProducts();
       if (activeDocument.collection === byId("collection-name").value.trim()) await loadCollection();
+      // Auto-send order confirmation email when a new order is created
+      if (wasCreatingOrder && String(data.email || "").includes("@")) {
+        window.setTimeout(async () => {
+          try {
+            await sendOrderNotificationEmail({ ...data, _docId: activeDocument.id });
+            window.showAdminToast?.("Order confirmation email sent to customer via Gmail.", "success");
+          } catch (err) {
+            console.warn("Could not auto-send order confirmation email:", err);
+          }
+        }, 800);
+      }
     } catch (error) {
       byId("editor-error").textContent = error instanceof SyntaxError ? "The JSON is invalid. Check commas, quotes, and braces." : errorText(error);
     } finally {
@@ -944,14 +986,44 @@
     if (value && typeof value.toDate === "function") value = { __firestoreType: "timestamp", value: value.toDate().toISOString() };
     const item = document.createElement("div"); item.className = "admin-detail-item";
     if (Array.isArray(value)) {
+      item.classList.add("admin-detail-full");
       const heading = document.createElement("strong"); heading.textContent = `${humanize(label)} (${value.length})`; item.append(heading);
-      if (!value.length) { const empty = document.createElement("div"); empty.textContent = "No entries"; item.append(empty); }
+      if (!value.length) { const empty = document.createElement("div"); empty.textContent = "No entries"; empty.className = "admin-helper"; item.append(empty); }
+      const cardsGrid = document.createElement("div");
+      cardsGrid.className = "admin-detail-cards-grid";
       value.forEach((entry, index) => {
-        const card = document.createElement("div"); card.className = "admin-detail-section";
-        if (entry && typeof entry === "object") Object.entries(entry).forEach(([key, child]) => appendDetailValue(card, key, child));
-        else card.textContent = String(entry ?? "—");
-        item.append(card);
+        const card = document.createElement("div"); card.className = "admin-detail-card-item";
+        if (entry && typeof entry === "object") {
+          const imgUrl = entry.imageUrl || entry.image_url || entry.image || entry.photo;
+          if (imgUrl && typeof imgUrl === "string" && (imgUrl.startsWith("http://") || imgUrl.startsWith("https://"))) {
+            const thumb = document.createElement("img");
+            thumb.className = "admin-item-thumbnail";
+            thumb.src = imgUrl;
+            thumb.alt = entry.name || entry.productName || "Product image";
+            thumb.loading = "lazy";
+            card.append(thumb);
+          }
+          const infoWrap = document.createElement("div");
+          infoWrap.className = "admin-item-info";
+          const title = document.createElement("div");
+          title.className = "admin-item-name";
+          title.textContent = entry.name || entry.productName || entry.title || `Item #${index + 1}`;
+          infoWrap.append(title);
+
+          const specsGrid = document.createElement("div");
+          specsGrid.className = "admin-item-specs";
+          Object.entries(entry).forEach(([key, child]) => {
+            if (["name", "productName", "title", "image", "imageUrl", "image_url", "photo"].includes(key)) return;
+            appendDetailValue(specsGrid, key, child);
+          });
+          infoWrap.append(specsGrid);
+          card.append(infoWrap);
+        } else {
+          card.textContent = String(entry ?? "—");
+        }
+        cardsGrid.append(card);
       });
+      item.append(cardsGrid);
     } else if (value && typeof value === "object" && value.__firestoreType === "timestamp") {
       item.className = "admin-detail-value"; const name = document.createElement("strong"); name.textContent = humanize(label);
       item.append(name, document.createTextNode(orderDate(value.value)));
@@ -965,11 +1037,32 @@
       item.className = "admin-detail-value"; const name = document.createElement("strong"); name.textContent = humanize(label);
       item.append(name, document.createTextNode("Stored file data"));
     } else if (value && typeof value === "object") {
+      item.classList.add("admin-detail-full");
       const heading = document.createElement("strong"); heading.textContent = humanize(label); item.append(heading);
-      Object.entries(value).forEach(([key, child]) => appendDetailValue(item, key, child));
+      const innerGrid = document.createElement("div"); innerGrid.className = "admin-detail-grid";
+      Object.entries(value).forEach(([key, child]) => appendDetailValue(innerGrid, key, child));
+      item.append(innerGrid);
     } else {
-      item.className = "admin-detail-value"; const name = document.createElement("strong"); name.textContent = humanize(label);
-      item.append(name, document.createTextNode(value === null || value === "" || value === undefined ? "—" : String(value)));
+      item.className = "admin-detail-value";
+      const strVal = value === null || value === "" || value === undefined ? "—" : String(value);
+      if (strVal.length > 50 || label.includes("address") || label.includes("note") || label.includes("description") || label.includes("request")) {
+        item.classList.add("admin-detail-full");
+      }
+      const name = document.createElement("strong"); name.textContent = humanize(label);
+      item.append(name);
+      if (typeof value === "string" && (value.startsWith("http://") || value.startsWith("https://"))) {
+        const link = document.createElement("a");
+        link.href = value;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = value.length > 55 ? value.substring(0, 52) + "…" : value;
+        link.className = "admin-detail-link";
+        item.append(link);
+      } else if (["price", "total", "item_total", "delivery_charge", "discount"].includes(label) && (typeof value === "number" || (!isNaN(Number(value)) && value !== "" && value !== null))) {
+        item.append(document.createTextNode(formatOrderMoney(value)));
+      } else {
+        item.append(document.createTextNode(strVal));
+      }
     }
     parent.append(item);
   }
@@ -990,31 +1083,47 @@
 
     // Quick Status Bar in Order Detail Modal
     const statusRow = document.createElement("div");
-    statusRow.className = "admin-detail-section";
-    statusRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--accent-subtle); border-color: var(--accent-border); margin-bottom: 14px;";
+    statusRow.className = "admin-order-status-bar";
     const curStatus = order.status || "Order Placed";
     const canonical = canonicalOrderStatus(curStatus);
     const statusSlug = canonical.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const formattedTotal = order.total !== undefined && order.total !== null ? formatOrderMoney(order.total) : "";
     statusRow.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-2); text-transform: uppercase;">Status:</span>
-        <span class="admin-order-status status-${statusSlug}">${curStatus}</span>
+      <div class="admin-order-status-bar-info">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-2); text-transform: uppercase;">Status:</span>
+          <span class="admin-order-status status-${statusSlug}">${escapeHtml(canonical)}</span>
+        </div>
+        ${formattedTotal ? `<span style="font-weight: 800; color: var(--accent-dark); font-size: 0.92rem; padding-left: 10px; border-left: 2px solid var(--border);">Total: ${formattedTotal}</span>` : ""}
+        ${order.name ? `<span style="color: var(--text-2); font-size: 0.82rem; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--border);">Customer: ${escapeHtml(order.name)}</span>` : ""}
       </div>
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <input type="text" id="modal-quick-status" aria-label="Change order status" value="${curStatus}" placeholder="Type new status…" style="height: 32px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; background: #fff; color: #0f172a; min-width: 160px;" />
-        <button type="button" id="modal-apply-status" class="btn-primary" style="height: 32px!important; padding: 0 12px!important; font-size: 0.78rem!important;">Update</button>
+      <div class="admin-order-status-bar-action">
+        <input type="text" id="modal-quick-status" aria-label="Change order status" value="${curStatus}" placeholder="Type new status…" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.82rem; background: #fff; color: #0f172a; min-width: 170px;" />
+        <button type="button" id="modal-apply-status" class="btn-primary" style="height: 34px!important; padding: 0 14px!important; font-size: 0.8rem!important;">Update</button>
       </div>
     `;
     const applyBtn = statusRow.querySelector("#modal-apply-status");
-    const statusInput = statusRow.querySelector("#modal-quick-status");
+    const statusInput = document.createElement("select");
+    statusInput.id = "modal-quick-status";
+    statusInput.setAttribute("aria-label", "Change order status");
+    statusInput.innerHTML = orderStatusOptions(canonical);
+    Object.assign(statusInput.style, { height: "34px", padding: "0 10px", borderRadius: "6px", border: "1px solid var(--border)", fontSize: "0.82rem", background: "#fff", color: "#0f172a", minWidth: "170px" });
+    statusRow.querySelector("#modal-quick-status").replaceWith(statusInput);
+    const statusInfoField = document.createElement("label");
+    statusInfoField.className = "admin-order-status-info-field";
+    statusInfoField.innerHTML = `<span>Additional status info</span><textarea id="modal-status-info" rows="2" placeholder="Add an update related to this order status…">${escapeHtml(order.status_info || "")}</textarea>`;
+    statusRow.querySelector(".admin-order-status-bar-action").append(statusInfoField);
+    const statusInfoInput = statusInfoField.querySelector("textarea");
     applyBtn.addEventListener("click", async () => {
       const nextStatus = statusInput.value.trim();
-      if (!nextStatus || nextStatus === order.status) return;
+      const nextStatusInfo = statusInfoInput.value.trim();
+      if (!nextStatus || (nextStatus === order.status && nextStatusInfo === String(order.status_info || "").trim())) return;
       applyBtn.disabled = true;
       applyBtn.textContent = "Saving…";
       try {
-        await db.collection("orders").doc(id).update({ status: nextStatus });
+        await db.collection("orders").doc(id).update({ status: nextStatus, status_info: nextStatusInfo });
         order.status = nextStatus;
+        order.status_info = nextStatusInfo;
         window.showAdminToast?.("Order status updated to " + nextStatus, "success");
         await loadOrders();
         showOrderDetails(id, order);
@@ -1030,30 +1139,55 @@
     if (invoiceBtn) {
       invoiceBtn.onclick = () => downloadInvoice(order);
     }
+    const notifyBtn = byId("order-detail-notify");
+    if (notifyBtn) {
+      notifyBtn.onclick = async () => {
+        const quickStatusInput = byId("modal-quick-status");
+        const nextStatus = quickStatusInput?.value.trim() || order.status || "Order Placed";
+        const nextStatusInfo = statusInfoInput.value.trim();
+        try {
+          await db.collection("orders").doc(id).update({ status: nextStatus, status_info: nextStatusInfo });
+          order.status = nextStatus;
+          order.status_info = nextStatusInfo;
+        } catch (err) {
+          reportError(err);
+          return;
+        }
+        sendOrderNotificationEmail(order);
+      };
+    }
+
+    const layout = document.createElement("div");
+    layout.className = "admin-order-detail-layout";
+
     const categories = [
       ["Order and status", ["order_id", "status", "approved", "timestamp", "expected_delivery", "order_type"]],
       ["Customer", ["name", "email", "phone"]],
       ["Delivery or pickup", ["fulfillment_type", "address", "pickup_location"]],
-      ["Items and request", ["items", "service_request", "order_note"]],
-      ["Payment and totals", ["item_total", "delivery_charge", "discount", "coupon_code", "total", "payment_ref", "payment_status", "mop", "upi_id"]]
+      ["Payment and totals", ["item_total", "delivery_charge", "discount", "coupon_code", "total", "payment_ref", "payment_status", "mop", "upi_id"]],
+      ["Items and request", ["items", "service_request", "order_note"]]
     ];
     const shown = new Set();
     categories.forEach(([title, keys]) => {
       const entries = keys.filter(key => Object.hasOwn(order, key));
       if (!entries.length) return;
-      const section = document.createElement("section"); section.className = "admin-detail-section";
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const section = document.createElement("section");
+      section.className = `admin-detail-section section-${slug}`;
       const heading = document.createElement("h3"); heading.textContent = title; section.append(heading);
       const grid = document.createElement("div"); grid.className = "admin-detail-grid";
       entries.forEach(key => { shown.add(key); appendDetailValue(grid, key, order[key]); });
-      section.append(grid); content.append(section);
+      section.append(grid); layout.append(section);
     });
     const additional = Object.keys(order).filter(key => !shown.has(key));
     if (additional.length) {
-      const section = document.createElement("section"); section.className = "admin-detail-section";
+      const section = document.createElement("section");
+      section.className = "admin-detail-section section-additional-details";
       const heading = document.createElement("h3"); heading.textContent = "Additional details"; section.append(heading);
       const grid = document.createElement("div"); grid.className = "admin-detail-grid";
-      additional.forEach(key => appendDetailValue(grid, key, order[key])); section.append(grid); content.append(section);
+      additional.forEach(key => appendDetailValue(grid, key, order[key])); section.append(grid); layout.append(section);
     }
+    content.append(layout);
     byId("order-detail-edit").onclick = () => {
       byId("order-detail-dialog").close();
       openEditor({ collection: "orders", id, data: order, creating: false });
@@ -1082,15 +1216,14 @@
   }
   function canonicalOrderStatus(value) {
     const status = String(value || "Order Placed").trim().toLowerCase();
-    if (/deliver/.test(status)) return "Delivered";
+    if (/\b(delivered|product delivered)\b|delivery complete/.test(status)) return "Product Delivered";
+    if (/out for delivery|delivery/.test(status)) return "Out For Delivery";
     if (/reject/.test(status)) return "Rejected";
     if (/cancel/.test(status)) return "Cancelled";
-    if (/payment|due/.test(status)) return "Payment Pending";
-    if (/ship|dispatch/.test(status)) return /ready|dispatch/.test(status) ? "Ready for Dispatch" : "Shipped";
-    if (/print(ing)? complete|production complete/.test(status)) return "Ready for Dispatch";
-    if (/print|production/.test(status)) return "In Production";
-    if (/confirm/.test(status)) return "Confirmed";
-    if (/request/.test(status)) return "Request Received";
+    if (/payment|due|request/.test(status)) return "Order Placed";
+    if (/ship|dispatch/.test(status)) return "Order Dispatched";
+    if (/print|production/.test(status)) return "Printing Product";
+    if (/approve|confirm/.test(status)) return "Order Approved";
     if (/place|order placed/.test(status)) return "Order Placed";
     return "Other";
   }
@@ -1098,8 +1231,8 @@
   function updateOrderOverview(docs) {
     const cleanDocs = (docs || []).filter(doc => !isCustomerIgnored(doc.data(), doc.id));
     const orders = cleanDocs.map(doc => doc.data());
-    const delivered = orders.filter(order => canonicalOrderStatus(order.status) === "Delivered").length;
-    const actionStatuses = new Set(["Order Placed", "Payment Pending", "Request Received", "Confirmed", "In Production", "Ready for Dispatch", "Other"]);
+    const delivered = orders.filter(order => canonicalOrderStatus(order.status) === "Product Delivered").length;
+    const actionStatuses = new Set(["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Other"]);
     const needsAction = orders.filter(order => actionStatuses.has(canonicalOrderStatus(order.status))).length;
     byId("stat-total-orders").textContent = String(orders.length);
     byId("stat-open-orders").textContent = String(needsAction);
@@ -1465,7 +1598,7 @@
   function renderAttentionQueue() {
     const target = byId("admin-attention-queue");
     const now = Date.now();
-    const terminal = new Set(["Delivered", "Cancelled", "Rejected"]);
+    const terminal = new Set(["Product Delivered", "Cancelled", "Rejected"]);
     const attention = orderDocuments.map(doc => {
       const order = doc.data();
       if (isCustomerIgnored(order, doc.id)) return null;
@@ -1674,7 +1807,7 @@
       row.append(cell(order.payment_ref || order.mop || "Payment not specified", order.payment_status ? `Payment status: ${order.payment_status}` : ""));
       const canonical = canonicalOrderStatus(order.status);
       const statusSlug = canonical.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const statusCell = cell(order.status || "Order Placed");
+      const statusCell = cell(canonical);
       statusCell.firstElementChild.className = `admin-order-status status-${statusSlug}`;
       row.append(statusCell);
       const amount = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(order.total || 0));
@@ -1717,7 +1850,15 @@
         } catch (error) { reportError(error); }
       });
 
-      actions.append(manage, invoice, edit, ignore, remove); actionCell.append(actions); row.append(actionCell); body.append(row);
+
+      const notify = document.createElement("button"); notify.type = "button"; notify.className = "btn-table-action btn-notify";
+      notify.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg><span>Notify</span>`;
+      notify.title = "Send order status notification email to customer";
+      notify.addEventListener("click", () => {
+        sendOrderNotificationEmail(order);
+      });
+
+      actions.append(manage, invoice, notify, edit, ignore, remove); actionCell.append(actions); row.append(actionCell); body.append(row);
     });
     table.append(body); wrapper.append(table); container.append(wrapper);
   }
@@ -2570,17 +2711,742 @@
     return `Re: Your Creative Souls 3D order ${ticket.order_id || ""} — Ticket ${ticket.ticket_id || ""}`.replace(/\s+/g, " ").trim();
   }
   async function openGmailCompose({ to, subject, body }) {
-    const base = "https://mail.google.com/mail/?view=cm&fs=1&tf=1&authuser=" + encodeURIComponent(ADMIN_EMAIL);
-    const fullUrl = `${base}&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    if (fullUrl.length > 1800) {
-      try { await navigator.clipboard.writeText(body); } catch {}
-      const shortUrl = `${base}&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}`;
-      window.open(shortUrl, "_blank", "noopener");
-      return "copied";
+    const cleanTo = String(to || "").trim();
+    const cleanSubject = String(subject || "").trim();
+    const cleanBody = String(body || "").trim();
+
+    // Explicitly target hello.creative.souls3d@gmail.com account session
+    const sender = encodeURIComponent(NOTIFY_EMAIL);
+    const base = `https://mail.google.com/mail/u/${sender}/?view=cm&fs=1&authuser=${sender}`;
+    const fullUrl = `${base}&to=${encodeURIComponent(cleanTo)}&su=${encodeURIComponent(cleanSubject)}&body=${encodeURIComponent(cleanBody)}`;
+
+    const win = window.open(fullUrl, "_blank", "noopener");
+
+    // If popup was blocked or window.open failed, fall back to mailto:
+    if (!win || win.closed || typeof win.closed === "undefined") {
+      const mailtoUrl = `mailto:${encodeURIComponent(cleanTo)}?subject=${encodeURIComponent(cleanSubject)}&body=${encodeURIComponent(cleanBody)}`;
+      window.location.href = mailtoUrl;
     }
-    window.open(fullUrl, "_blank", "noopener");
+
     return "opened";
   }
+
+  // ── Order notification email system ────────────────────────────────────
+
+  function orderEmailSubject(order) {
+    const rawId = String(order.order_id || "").trim().replace(/^#+/, "");
+    const idStr = rawId ? `#${rawId}` : "";
+    const status = String(order.status || "Order Placed").trim();
+    const canonical = canonicalOrderStatus(status);
+    if (ORDER_WORKFLOW_STATUSES.includes(canonical)) return `${canonical} ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+
+    switch (canonical) {
+      case "Order Placed":
+        return `Order Received ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Request Received":
+        return `Service Request Received ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Order Approved":
+        return `Order Confirmed ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Payment Pending":
+        return `Payment Pending for Order ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Printing Product":
+        return `Order In Production ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Order Dispatched":
+        return `Order Ready for Dispatch ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Out For Delivery":
+        return `Order Dispatched & Shipped ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Out For Delivery":
+        return `Order Out for Delivery ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Product Delivered":
+        return `Order Delivered ${idStr} — Thank You for Choosing Creative Souls 3D!`.replace(/\s+/g, " ").trim();
+      case "Cancelled":
+        return `Order Cancelled ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Rejected":
+        return `Order Request Update ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      default:
+        return `Order Status: ${status} ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+    }
+  }
+
+  function buildOrderNotificationEmailBody(order) {
+    const esc = v => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const fmt = v => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+    const firstName = String(order.name || "Customer").trim().split(/\s+/)[0] || "Customer";
+    const cleanId = String(order.order_id || "").trim().replace(/^#+/, "");
+    const displayId = cleanId ? `#${cleanId}` : "—";
+    const status = String(order.status || "Order Placed").trim();
+    const canonicalSt = canonicalOrderStatus(status);
+    const placedOn = orderDate(order.timestamp);
+    const items = Array.isArray(order.items) ? order.items : [];
+    const itemsSubtotal = Number(order.item_total) || items.reduce((s, it) => s + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1), 0);
+    const deliveryCharge = Number(order.delivery_charge || 0);
+    const discount = Number(order.discount || 0);
+    const total = Number(order.total) || itemsSubtotal + deliveryCharge - discount;
+    const trackingLink = String(order.tracking_url || order.trackingUrl || order.tracking_link || "").trim();
+    const estimatedDelivery = String(order.expected_delivery || order.estimatedDelivery || "").trim();
+    const paymentStatus = String(order.payment_status || "").trim();
+    const paymentMode = String(order.payment_ref || order.mop || "").trim();
+    const isPickup = order.fulfillment_type === "pickup";
+    const isPaid = paymentStatus.toLowerCase() === "paid";
+
+    // Status config with Creative Souls 3D brand styling (solid, high-contrast, dark-mode proof)
+    const statusConfig = {
+      "Order Placed":       { emoji: "🛍️", color: "#ffffff", bg: "#2563eb", border: "#3b82f6" },
+      "Request Received":   { emoji: "📋", color: "#ffffff", bg: "#7c3aed", border: "#8b5cf6" },
+      "Confirmed":          { emoji: "✅", color: "#ffffff", bg: "#059669", border: "#10b981" },
+      "In Production":      { emoji: "⚙️", color: "#ffffff", bg: "#d97706", border: "#f59e0b" },
+      "Ready for Dispatch": { emoji: "📦", color: "#ffffff", bg: "#ea580c", border: "#f97316" },
+      "Shipped":            { emoji: "🚚", color: "#ffffff", bg: "#1d4ed8", border: "#3b82f6" },
+      "Delivered":          { emoji: "🎉", color: "#ffffff", bg: "#16a34a", border: "#22c55e" },
+      "Payment Pending":    { emoji: "⏳", color: "#0f172a", bg: "#f59e0b", border: "#fbbf24" },
+      "Cancelled":          { emoji: "❌", color: "#ffffff", bg: "#dc2626", border: "#ef4444" },
+      "Rejected":           { emoji: "🚫", color: "#ffffff", bg: "#dc2626", border: "#ef4444" }
+    };
+    const sc = statusConfig[canonicalSt] || { emoji: "📋", color: "#ffffff", bg: "#475569", border: "#64748b" };
+
+    // Status message copy tailored per status
+    let statusHeadline = "Order Status Update";
+    let statusDescription = `Your order status has been updated to <strong>${esc(status)}</strong>.`;
+
+    switch (canonicalSt) {
+      case "Order Placed":
+        statusHeadline = "Your order has been received!";
+        statusDescription = "Thank you for choosing <strong>Creative Souls 3D</strong>. We have received your order details and our workshop is reviewing the specifications. We will keep you updated every step of the way.";
+        break;
+      case "Request Received":
+        statusHeadline = "We've received your custom request!";
+        statusDescription = "Thank you for reaching out to <strong>Creative Souls 3D</strong>. Our design team is currently reviewing your 3D printing requirements and reference files. We will update you shortly.";
+        break;
+      case "Order Approved":
+        statusHeadline = "Your order has been approved!";
+        statusDescription = "Great news! Your order has been officially verified and added to our production schedule. Our workshop is preparing the 3D models and premium materials to begin manufacturing.";
+        break;
+      case "Payment Pending":
+        statusHeadline = "Payment Pending for your order";
+        statusDescription = `Your order payment of <strong>${fmt(total)}</strong> is currently pending. Please complete the payment so that our workshop can begin crafting your custom items. If you have already made the transfer, please reply to this email with your transaction reference.`;
+        break;
+      case "Printing Product":
+        statusHeadline = "Your product is now being printed!";
+        statusDescription = "Our high-precision 3D printers are currently crafting your items with care and precision. Every piece is monitored to ensure top quality. We will notify you once printing and quality inspections are complete.";
+        break;
+      case "Order Dispatched":
+        statusHeadline = "Your order is packed and ready!";
+        statusDescription = "Your 3D printed items have completed production and successfully passed our quality inspection! They have been carefully cleaned, packaged, and are now ready for dispatch with our courier partner.";
+        break;
+      case "Order Dispatched":
+        statusHeadline = "Your order has been dispatched!";
+        statusDescription = "Your package has been handed over to our delivery partner and is on its way to you.";
+        break;
+      case "Out For Delivery":
+        statusHeadline = "Your order is out for delivery!";
+        statusDescription = "Your package is with the courier and is expected to reach you soon. Please keep your phone available for the delivery.";
+        break;
+      case "Product Delivered":
+        statusHeadline = "Your order has been delivered!";
+        statusDescription = "We hope your 3D printed creations arrived safely and bring joy to you! We loved making them for you. If you have a moment, we would love to see your items — feel free to tag us on Instagram <strong>@creative.souls3d</strong> or reply to this email with your feedback.";
+        break;
+      case "Cancelled":
+        statusHeadline = "Your order has been cancelled";
+        statusDescription = `We are writing to confirm that order <strong>${esc(displayId)}</strong> has been cancelled. If this cancellation was unexpected or made in error, please reply to this email and our support team will assist you right away.`;
+        break;
+      case "Rejected":
+        statusHeadline = "Update regarding your order request";
+        statusDescription = "Thank you for your interest in <strong>Creative Souls 3D</strong>. Regrettably, after careful review, we are unable to fulfill this custom request at this time. If you would like to discuss alternative designs or modifications, please reply directly to this email.";
+        break;
+    }
+
+    if (canonicalSt === "Order Dispatched") {
+      statusHeadline = "Your order has been dispatched!";
+      statusDescription = "Your package has been handed over to our delivery partner and is on its way to you.";
+    } else if (canonicalSt === "Out For Delivery") {
+      statusHeadline = "Your order is out for delivery!";
+      statusDescription = "Your package is with the courier and is expected to reach you soon. Please keep your phone available for the delivery.";
+    }
+
+    // Items table rows
+    const itemsRowsHtml = items.length
+      ? items.map(it => {
+          const qty = Math.max(1, Number(it.quantity) || 1);
+          const lineTotal = (Number(it.price) || 0) * qty;
+          const specs = [
+            it.colour && `Colour: ${esc(it.colour)}`,
+            it.size && `Size: ${esc(it.size)}`
+          ].filter(Boolean).join(" · ");
+          return `
+            <tr style="background-color:#0f172a; background-image:linear-gradient(#0f172a,#0f172a);">
+              <td style="padding:12px 14px; border-bottom:1px solid #1e293b; color:#f8fafc; vertical-align:top;">
+                <div style="font-weight:700; font-size:13.5px; color:#ffffff; margin-bottom:2px;">${esc(it.productName || "Product")}</div>
+                ${specs ? `<div style="font-size:12px; color:#94a3b8;">${specs}</div>` : ""}
+                ${it.customization ? `<div style="font-size:12px; color:#fbbf24; background-color:#2a1b08; background-image:linear-gradient(#2a1b08,#2a1b08); border:1px solid #78350f; padding:2px 7px; border-radius:4px; display:inline-block; margin-top:4px;">Note: ${esc(it.customization)}</div>` : ""}
+              </td>
+              <td style="padding:12px 14px; border-bottom:1px solid #1e293b; text-align:center; color:#cbd5e1; font-weight:600; font-size:13px; vertical-align:top;">${qty}</td>
+              <td style="padding:12px 14px; border-bottom:1px solid #1e293b; text-align:right; font-weight:700; color:#ffffff; font-size:13.5px; vertical-align:top;">${fmt(lineTotal)}</td>
+            </tr>`;
+        }).join("")
+      : `<tr><td colspan="3" style="padding:16px; color:#94a3b8; text-align:center; font-size:13px; background-color:#0f172a; background-image:linear-gradient(#0f172a,#0f172a);">No items listed</td></tr>`;
+
+    // Items table block
+    const itemsSectionHtml = items.length ? `
+      <div style="margin:24px 0 8px;">
+        <div style="font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#f59e0b; margin-bottom:10px;">
+          🛒 Ordered Items
+        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #334155; border-radius:10px; overflow:hidden; background-color:#0f172a; background-image:linear-gradient(#0f172a,#0f172a);">
+          <thead>
+            <tr style="background-color:#1e293b; background-image:linear-gradient(#1e293b,#1e293b); border-bottom:1px solid #334155;">
+              <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8;">Product</th>
+              <th style="padding:10px 14px; text-align:center; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8; width:45px;">Qty</th>
+              <th style="padding:10px 14px; text-align:right; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8; width:90px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsRowsHtml}
+          </tbody>
+        </table>
+
+        <!-- Totals strip -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px; background-color:#1e293b; background-image:linear-gradient(#1e293b,#1e293b); border:1px solid #334155; border-radius:10px; overflow:hidden;">
+          <tr>
+            <td style="padding:8px 14px; color:#94a3b8; font-size:12.5px;">Item Subtotal</td>
+            <td style="padding:8px 14px; text-align:right; font-size:12.5px; color:#cbd5e1; font-weight:600;">${fmt(itemsSubtotal)}</td>
+          </tr>
+          ${deliveryCharge > 0 ? `
+          <tr>
+            <td style="padding:5px 14px; color:#94a3b8; font-size:12.5px;">Delivery Charge</td>
+            <td style="padding:5px 14px; text-align:right; font-size:12.5px; color:#cbd5e1; font-weight:600;">${fmt(deliveryCharge)}</td>
+          </tr>` : ""}
+          ${discount > 0 ? `
+          <tr>
+            <td style="padding:5px 14px; color:#34d399; font-size:12.5px; font-weight:600;">Discount</td>
+            <td style="padding:5px 14px; text-align:right; font-size:12.5px; color:#34d399; font-weight:600;">-${fmt(discount)}</td>
+          </tr>` : ""}
+          <tr style="border-top:1.5px solid #334155; background-color:#2a1b08; background-image:linear-gradient(#2a1b08,#2a1b08);">
+            <td style="padding:11px 14px; font-size:14px; font-weight:800; color:#f59e0b; border-left:4px solid #f59e0b;">Total Amount</td>
+            <td style="padding:11px 14px; text-align:right; font-size:15px; font-weight:900; color:#fbbf24;">${fmt(total)}</td>
+          </tr>
+        </table>
+      </div>` : "";
+
+    // Tracking Card
+    const trackingCardHtml = trackingLink ? `
+      <div style="margin:20px 0; padding:16px 20px; background-color:#064e3b; background-image:linear-gradient(#064e3b,#064e3b); border:1.5px solid #059669; border-radius:12px;">
+        <div style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#6ee7b7; letter-spacing:0.05em; margin-bottom:4px;">🚚 Courier Tracking Details</div>
+        <p style="margin:0 0 12px; font-size:13px; color:#d1fae5; line-height:1.5;">
+          ${estimatedDelivery ? `Estimated Delivery: <strong style="color:#ffffff;">${esc(estimatedDelivery)}</strong>` : "Your package has been dispatched and is on its way."}
+        </p>
+        <a href="${esc(trackingLink)}" target="_blank" style="display:inline-block; background-color:#10b981; background-image:linear-gradient(#10b981,#10b981); color:#ffffff !important; font-weight:800; font-size:12.5px; padding:9px 20px; border-radius:8px; text-decoration:none;">Track Package &rarr;</a>
+      </div>` : "";
+
+    // Payment Pending Card
+    const paymentPendingCardHtml = canonicalSt === "Payment Pending" ? `
+      <div style="margin:20px 0; padding:16px 20px; background-color:#451a03; background-image:linear-gradient(#451a03,#451a03); border:1.5px solid #d97706; border-radius:12px;">
+        <div style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:#fbbf24; letter-spacing:0.05em; margin-bottom:4px;">⚠️ Payment Pending</div>
+        <p style="margin:0; color:#fef3c7; font-size:13.5px; line-height:1.6;">Your order total of <strong style="color:#ffffff;">${fmt(total)}</strong> is awaiting payment. Please complete the transaction so our workshop can begin crafting your custom items.</p>
+        ${paymentMode ? `<div style="margin-top:8px; font-size:12px; color:#fde68a;">Payment Method: <strong style="color:#ffffff;">${esc(paymentMode)}</strong></div>` : ""}
+      </div>` : "";
+
+    // Note Card
+    const noteCardHtml = order.order_note ? `
+      <div style="margin:16px 0; padding:12px 16px; background-color:#2a1b08; background-image:linear-gradient(#2a1b08,#2a1b08); border:1px solid #78350f; border-left:4px solid #f59e0b; border-radius:8px;">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#f59e0b; letter-spacing:0.05em; margin-bottom:3px;">📝 Customer Note</div>
+        <p style="margin:0; font-size:13px; color:#fef3c7; line-height:1.5;">${esc(order.order_note)}</p>
+      </div>` : "";
+
+    // Delivery / Pickup Address Card
+    const addressCardHtml = `
+      <div style="margin:22px 0 16px; padding:14px 18px; background-color:#1e293b; background-image:linear-gradient(#1e293b,#1e293b); border:1px solid #334155; border-radius:10px;">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#94a3b8; letter-spacing:0.05em; margin-bottom:4px;">
+          ${isPickup ? "📍 Store Pickup Location" : "🏠 Delivery Address"}
+        </div>
+        <p style="margin:0; font-size:13px; color:#e2e8f0; line-height:1.6;">
+          ${esc(isPickup ? (order.pickup_location || "Store Pickup") : (order.address || "—"))}
+        </p>
+      </div>`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="supported-color-schemes" content="light"/>
+  <title>Order ${esc(displayId)} — Creative Souls 3D</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    :root { color-scheme: light only; }
+  </style>
+</head>
+<body style="margin:0; padding:0; color-scheme:light; background-color:#f1f5f9; font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; color:#334155;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9" class="email-bg-wrapper" style="background-color:#f1f5f9; padding:32px 12px; width:100%;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="email-main-card" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,0.12); border:1px solid #cbd5e1;">
+
+        <!-- Brand Header -->
+        <tr>
+          <td bgcolor="#ffffff" class="email-header-cell" style="background-color:#ffffff; padding:36px 36px 30px; text-align:center; color:#0f172a;">
+            <div style="font-size:11px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#f59e0b; margin-bottom:8px;">CREATIVE SOULS 3D</div>
+            <div style="font-size:23px; font-weight:900; color:#ffffff; letter-spacing:-0.02em; margin:0 0 14px;">Order Status Update</div>
+            <div style="display:inline-block; background-color:${sc.bg}; background-image:linear-gradient(${sc.bg},${sc.bg}); color:${sc.color} !important; border:1.5px solid ${sc.border}; padding:6px 20px; border-radius:999px; font-size:13px; font-weight:800;">
+              ${sc.emoji} ${esc(canonicalSt)}
+            </div>
+          </td>
+        </tr>
+
+        <!-- Main Body -->
+        <tr>
+          <td bgcolor="#ffffff" class="email-body-cell" style="padding:32px 36px; background-color:#ffffff;">
+
+            <p class="email-title-text" style="margin:0 0 12px; font-size:16px; color:#ffffff; font-weight:700;">Dear ${esc(firstName)},</p>
+
+            <!-- Status Headline & Description Card -->
+            <div style="margin:14px 0 22px; padding:14px 18px; background-color:#1e293b; background-image:linear-gradient(#1e293b,#1e293b); border:1px solid #334155; border-left:4px solid #f59e0b; border-radius:10px;">
+              <div class="email-title-text" style="font-size:16.5px; font-weight:800; color:#ffffff; margin-bottom:6px;">${statusHeadline}</div>
+              <p class="email-body-text" style="margin:0; font-size:13.5px; color:#cbd5e1; line-height:1.7;">${statusDescription}</p>
+            </div>
+
+            <!-- Order Metadata Strip -->
+            <table width="100%" cellpadding="0" cellspacing="0" class="email-meta-strip" style="background-color:#1e293b; background-image:linear-gradient(#1e293b,#1e293b); border:1px solid #334155; border-radius:12px; margin-bottom:20px; overflow:hidden;">
+              <tr>
+                <td width="50%" style="padding:12px 16px; border-bottom:1px solid #334155; border-right:1px solid #334155;">
+                  <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8;">Order ID</span><br>
+                  <strong style="font-size:14.5px; color:#ffffff;">${esc(displayId)}</strong>
+                </td>
+                <td width="50%" style="padding:12px 16px; border-bottom:1px solid #334155;">
+                  <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8;">Current Status</span><br>
+                  <strong style="font-size:13.5px; color:${sc.color === '#ffffff' ? '#38bdf8' : sc.color};">${sc.emoji} ${esc(canonicalSt)}</strong>
+                </td>
+              </tr>
+              <tr>
+                <td width="50%" style="padding:12px 16px; border-right:1px solid #334155;">
+                  <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8;">Order Date</span><br>
+                  <strong style="font-size:13px; color:#e2e8f0;">${esc(placedOn)}</strong>
+                </td>
+                <td width="50%" style="padding:12px 16px;">
+                  <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#94a3b8;">Payment</span><br>
+                  <strong style="font-size:13px; color:${isPaid ? '#34d399' : '#fbbf24'};">${esc(paymentStatus || paymentMode || "—")}</strong>
+                </td>
+              </tr>
+            </table>
+
+            ${trackingCardHtml}
+            ${paymentPendingCardHtml}
+            ${itemsSectionHtml}
+            ${addressCardHtml}
+            ${noteCardHtml}
+
+            <p style="margin:26px 0 10px; font-size:13.5px; color:#94a3b8; line-height:1.7;">
+              If you have any questions or need to make any changes, simply reply directly to this email. We are always happy to help!
+            </p>
+
+            <p style="margin:16px 0 0; font-size:13.5px; color:#ffffff; line-height:1.6;">
+              Warm regards,<br>
+              <strong style="color:#ffffff;">Customer Support Team</strong><br>
+              <span style="color:#f59e0b; font-weight:700;">Creative Souls 3D</span>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Brand Footer -->
+        <tr>
+          <td bgcolor="#f8fafc" class="email-footer-cell" style="background-color:#f8fafc; padding:24px 36px; text-align:center; border-top:1px solid #e2e8f0; color:#475569;">
+            <div style="font-size:12px; font-weight:700; color:#f8fafc; margin-bottom:4px;">Creative Souls 3D</div>
+            <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+              Personalized 3D Printed Art, Lithophanes, Gifts &amp; Keepsakes
+            </div>
+            <div style="margin-top:10px; font-size:11.5px;">
+              <a href="mailto:hello.creative.souls3d@gmail.com" style="color:#f59e0b !important; text-decoration:none; font-weight:600; margin:0 6px;">hello.creative.souls3d@gmail.com</a>
+              <span style="color:#475569;">·</span>
+              <a href="https://www.instagram.com/creative.souls3d/" target="_blank" style="color:#f59e0b !important; text-decoration:none; font-weight:600; margin:0 6px;">Instagram: @creative.souls3d</a>
+            </div>
+            <div style="margin-top:12px; font-size:10px; color:#64748b;">
+              Order Reference: <strong style="color:#94a3b8;">${esc(displayId)}</strong>
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+
+</body>
+</html>`;
+    // Use explicit light colors and plain fills. Gradient backgrounds are
+    // frequently treated differently by mobile email clients in dark mode.
+    const lightColors = {
+      "#0b0f19": "#f1f5f9", "#0f172a": "#ffffff", "#1e293b": "#f8fafc",
+      "#090d16": "#e2e8f0", "#2a1b08": "#fffbeb", "#064e3b": "#ecfdf5",
+      "#451a03": "#fffbeb"
+    };
+    const darkTextColors = {
+      "#ffffff": "#0f172a", "#f8fafc": "#0f172a", "#cbd5e1": "#334155",
+      "#e2e8f0": "#1e293b", "#94a3b8": "#475569", "#d1fae5": "#065f46",
+      "#fef3c7": "#78350f", "#fde68a": "#78350f", "#fbbf24": "#92400e"
+    };
+    return html
+      .replace(/background-image:\s*linear-gradient\([^;]*\);?/gi, "")
+      .replace(/background-color:\s*(#[\da-f]{3,8})/gi, (match, color) => `background-color:${lightColors[color.toLowerCase()] || color}`)
+      .replace(/(?<!background-)color:\s*(#[\da-f]{3,8})/gi, (match, color) => `color:${darkTextColors[color.toLowerCase()] || color}`);
+  }
+
+  function toBold(str) {
+    if (!str) return "";
+    return String(str).split("").map(ch => {
+      const code = ch.charCodeAt(0);
+      if (code >= 65 && code <= 90) return String.fromCodePoint(0x1D5D4 + (code - 65));
+      if (code >= 97 && code <= 122) return String.fromCodePoint(0x1D5EE + (code - 97));
+      return ch;
+    }).join("");
+  }
+  window.toBold = toBold;
+
+  function buildOrderNotificationPlainText(order) {
+    const fmt = v => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+    const firstName = String(order.name || "Customer").trim().split(/\s+/)[0] || "Customer";
+    const status = String(order.status || "Order Placed").trim();
+    const canonicalSt = canonicalOrderStatus(status);
+    const placedOn = orderDate(order.timestamp);
+    const cleanId = String(order.order_id || "").trim().replace(/^#+/, "");
+    const displayId = cleanId ? `#${cleanId}` : "—";
+
+    const items = Array.isArray(order.items) ? order.items : [];
+    const itemsSubtotal = Number(order.item_total) || items.reduce((s, it) => s + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1), 0);
+    const deliveryCharge = Number(order.delivery_charge || 0);
+    const discount = Number(order.discount || 0);
+    const total = Number(order.total) || itemsSubtotal + deliveryCharge - discount;
+
+    const trackingLink = String(order.tracking_url || order.trackingUrl || order.tracking_link || "").trim();
+    const estimatedDelivery = String(order.expected_delivery || order.estimatedDelivery || "").trim();
+    const paymentStatus = String(order.payment_status || "").trim();
+    const paymentMode = String(order.payment_ref || order.mop || "").trim();
+    const isPickup = order.fulfillment_type === "pickup";
+
+    let introLines = [];
+    switch (canonicalSt) {
+      case "Order Placed":
+        introLines = [
+          "Thank you for your order with Creative Souls 3D!",
+          "",
+          "We have successfully received your order and our workshop is reviewing the specifications. We will keep you updated every step of the way."
+        ];
+        break;
+      case "Request Received":
+        introLines = [
+          "Thank you for reaching out to Creative Souls 3D!",
+          "",
+          "We have received your custom 3D printing service request. Our team is currently reviewing your design files and requirements. We will update you shortly."
+        ];
+        break;
+      case "Order Approved":
+        introLines = [
+          "Great news — your order has been confirmed!",
+          "",
+          "Your order has been verified and added to our production schedule. We are preparing the 3D models and premium materials to begin manufacturing."
+        ];
+        break;
+      case "Payment Pending":
+        introLines = [
+          "This is a friendly reminder regarding your order with Creative Souls 3D.",
+          "",
+          `Your order payment of ${fmt(total)} is currently pending. Please complete the payment so our workshop can begin crafting your custom items.`,
+          paymentMode ? `Payment Method: ${paymentMode}` : "",
+          "If you have already transferred the funds, please reply to this email with your transaction reference number or screenshot so we can verify it immediately."
+        ].filter(Boolean);
+        break;
+      case "Printing Product":
+        introLines = [
+          "Exciting news about your order!",
+          "",
+          "Your order is now actively in production. Our high-precision 3D printers are currently crafting your items with care and precision. We will update you as soon as printing and quality inspections are complete."
+        ];
+        break;
+      case "Order Dispatched":
+        introLines = [
+          "Your order is finished and ready!",
+          "",
+          "Your 3D printed items have completed production and passed our quality inspection. They have been securely packaged and are now ready for dispatch with our courier partner."
+        ];
+        break;
+      case "Order Dispatched":
+        introLines = [
+          "Your order has been dispatched and is on the way!",
+          "",
+          "Your package has been handed over to our delivery partner and is en route to your address."
+        ];
+        if (trackingLink) introLines.push(`Tracking URL: ${trackingLink}`);
+        if (estimatedDelivery) introLines.push(`Estimated Delivery: ${estimatedDelivery}`);
+        break;
+      case "Out For Delivery":
+        introLines = [
+          "Your order is out for delivery!",
+          "",
+          "Your package is with the courier and is expected to reach you soon. Please keep your phone available for the delivery."
+        ];
+        if (trackingLink) introLines.push(`Tracking URL: ${trackingLink}`);
+        break;
+      case "Product Delivered":
+        introLines = [
+          "Your order has been delivered!",
+          "",
+          "We hope your 3D printed items arrived in perfect condition and bring joy to you! We loved creating them for you.",
+          "",
+          "We would love to see your items in action — feel free to tag us on Instagram @creative.souls3d or reply to this email with your feedback."
+        ];
+        break;
+      case "Cancelled":
+        introLines = [
+          "Your order has been cancelled.",
+          "",
+          `We are writing to confirm that order ${displayId} has been cancelled. If this cancellation was unexpected or made in error, please reply to this email and our team will assist you right away.`
+        ];
+        break;
+      case "Rejected":
+        introLines = [
+          "Update regarding your order request with Creative Souls 3D.",
+          "",
+          "Thank you for your interest. Regrettably, after careful review, we are unable to fulfill this custom request at this time. If you would like to discuss alternative designs or modifications, please reply directly to this email."
+        ];
+        break;
+      default:
+        introLines = [
+          "We are writing to update you on your order with Creative Souls 3D.",
+          "",
+          `Your current order status is: ${status}.`
+        ];
+        break;
+    }
+
+    const divider = "─".repeat(40);
+    const boldDivider = "━".repeat(40);
+
+    if (canonicalSt === "Order Dispatched") {
+      introLines = ["Your order has been dispatched and is on the way!", "", "Your package has been handed over to our delivery partner and is en route to your address."];
+      if (trackingLink) introLines.push(`Tracking URL: ${trackingLink}`);
+      if (estimatedDelivery) introLines.push(`Estimated Delivery: ${estimatedDelivery}`);
+    } else if (canonicalSt === "Out For Delivery") {
+      introLines = ["Your order is out for delivery!", "", "Your package is with the courier and is expected to reach you soon. Please keep your phone available for the delivery."];
+      if (trackingLink) introLines.push(`Tracking URL: ${trackingLink}`);
+    }
+
+    const lines = [
+      `Dear ${firstName},`,
+      "",
+      ...introLines,
+      "",
+      boldDivider,
+      ` ${toBold("ORDER SUMMARY")}`,
+      boldDivider,
+      `Order ID:         ${displayId}`,
+      `Current Status:   ${canonicalSt}`,
+      `Order Date:       ${placedOn}`
+    ];
+
+    if (paymentStatus || paymentMode) {
+      lines.push(`Payment:          ${[paymentStatus, paymentMode].filter(Boolean).join(" · ")}`);
+    }
+    if (estimatedDelivery && canonicalSt !== "Shipped") {
+      lines.push(`Est. Delivery:    ${estimatedDelivery}`);
+    }
+    if (trackingLink && canonicalSt !== "Shipped") {
+      lines.push(`Tracking URL:     ${trackingLink}`);
+    }
+
+    if (items.length) {
+      lines.push(
+        "",
+        boldDivider,
+        ` ${toBold("ITEMS ORDERED")}`,
+        boldDivider
+      );
+      items.forEach((it, idx) => {
+        const qty = Math.max(1, Number(it.quantity) || 1);
+        const lineTotal = (Number(it.price) || 0) * qty;
+        lines.push(`${idx + 1}. ${it.productName || "Product"} × ${qty} (${fmt(lineTotal)})`);
+        const specs = [
+          it.colour && `Colour: ${it.colour}`,
+          it.size && `Size: ${it.size}`
+        ].filter(Boolean).join(" | ");
+        if (specs) lines.push(`   ${specs}`);
+        if (it.customization) lines.push(`   Customization: ${it.customization}`);
+        if (idx < items.length - 1) lines.push("");
+      });
+
+      lines.push(
+        "",
+        divider,
+        `Item Subtotal:    ${fmt(itemsSubtotal)}`
+      );
+      if (deliveryCharge > 0) lines.push(`Delivery Charge:  ${fmt(deliveryCharge)}`);
+      if (discount > 0) lines.push(`Discount:        -${fmt(discount)}`);
+      lines.push(
+        `Total Amount:     ${fmt(total)}`,
+        divider
+      );
+    } else {
+      lines.push(
+        "",
+        divider,
+        `Total Amount:     ${fmt(total)}`,
+        divider
+      );
+    }
+
+    const address = isPickup ? (order.pickup_location || "Store Pickup") : (order.address || "");
+    if (address) {
+      lines.push(
+        "",
+        boldDivider,
+        ` ${toBold(isPickup ? "PICKUP LOCATION" : "DELIVERY ADDRESS")}`,
+        boldDivider,
+        address
+      );
+    }
+
+    if (order.order_note) {
+      lines.push(
+        "",
+        boldDivider,
+        ` ${toBold("CUSTOMER NOTE")}`,
+        boldDivider,
+        order.order_note
+      );
+    }
+
+    lines.push(
+      "",
+      boldDivider,
+      "",
+      "If you have any questions or need to make any changes, please reply directly to this email.",
+      "",
+      "Warm regards,",
+      "Customer Support Team",
+      "Creative Souls 3D",
+      "Email: hello.creative.souls3d@gmail.com",
+      "Instagram: @creative.souls3d"
+    );
+
+    return lines.join("\n");
+  }
+
+  async function copyStyledHtmlToClipboard(html, plainText) {
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const htmlBlob = new Blob([html], { type: "text/html" });
+        const textBlob = new Blob([plainText], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": htmlBlob,
+            "text/plain": textBlob
+          })
+        ]);
+        return true;
+      }
+    } catch (err) {
+      console.warn("Clipboard rich copy failed, falling back to text:", err);
+    }
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(plainText);
+        return false;
+      }
+    } catch {}
+    return false;
+  }
+
+  function openOrderNotificationPreview(order) {
+    const to = String(order.email || "").trim();
+    if (!to || !to.includes("@")) {
+      window.showAdminToast?.("This order has no valid customer email address.", "danger");
+      return;
+    }
+    const dialog = byId("email-preview-dialog");
+    if (!dialog) {
+      const subject = orderEmailSubject(order);
+      const plain = buildOrderNotificationPlainText(order);
+      openGmailCompose({ to, subject, body: plain });
+      return;
+    }
+
+    const subject = orderEmailSubject(order);
+    const html = buildOrderNotificationEmailBody(order);
+    const plain = buildOrderNotificationPlainText(order);
+
+    const toEl = byId("email-preview-to");
+    const subEl = byId("email-preview-subject");
+    const frameEl = byId("email-preview-frame");
+    const titleEl = byId("email-preview-title");
+
+    const cleanId = String(order.order_id || "").trim().replace(/^#+/, "");
+    if (titleEl) titleEl.textContent = `Customer Email: ${cleanId ? '#' + cleanId : 'Order'} (${canonicalOrderStatus(order.status)})`;
+    if (toEl) toEl.textContent = to;
+    if (subEl) subEl.textContent = subject;
+    if (frameEl) frameEl.srcdoc = html;
+
+    const copyBtn = byId("email-preview-copy-btn");
+    if (copyBtn) {
+      copyBtn.onclick = async () => {
+        copyBtn.disabled = true;
+        const success = await copyStyledHtmlToClipboard(html, plain);
+        window.showAdminToast?.(success ? "Styled brand HTML copied to clipboard!" : "Plain text copied to clipboard.", "success");
+        setTimeout(() => { copyBtn.disabled = false; }, 800);
+      };
+    }
+
+    const gmailBtn = byId("email-preview-gmail-btn");
+    if (gmailBtn) {
+      gmailBtn.onclick = async () => {
+        gmailBtn.disabled = true;
+        gmailBtn.textContent = "Opening Gmail…";
+        try {
+          await copyStyledHtmlToClipboard(html, plain);
+          await openGmailCompose({ to, subject, body: plain });
+          dialog.close();
+          window.showAdminToast?.("Gmail opened! Styled brand template copied — press Ctrl+V in Gmail to paste.", "success");
+          try {
+            const orderDocId = order._docId || order.order_id;
+            if (orderDocId) {
+              const docMatch = orderDocuments.find(d => d.id === orderDocId || d.data().order_id === order.order_id);
+              if (docMatch) {
+                await db.collection("orders").doc(docMatch.id).update({
+                  last_notified_at: firebase.firestore.FieldValue.serverTimestamp(),
+                  last_notified_status: order.status || "Order Placed"
+                });
+              }
+            }
+          } catch (e) {
+            console.warn("Could not log notification timestamp:", e);
+          }
+        } finally {
+          gmailBtn.disabled = false;
+          gmailBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> <span>Open in Gmail (Copy &amp; Paste)</span>`;
+        }
+      };
+    }
+
+    const frameWrap = byId("email-preview-frame-wrap");
+    if (frameWrap) frameWrap.style.background = "#f1f5f9";
+
+    const closeBtn = byId("email-preview-close");
+    if (closeBtn) closeBtn.onclick = () => dialog.close();
+    const cancelBtn = byId("email-preview-cancel");
+    if (cancelBtn) cancelBtn.onclick = () => dialog.close();
+
+    dialog.showModal();
+  }
+
+  async function sendOrderNotificationEmail(order) {
+    openOrderNotificationPreview(order);
+  }
+
   function visibleTickets() {
     const query = String(byId("ticket-search")?.value || "").trim().toLowerCase();
     return ticketDocuments.filter(doc => {
@@ -3290,14 +4156,14 @@
   const _origNavigateTo = window.navigateTo;
   window.navigateTo = function(id, options) {
     const sectionId = _origNavigateTo(id, options);
-    const isAdmin = String(auth.currentUser?.email || "").trim().toLowerCase() === ADMIN_EMAIL;
+    const isAdmin = ALLOWED_ADMINS.includes(String(auth.currentUser?.email || "").trim().toLowerCase());
     if (isAdmin && sectionId === "products" && catalogDocuments.length === 0) loadCatalogProducts();
     if (isAdmin && sectionId === "tickets") loadTickets();
     return sectionId;
   };
 
   auth.onAuthStateChanged(user => {
-    const isAdmin = String(user?.email || "").trim().toLowerCase() === ADMIN_EMAIL;
+    const isAdmin = ALLOWED_ADMINS.includes(String(user?.email || "").trim().toLowerCase());
     tools.hidden = !isAdmin;
     login.hidden = !!user;
     if (isAdmin) {

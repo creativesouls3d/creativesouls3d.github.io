@@ -282,7 +282,7 @@
                 <span class="admin-stat-tag">FULFILLED</span>
               </div>
               <div>
-                <div class="admin-stat-label">Delivered</div>
+                <div class="admin-stat-label">Product Delivered</div>
                 <div class="admin-stat-value" id="stat-delivered-orders">—</div>
               </div>
               <div class="admin-stat-sub">Successfully fulfilled to customers</div>
@@ -841,15 +841,23 @@
     
     <div id="order-detail-content"></div>
 
-    <div class="admin-actions">
-      <button type="button" id="order-detail-ignore" class="btn-secondary btn-ignore">Ignore Customer</button>
-      <button type="button" id="order-detail-duplicate" class="btn-secondary">Duplicate Order</button>
-      <button type="button" id="order-detail-invoice" class="btn-secondary">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-        Download Invoice
-      </button>
-      <button type="button" id="order-detail-edit">Edit This Order</button>
-      <button type="button" id="order-detail-done" class="btn-secondary">Done</button>
+    <div class="admin-actions admin-order-detail-actions">
+      <div class="admin-actions-secondary">
+        <button type="button" id="order-detail-ignore" class="btn-secondary btn-ignore">Ignore Customer</button>
+        <button type="button" id="order-detail-duplicate" class="btn-secondary">Duplicate Order</button>
+        <button type="button" id="order-detail-invoice" class="btn-secondary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          Download Invoice
+        </button>
+      </div>
+      <div class="admin-actions-primary">
+        <button type="button" id="order-detail-notify" class="btn-primary" style="display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Notify Order Status
+        </button>
+        <button type="button" id="order-detail-edit">Edit This Order</button>
+        <button type="button" id="order-detail-done" class="btn-secondary">Done</button>
+      </div>
     </div>
   </dialog>
 
@@ -940,6 +948,52 @@
     <div class="admin-actions">
       <button type="button" id="ticket-create-cancel" class="btn-secondary">Cancel</button>
       <button type="button" id="ticket-create-save" class="btn-primary">Create Ticket</button>
+    </div>
+  </dialog>
+
+  <!-- Customer Email Notification Preview Dialog -->
+  <dialog id="email-preview-dialog" class="admin-dialog" style="max-width: 680px; width: 95vw; max-height: 92vh; padding: 0; overflow: hidden;" aria-labelledby="email-preview-title">
+    <div class="admin-dialog-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border, #e2e8f0);">
+      <div>
+        <p class="eyebrow" style="color: var(--accent-dark, #b45309); font-weight: 800; margin: 0 0 2px;">Email Notification</p>
+        <h2 id="email-preview-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Customer Email Preview</h2>
+      </div>
+      <button type="button" id="email-preview-close" aria-label="Close dialog" style="background: none; border: 0; font-size: 1.25rem; cursor: pointer; color: #64748b; line-height: 1; padding: 6px;">✕</button>
+    </div>
+
+    <div class="admin-modal-body" style="padding: 14px 20px; display: flex; flex-direction: column; gap: 12px; max-height: calc(92vh - 140px); overflow-y: auto;">
+      <!-- Email Meta Strip -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; line-height: 1.6;">
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">From:</strong> <span style="color: #0f172a; font-weight: 700;">hello.creative.souls3d@gmail.com</span></div>
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">To:</strong> <span id="email-preview-to" style="color: #0f172a; font-weight: 700;">—</span></div>
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Subject:</strong> <span id="email-preview-subject" style="color: #0f172a; font-weight: 700;">—</span></div>
+      </div>
+
+      <!-- Quick tip banner -->
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 12px; font-size: 0.8rem; color: #92400e; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem; flex-shrink: 0;">✨</span>
+        <span>Click <strong>Open in Gmail</strong>: the brand-styled HTML template is copied to your clipboard. Simply press <strong>Ctrl+V</strong> (Paste) in Gmail to send this rich design!</span>
+      </div>
+
+      <!-- Live HTML Preview Frame -->
+      <div id="email-preview-frame-wrap" style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #f1f5f9; height: 380px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);">
+        <iframe id="email-preview-frame" style="width: 100%; height: 100%; border: 0; display: block;" title="Email Template Preview"></iframe>
+      </div>
+    </div>
+
+    <div class="admin-actions" style="padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: #f8fafc;">
+      <button type="button" id="email-preview-copy-btn" class="btn-secondary" style="height: 36px; font-size: 0.8rem; font-weight: 700; gap: 6px; display: flex; align-items: center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>Copy Styled HTML</span>
+      </button>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="email-preview-cancel" class="btn-secondary" style="height: 36px; font-size: 0.8rem;">Cancel</button>
+        <button type="button" id="email-preview-gmail-btn" class="btn-primary" style="height: 36px; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; gap: 7px; display: flex; align-items: center; border: 0; padding: 0 16px; border-radius: 8px; cursor: pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span>Open in Gmail (Copy &amp; Paste)</span>
+        </button>
+      </div>
     </div>
   </dialog>
 
@@ -1156,7 +1210,7 @@
     });
 
     // Auto-dismiss dialogs when clicking on backdrop
-    ['document-editor', 'order-detail-dialog', 'ticket-detail-dialog', 'ticket-create-dialog'].forEach(id => {
+    ['document-editor', 'order-detail-dialog', 'ticket-detail-dialog', 'ticket-create-dialog', 'catalog-pdf-dialog'].forEach(id => {
       const dlg = document.getElementById(id);
       if (!dlg) return;
       dlg.addEventListener('click', (event) => {
@@ -1302,10 +1356,10 @@
       const shell = document.getElementById('admin-shell');
       const statusEl = document.getElementById('admin-status');
       const statusSignin = document.getElementById('admin-status-signin');
+      const ALLOWED_ADMINS = ['luvs2006@gmail.com', 'hello.creative.souls3d@gmail.com'];
 
       firebase.auth().onAuthStateChanged(function (user) {
-        const ADMIN_EMAIL = 'luvs2006@gmail.com';
-        const isAdmin = String(user?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+        const isAdmin = ALLOWED_ADMINS.includes(String(user?.email || '').trim().toLowerCase());
 
         if (isAdmin) {
           signinScreen.hidden = true;

@@ -86,7 +86,7 @@ if (accountPopup) {
   if (window.firebase?.auth) {
     firebase.auth().onAuthStateChanged(user => {
       const adminLink = accountPopup.querySelector(".admin-dashboard-link");
-      if (adminLink) adminLink.hidden = String(user?.email || "").trim().toLowerCase() !== "luvs2006@gmail.com";
+      if (adminLink) { const allowedAdmins = ["luvs2006@gmail.com", "hello.creative.souls3d@gmail.com"]; adminLink.hidden = !allowedAdmins.includes(String(user?.email || "").trim().toLowerCase()); }
       popupLogoutButton.style.display = user ? "block" : "none";
       accountPopup.querySelector(".account-popup-name").textContent = user?.displayName || (user ? "Your account" : "Welcome");
       accountPopup.querySelector(".account-popup-email").textContent = user?.email || "Sign in to your account";

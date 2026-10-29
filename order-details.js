@@ -25,8 +25,19 @@ function getStatusClass(status = "") {
   const normalized = String(status).toLowerCase();
   if (normalized.includes("delivered") || normalized.includes("approved")) return "success";
   if (normalized.includes("rejected") || normalized.includes("cancel")) return "danger";
-  if (normalized.includes("printing") || normalized.includes("delivery")) return "active";
+  if (normalized.includes("printing") || normalized.includes("delivery") || normalized.includes("dispatch")) return "active";
   return "pending";
+}
+
+function displayOrderStatus(status = "Order Placed") {
+  const value = String(status).toLowerCase();
+  if (value.includes("delivered")) return "Product Delivered";
+  if (value.includes("delivery")) return "Out For Delivery";
+  if (value.includes("dispatch") || value.includes("shipped")) return "Order Dispatched";
+  if (value.includes("printing") || value.includes("production")) return "Printing Product";
+  if (value.includes("approved") || value.includes("confirm")) return "Order Approved";
+  if (value.includes("placed") || value.includes("pending") || value.includes("request")) return "Order Placed";
+  return status || "Order Placed";
 }
 
 function itemImageUrl(item = {}) {
@@ -301,7 +312,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
       </div>
     `).join("");
 
-    const status = data.status || "Order Placed";
+    const status = displayOrderStatus(data.status || "Order Placed");
     const placedOn = data.timestamp ? data.timestamp.toDate().toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short"

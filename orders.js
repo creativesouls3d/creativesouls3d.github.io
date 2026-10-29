@@ -11,8 +11,19 @@ function getStatusClass(status = "") {
   if (normalized.includes("delivered")) return "success";
   if (normalized.includes("approved")) return "success";
   if (normalized.includes("rejected") || normalized.includes("cancel")) return "danger";
-  if (normalized.includes("printing") || normalized.includes("delivery")) return "active";
+  if (normalized.includes("printing") || normalized.includes("delivery") || normalized.includes("dispatch")) return "active";
   return "pending";
+}
+
+function displayOrderStatus(status = "Order Placed") {
+  const value = String(status).toLowerCase();
+  if (value.includes("delivered")) return "Product Delivered";
+  if (value.includes("delivery")) return "Out For Delivery";
+  if (value.includes("dispatch") || value.includes("shipped")) return "Order Dispatched";
+  if (value.includes("printing") || value.includes("production")) return "Printing Product";
+  if (value.includes("approved") || value.includes("confirm")) return "Order Approved";
+  if (value.includes("placed") || value.includes("pending") || value.includes("request")) return "Order Placed";
+  return status || "Order Placed";
 }
 
 function loginUser() {
@@ -84,7 +95,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         <div class="order-card-info">
           <div class="order-card-header">
             <h3>${requestLabel || "Order"} ${order.order_id || ""}</h3>
-            <span class="order-status ${statusClass}">${order.status || "Order Placed"}</span>
+            <span class="order-status ${statusClass}">${displayOrderStatus(order.status)}</span>
           </div>
           <p><strong>${requestLabel ? "Quote" : "Total"}:</strong> ${requestLabel ? "Pending" : formatPrice(order.total)} &bull; <strong>Date:</strong> ${placedOn}</p>
           <p style="font-size: 0.84rem; color: var(--text-muted);">${requestLabel || `${itemCount} product${itemCount === 1 ? '' : 's'}`} &bull; ${order.payment_ref || "Cash on Delivery"}</p>
