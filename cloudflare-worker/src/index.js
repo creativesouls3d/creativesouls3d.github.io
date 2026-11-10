@@ -99,6 +99,100 @@ async function getOrderDocument(projectId, idToken, orderDocId) {
   return null;
 }
 
+async function getAdminDocument(env, collection, id) {
+  const encodedId = encodeURIComponent(id);
+  try { return await firestoreRequest(env, `/${encodeURIComponent(collection)}/${encodedId}`); }
+  catch (error) { if (error.status === 404) return null; throw error; }
+}
+
+async function sha256Hex(value) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value))));
+  return [...digest].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function handleGetFeedbackOrder(request, env, origin) {
+  let input;
+  try { input = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400, origin); }
+  const rawId = String(input.orderId || input.orderDocId || "").trim();
+  if (!rawId) return json({ error: "Enter an order ID." }, 400, origin);
+  const cleanId = rawId.replace(/^#+/, "");
+  let document = null;
+  try {
+    for (const candidate of [...new Set([`#${cleanId}`, cleanId])]) {
+      document = await getAdminDocument(env, "orders", candidate);
+      if (document) break;
+    }
+  } catch (error) { return json({ error: error.message || "Could not look up this order." }, 500, origin); }
+  if (!document) return json({ error: `Order ${rawId} not found.` }, 404, origin);
+  const fields = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+  const token = String(input.token || "");
+  const tokenHash = token ? await sha256Hex(token) : "";
+  const tokenMatch = !!tokenHash && tokenHash === fields.feedback_access?.token_hash;
+  let claims = false;
+  const authorization = request.headers.get("Authorization") || "";
+  if (/^Bearer\s+/i.test(authorization)) {
+    try { claims = await verifyFirebaseToken(request, env.FIREBASE_PROJECT_ID || "creative-souls-3d"); } catch { claims = false; }
+  }
+  const email = String(claims?.email || "").trim().toLowerCase();
+  const owner = !!claims && ((email && email === String(fields.email || "").trim().toLowerCase()) || claims.user_id === String(fields.user_uid || fields.uid || ""));
+  if (!tokenMatch && !owner) return json({ error: "Use the private link from your delivery email or sign in with the account used to order." }, 403, origin);
+  const docId = document.name.split("/").pop();
+  let feedback = null;
+  try { feedback = await getAdminDocument(env, "feedback", docId); } catch (error) { return json({ error: error.message || "Could not check feedback status." }, 500, origin); }
+  const feedbackFields = Object.fromEntries(Object.entries(feedback?.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+  const order = {
+    id: docId, order_id: fields.order_id || docId, name: fields.name || "", email: fields.email || "", phone: fields.phone || "",
+    total: Number(fields.total || 0), timestamp: fields.timestamp || null, status: fields.status || "Order Placed",
+    expected_delivery: fields.expected_delivery || "",
+    items: Array.isArray(fields.items) ? fields.items.map(item => ({ productName: item.productName || item.name || "Product", quantity: Number(item.quantity || 1), colour: item.colour || item.color || "", size: item.size || "", customization: item.customization || "" })) : [],
+  };
+  return json({ order, delivered: String(order.status).toLowerCase().includes("deliver"), feedbackSubmitted: !!feedback, feedback: feedback ? { reference_id: feedbackFields.reference_id || "" } : null }, 200, origin);
+}
+
+async function handleAdminFeedbackList(request, env, origin) {
+  const { claims, response: authResponse } = await workerAdminClaims(request, env, origin);
+  if (!claims) return authResponse;
+  try {
+    const page = await firestoreRequest(env, "/feedback?pageSize=1000");
+    const feedback = (page.documents || []).map(document => {
+      const data = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+      return { id: document.name.split("/").pop(), ...data };
+    });
+    return json({ feedback }, 200, origin);
+  } catch (error) {
+    console.error("Admin feedback list failed:", error?.message || "unknown error");
+    return json({ error: error?.message || "Could not load customer feedback." }, 500, origin);
+  }
+}
+
+async function handleIssueFeedbackToken(request, env, origin) {
+  const { claims, response: authResponse } = await workerAdminClaims(request, env, origin);
+  if (!claims) return authResponse;
+  let input;
+  try { input = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400, origin); }
+  const cleanId = String(input.orderId || input.orderDocId || "").trim().replace(/^#+/, "");
+  if (!cleanId) return json({ error: "An order ID is required." }, 400, origin);
+  try {
+    let document = null;
+    for (const candidate of [...new Set([`#${cleanId}`, cleanId])]) {
+      document = await getAdminDocument(env, "orders", candidate);
+      if (document) break;
+    }
+    if (!document) return json({ error: "We could not find that order." }, 404, origin);
+    const fields = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+    if (!String(fields.status || "").toLowerCase().includes("deliver")) return json({ error: "Feedback links are available after delivery." }, 409, origin);
+    const token = crypto.randomUUID();
+    const access = { token_hash: await sha256Hex(token), issued_at: new Date().toISOString() };
+    const documentPath = `/orders/${encodeURIComponent(document.name.split("/").pop())}`;
+    const query = new URLSearchParams(); query.set("updateMask.fieldPaths", "feedback_access");
+    await firestoreRequest(env, `${documentPath}?${query}`, { method: "PATCH", body: JSON.stringify({ fields: { feedback_access: toFirestoreValue(access) } }) });
+    return json({ token, orderId: fields.order_id || cleanId, orderDocId: document.name.split("/").pop() }, 200, origin);
+  } catch (error) {
+    console.error("Could not issue feedback token:", error?.message || "unknown error");
+    return json({ error: error?.message || "Could not issue a private feedback link." }, 500, origin);
+  }
+}
+
 function firestoreString(fields, key) {
   return fields?.[key]?.stringValue || "";
 }
@@ -150,6 +244,139 @@ async function getFirestoreAccessToken(env) {
   return cachedFirestoreAccessToken;
 }
 
+function firestoreRestRoot(env) {
+  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID || "creative-souls-3d")}/databases/(default)/documents`;
+}
+
+function toFirestoreValue(value) {
+  if (value === null) return { nullValue: null };
+  if (value instanceof Date) return { timestampValue: value.toISOString() };
+  if (typeof value === "string") return { stringValue: value };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (typeof value === "number") return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(toFirestoreValue) } };
+  if (value && typeof value === "object") return { mapValue: { fields: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toFirestoreValue(item)])) } };
+  return { nullValue: null };
+}
+
+function toFirestoreFields(value) {
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toFirestoreValue(item)]));
+}
+
+async function firestoreRequest(env, path, init = {}) {
+  const token = await getFirestoreAccessToken(env);
+  const response = await fetch(`${firestoreRestRoot(env)}${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, ...(init.body ? { "Content-Type": "application/json" } : {}), ...(init.headers || {}) },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload.error?.message || "Firestore request failed.";
+    const error = new Error(message); error.status = response.status; throw error;
+  }
+  return payload;
+}
+
+async function workerAdminClaims(request, env, origin) {
+  let claims;
+  try { claims = await verifyFirebaseToken(request, env.FIREBASE_PROJECT_ID || "creative-souls-3d"); }
+  catch (error) {
+    console.error("Firebase token verification failed:", error?.message || "verification error");
+    return { response: json({ error: "Could not verify your Firebase sign-in. Please try again." }, 503, origin) };
+  }
+  if (!isAdmin(claims)) return { response: json({ error: "Administrator access is required. Sign in again and retry." }, 403, origin) };
+  return { claims };
+}
+
+async function handleAdminWallets(request, env, origin, action) {
+  const { claims, response: authResponse } = await workerAdminClaims(request, env, origin);
+  if (!claims) return authResponse;
+  let input = {};
+  try { input = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400, origin); }
+  const root = firestoreRestRoot(env);
+  try {
+    if (action === "list") {
+      const customers = [];
+      let pageToken = "";
+      do {
+        const query = new URLSearchParams({ pageSize: "1000" });
+        if (pageToken) query.set("pageToken", pageToken);
+        const page = await firestoreRequest(env, `/users?${query}`);
+        (page.documents || []).forEach(document => {
+          const fields = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+          const id = document.name.split("/").pop();
+          const email = String(fields.email || id).trim().toLowerCase();
+          if (email.includes("@")) customers.push({ id, email, name: String(fields.name || fields.displayName || fields.fullName || ""), phone: String(fields.phone || ""), wallet_balance: Number(fields.wallet_balance || 0), walletPoints: Number(fields.walletPoints || 0) });
+        });
+        pageToken = page.nextPageToken || "";
+      } while (pageToken);
+      customers.sort((a,b) => (a.name || a.email).localeCompare(b.name || b.email));
+      let activity = [];
+      try {
+        const transactions = await firestoreRequest(env, ":runQuery", { method: "POST", body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "wallet_history", allDescendants: true }], orderBy: [{ field: { fieldPath: "createdAt" }, direction: "DESCENDING" }], limit: 500 } }) });
+        const customersById = new Map(customers.map(customer => [customer.id, customer]));
+        activity = (Array.isArray(transactions) ? transactions : []).filter(row => row.document).map(row => {
+          const doc = row.document;
+          const fields = Object.fromEntries(Object.entries(doc.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+          const parts = doc.name.split("/");
+          const userId = parts[parts.indexOf("users") + 1] || "";
+          const customer = customersById.get(userId) || { id: userId, email: userId };
+          return { id: doc.name.split("/").pop(), userId, email: customer.email, name: customer.name || "Customer", ...fields };
+        });
+      } catch (error) { console.warn("Could not load global wallet activity:", error?.message || "query error"); }
+      return json({ customers, activity }, 200, origin);
+    }
+
+    const userId = String(input.userId || "").trim();
+    if (!userId || userId.includes("/")) return json({ error: "A valid customer wallet ID is required." }, 400, origin);
+    const userPath = `/users/${encodeURIComponent(userId)}`;
+    if (action === "history") {
+      const page = await firestoreRequest(env, `${userPath}/wallet_history?pageSize=100`);
+      const history = (page.documents || []).map(document => ({ id: document.name.split("/").pop(), ...Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)])) }));
+      history.sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      return json({ history }, 200, origin);
+    }
+    if (action !== "adjust") return json({ error: "Unknown wallet operation." }, 404, origin);
+    const amount = Number(input.amount);
+    const type = ["credit", "debit", "points"].includes(input.type) ? input.type : "credit";
+    const reason = String(input.reason || "").trim().slice(0, 240);
+    if (!Number.isFinite(amount) || amount <= 0 || (type === "points" && !Number.isInteger(amount)) || !reason) return json({ error: "Enter a valid positive amount and reason." }, 400, origin);
+    const begin = await firestoreRequest(env, ":beginTransaction", { method: "POST", body: JSON.stringify({ options: { readWrite: {} } }) });
+    const transaction = begin.transaction;
+    if (!transaction) throw new Error("Firestore did not start a wallet transaction.");
+    let userDoc = null;
+    try { userDoc = await firestoreRequest(env, `${userPath}?transaction=${encodeURIComponent(transaction)}`); }
+    catch (error) { if (error.status !== 404) throw error; }
+    const oldFields = Object.fromEntries(Object.entries(userDoc?.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
+    const balance = Number(oldFields.wallet_balance || 0);
+    if (type === "debit" && balance < amount) {
+      await firestoreRequest(env, ":rollback", { method: "POST", body: JSON.stringify({ transaction }) }).catch(() => {});
+      return json({ error: "The customer wallet does not have enough balance for this debit." }, 409, origin);
+    }
+    const nextBalance = type === "points" ? balance : balance + (type === "debit" ? -amount : amount);
+    const nextPoints = type === "points" ? Number(oldFields.walletPoints || 0) + amount : Number(oldFields.walletPoints || 0);
+    const now = new Date().toISOString();
+    const userData = { ...(userDoc?.fields || {}), ...(userDoc ? {} : { email: toFirestoreValue(oldFields.email || userId) }), updatedAt: toFirestoreValue(now) };
+    const updateFields = type === "points" ? { ...userData, walletPoints: toFirestoreValue(nextPoints) } : { ...userData, wallet_balance: toFirestoreValue(nextBalance) };
+    const updateMask = type === "points" ? ["walletPoints", "updatedAt", ...(!userDoc ? ["email"] : [])] : ["wallet_balance", "updatedAt", ...(!userDoc ? ["email"] : [])];
+    const historyId = crypto.randomUUID();
+    const historyName = `${userPath}/wallet_history/${historyId}`;
+    const historyData = {
+      amount: toFirestoreValue(amount), type: toFirestoreValue(type), title: toFirestoreValue(reason),
+      orderId: toFirestoreValue(String(input.orderId || "").trim() || null), createdAt: toFirestoreValue(now), processedBy: toFirestoreValue(String(claims.email || "admin")),
+    };
+    const writes = [
+      { update: { name: `${root}${userPath}`, fields: updateFields }, updateMask: { fieldPaths: updateMask } },
+      { update: { name: `${root}${historyName}`, fields: historyData }, currentDocument: { exists: false } },
+    ];
+    await firestoreRequest(env, ":commit", { method: "POST", body: JSON.stringify({ transaction, writes }) });
+    return json({ success: true, balance: nextBalance, points: nextPoints }, 200, origin);
+  } catch (error) {
+    console.error("Wallet Worker request failed:", action, error?.message || "unknown error");
+    return json({ error: error?.message || "Could not load wallet data." }, 500, origin);
+  }
+}
+
 async function handleTrackingOrder(request, env, origin) {
   let input;
   try { input = await request.json(); } catch { return json({ error: "Request body must be valid JSON." }, 400, origin); }
@@ -164,7 +391,11 @@ async function handleTrackingOrder(request, env, origin) {
     const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID || "creative-souls-3d")}/databases/(default)/documents/orders/${encodeURIComponent(candidate)}`;
     const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (response.ok) { document = await response.json(); break; }
-    if (response.status !== 404) throw new Error("Could not retrieve order tracking details.");
+    if (response.status !== 404) {
+      const details = await response.text();
+      console.error("Firestore tracking lookup failed:", response.status, details.slice(0, 500));
+      throw new Error("Could not retrieve order tracking details.");
+    }
   }
   if (!document) return json({ error: "Order ID or phone number was not recognized." }, 404, origin);
   const fields = document.fields || {};
@@ -371,6 +602,12 @@ async function handleRequest(request, env) {
   if (path === "/imagekit-auth") return handleImageKitAuth(request, env, origin);
   if (path === "/improve-ticket-reply") return handleImproveTicketReply(request, env, origin);
   if (path === "/get-tracking-order") return handleTrackingOrder(request, env, origin);
+  if (path === "/feedback/get-order") return handleGetFeedbackOrder(request, env, origin);
+  if (path === "/feedback/list") return handleAdminFeedbackList(request, env, origin);
+  if (path === "/feedback/issue-token") return handleIssueFeedbackToken(request, env, origin);
+  if (path === "/wallet/list") return handleAdminWallets(request, env, origin, "list");
+  if (path === "/wallet/history") return handleAdminWallets(request, env, origin, "history");
+  if (path === "/wallet/adjust") return handleAdminWallets(request, env, origin, "adjust");
   if (path !== "/") return json({ error: "Not found." }, 404, origin);
   if (!env.GEMINI_API_KEY) return json({ error: "The Worker is missing its GEMINI_API_KEY secret." }, 500, origin);
 

@@ -280,6 +280,7 @@ exports.adminRefundToWallet = callable({ secrets: [] }, async request => {
   requireAdmin(request);
 
   const { userId, amount, orderId, reason } = request.data || {};
+  const type = ['credit', 'debit', 'points'].includes(request.data?.type) ? request.data.type : 'credit';
 
   if (!userId || typeof amount !== 'number' || amount <= 0) {
     throw new HttpsError('invalid-argument', 'Provide a valid userId (email or UID) and a positive amount.');
@@ -290,15 +291,20 @@ exports.adminRefundToWallet = callable({ secrets: [] }, async request => {
 
   try {
     await db.runTransaction(async transaction => {
-      transaction.set(walletRef, {
-        wallet_balance: FieldValue.increment(amount),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+      const userSnap = await transaction.get(walletRef);
+      const currentBalance = Number(userSnap.data()?.wallet_balance || 0);
+      if (type === 'debit' && currentBalance < amount) {
+        throw new HttpsError('failed-precondition', 'The customer wallet does not have enough balance for this debit.');
+      }
+      const update = { updatedAt: FieldValue.serverTimestamp() };
+      if (type === 'points') update.walletPoints = FieldValue.increment(Math.floor(amount));
+      else update.wallet_balance = FieldValue.increment(type === 'debit' ? -amount : amount);
+      transaction.set(walletRef, update, { merge: true });
 
       transaction.set(historyRef, {
         amount,
-        title: reason || 'Refund / Credit',
-        type: 'credit',
+        title: reason || (type === 'debit' ? 'Wallet debit' : type === 'points' ? 'Loyalty points' : 'Refund / Credit'),
+        type,
         orderId: orderId || null,
         createdAt: FieldValue.serverTimestamp(),
         processedBy: request.auth.uid || request.auth.token?.email || 'admin'
@@ -307,9 +313,40 @@ exports.adminRefundToWallet = callable({ secrets: [] }, async request => {
 
     return { success: true, message: `Refund of ₹${amount} credited to user ${userId}.` };
   } catch (e) {
+    if (e instanceof HttpsError) throw e;
     console.error('Wallet refund transaction failed:', e);
     throw new HttpsError('internal', 'Failed to process refund: ' + e.message);
   }
+});
+
+/** Admin-only wallet directory. Client Firestore rules intentionally do not
+ * grant broad reads of customer documents, so the dashboard uses this callable. */
+exports.adminListWalletCustomers = callable({}, async request => {
+  requireAdmin(request);
+  const snapshot = await db.collection('users').get();
+  return {
+    customers: snapshot.docs.map(doc => {
+      const data = doc.data() || {};
+      return {
+        id: doc.id,
+        email: cleanEmail(data.email || doc.id),
+        name: String(data.name || data.displayName || data.fullName || ''),
+        phone: String(data.phone || ''),
+        wallet_balance: Number(data.wallet_balance || 0),
+        walletPoints: Number(data.walletPoints || 0)
+      };
+    }).filter(customer => customer.email.includes('@'))
+  };
+});
+
+/** Admin-only history lookup for one wallet. */
+exports.adminGetWalletHistory = callable({}, async request => {
+  requireAdmin(request);
+  const userId = String(request.data?.userId || '').trim();
+  if (!userId || userId.includes('/')) throw new HttpsError('invalid-argument', 'A valid customer wallet ID is required.');
+  const snapshot = await db.collection('users').doc(userId).collection('wallet_history')
+    .orderBy('createdAt', 'desc').limit(100).get();
+  return { history: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
 });
 
 /**
