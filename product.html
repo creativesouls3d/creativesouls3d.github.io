@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Details | Creative Souls 3D</title>
+
+  <meta name="description" content="View personalized 3D printed product details from Creative Souls 3D." />
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content="Creative Souls 3D Product" />
+  <meta property="og:description" content="View this personalized 3D printed product from Creative Souls 3D." />
+  <meta property="og:image" content="https://creativesouls3d.github.io/logo_creativesouls.jpg" />
+  <meta property="og:url" content="" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Creative Souls 3D Product" />
+  <meta name="twitter:description" content="View this personalized 3D printed product from Creative Souls 3D." />
+  <meta name="twitter:image" content="https://creativesouls3d.github.io/logo_creativesouls.jpg" />
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    .breadcrumb-nav {
+      width: min(1140px, calc(100% - 32px));
+      margin: 20px auto 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .breadcrumb-nav a {
+      color: var(--text-secondary);
+      transition: color var(--transition-fast);
+    }
+
+    .breadcrumb-nav a:hover {
+      color: var(--brand-dark);
+    }
+
+    .breadcrumb-sep {
+      color: #cbd5e1;
+    }
+
+    .breadcrumb-current {
+      color: var(--text-primary);
+      font-weight: 700;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Star Rating Selector for Review Form */
+    .star-rating-select {
+      display: inline-flex;
+      gap: 6px;
+      font-size: 1.8rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .star-rating-select span {
+      color: #cbd5e1;
+      transition: color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .star-rating-select span.selected,
+    .star-rating-select span.hovered {
+      color: #f59e0b;
+      transform: scale(1.15);
+    }
+
+    .rating-header-jump {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--brand-dark);
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .rating-header-jump:hover {
+      text-decoration: underline;
+    }
+
+    /* Quantity stepper */
+    .qty-stepper {
+      display: inline-flex;
+      align-items: center;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 3px;
+    }
+
+    .qty-stepper button {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 800;
+      box-shadow: var(--shadow-xs);
+      transition: all var(--transition-fast);
+    }
+
+    .qty-stepper button:hover {
+      background: var(--brand-light);
+      border-color: var(--brand);
+      color: var(--brand-dark);
+    }
+
+    .qty-stepper span {
+      min-width: 44px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+    }
+
+    #buy-now-btn {
+      background: var(--surface-dark);
+      color: #ffffff;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 1rem;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+      flex: 1;
+    }
+
+    #buy-now-btn:hover {
+      background: #1e293b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.4);
+    }
+
+    .empty-state-card {
+      text-align: center;
+      padding: 60px 20px;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border);
+      max-width: 600px;
+      margin: 40px auto;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <button class="back-nav" type="button" data-back data-fallback="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back
+    </button>
+
+    <div class="logo-section" onclick="window.location.href='index.html'">
+      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
+      <span>Creative Souls <strong>3D</strong></span>
+    </div>
+
+    <nav class="cart-link" aria-label="Main navigation">
+      <a href="index.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Shop
+      </a>
+      <a href="orders.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        Orders
+      </a>
+      <a href="cart.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Cart
+        <span class="cart-badge" id="cart-badge">0</span>
+      </a>
+    </nav>
+  </header>
+
+  <!-- Breadcrumbs -->
+  <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="index.html">Home</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="index.html#product-list" id="breadcrumb-category">Products</a>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current" id="breadcrumb-name">Loading...</span>
+  </nav>
+
+  <!-- Loading & Error States -->
+  <div id="loading" class="empty-state-card">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite; margin-bottom: 12px; color: var(--brand);">
+      <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+      <path d="M12 2a10 10 0 0 1 10 10"></path>
+    </svg>
+    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+    <p style="font-weight: 700; color: var(--text-secondary);">Loading product details...</p>
+  </div>
+
+  <div id="error" class="empty-state-card" style="display:none;">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <h2 style="margin: 12px 0 6px;">Product Not Found</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">The product you're looking for doesn't exist or has been removed.</p>
+    <a href="index.html" class="add-card-btn" style="max-width: 200px; margin: 0 auto; display: inline-flex;">Back to Shop</a>
+  </div>
+
+  <!-- Product Showcase Section -->
+  <main id="product-section" class="product-container" style="display:none;">
+    <div class="product-image">
+      <img id="product-image" src="" alt="Product image" />
+      <p class="product-image-hint">Click to view and zoom</p>
+      <div id="product-thumbnails" class="product-thumbnails" aria-label="Product images"></div>
+    </div>
+
+    <div class="product-details">
+      <span class="eyebrow" id="product-category">Custom Creation</span>
+      <h1 id="product-name">Loading...</h1>
+
+      <div class="rating-header-jump" id="rating-jump" title="Click to see reviews" style="display: none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span id="product-rating-label"></span>
+        <small style="color: var(--text-muted);">&bull; Read reviews &darr;</small>
+      </div>
+
+      <div class="product-price">
+        <del id="product-original-price" aria-label="Original price"></del>
+        <span id="product-price">₹0</span>
+      </div>
+
+      <p class="product-viewer-count"><span aria-hidden="true">👀</span> <strong id="product-viewer-count">29</strong> people are viewing this right now</p>
+      <p class="dispatch-estimate"><strong>Estimated dispatch:</strong> 2–3 working days.</p>
+
+      <div id="colour-selector" class="colour-selector" style="display:none;">
+        <strong>Choose a colour</strong>
+        <div id="colour-options" class="colour-options" role="group" aria-label="Available colours"></div>
+        <span id="selected-colour-label" class="selected-colour-label"></span>
+      </div>
+      <div id="size-selector" class="size-selector" hidden>
+        <strong>Choose a size</strong>
+        <div id="size-options" class="size-options" role="group" aria-label="Available sizes"></div>
+        <span id="selected-size-label" class="selected-colour-label"></span>
+      </div>
+
+      <button id="share-product" class="share-product-btn" type="button" aria-label="Share this product">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+          <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"></path>
+        </svg>
+        Share Product
+      </button>
+
+      <div class="product-description-wrap">
+        <div class="product-description" id="product-description"></div>
+        <button type="button" class="product-desc-toggle" id="product-desc-toggle" hidden aria-expanded="false">
+          Show more
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div id="product-customization-wrap" class="product-customization" hidden>
+        <label for="product-customization"><strong>Customization details</strong><span>Tell us the name, text, colors, or other changes you’d like.</span></label>
+        <textarea id="product-customization" rows="3" maxlength="500" placeholder="Enter your customization details (optional)"></textarea>
+      </div>
+
+      <!-- Quantity Selector -->
+      <div class="product-quantity-row">
+        <label for="detail-qty">Quantity:</label>
+        <div class="qty-stepper">
+          <button type="button" id="qty-minus" aria-label="Decrease quantity">−</button>
+          <span id="qty-display">1</span>
+          <button type="button" id="qty-plus" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <div class="product-buttons">
+        <button id="add-to-cart">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add to Cart
+        </button>
+        <button id="buy-now-btn">
+          Buy Now ➔
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <dialog id="product-image-dialog" class="product-image-dialog" aria-label="Product image viewer">
+    <button type="button" class="product-image-dialog-close" aria-label="Close image viewer">&times;</button>
+    <button type="button" class="product-image-zoom-out" aria-label="Zoom out">−</button>
+    <button type="button" class="product-image-zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" class="product-image-reset" aria-label="Reset zoom">Reset</button>
+    <img id="product-image-large" alt="" />
+  </dialog>
+
+  <section id="product-trust-strip" class="product-trust-strip" aria-label="Shopping assurances" style="display:none;">
+    <div><strong>💬 Customer Support</strong><span>We're here to help</span></div>
+    <div><strong>⚡ Dispatch in 1–2 Days</strong><span>Quick order processing</span></div>
+    <div><strong>📦 Secure Packaging</strong><span>Packed with care</span></div>
+    <div><strong>🔒 Secure Payments</strong><span>Safe &amp; trusted checkout</span></div>
+  </section>
+
+  <!-- Customer Reviews Section -->
+  <section id="reviews-section" class="reviews-section" style="display:none;">
+    <article class="review-panel">
+      <h2>Customer Reviews</h2>
+      <p>Share your verified feedback for this item.</p>
+
+      <div id="review-summary" class="review-summary">
+        <strong>0/5</strong>
+        <span>No reviews yet</span>
+      </div>
+
+      <div id="review-auth-message" class="review-message" style="margin-bottom: 12px; font-weight: 600;">
+        Login to write a review.
+      </div>
+
+      <button id="review-login-btn" type="button" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.35 11.1h-9.17v2.73h5.51c-.33 1.94-1.87 3.32-3.84 3.32-2.31 0-4.18-1.87-4.18-4.18s1.87-4.18 4.18-4.18c1.07 0 2.05.41 2.8 1.09l2.06-2.06C17.39 6.55 15.42 5.8 13.18 5.8 9.21 5.8 6 9.01 6 12.98s3.21 7.18 7.18 7.18c4.15 0 6.91-2.92 6.91-7.03 0-.71-.07-1.39-.2-2.03z"/>
+        </svg>
+        Login with Google to Review
+      </button>
+
+      <form id="review-form" class="review-form" style="display:none;">
+        <label>
+          Your Rating
+          <div class="star-rating-select" id="star-picker">
+            <span data-value="1">★</span>
+            <span data-value="2">★</span>
+            <span data-value="3">★</span>
+            <span data-value="4">★</span>
+            <span data-value="5" class="selected">★</span>
+          </div>
+          <input type="hidden" id="review-rating" value="5" />
+        </label>
+
+        <label>
+          Your Review
+          <textarea id="review-comment" placeholder="What did you love about this 3D print?" rows="4" required></textarea>
+        </label>
+
+        <button type="submit">Submit Review</button>
+        <p id="review-message" class="review-message" style="font-weight: 700;"></p>
+      </form>
+    </article>
+
+    <article class="review-panel">
+      <h2>Verified Feedback</h2>
+      <div id="reviews-list" class="reviews-list">
+        <div class="empty-state">Loading reviews...</div>
+      </div>
+    </article>
+  </section>
+
+  <section id="related-products-section" class="recommendation-section" aria-labelledby="related-products-heading" hidden>
+    <div class="section-heading"><div><h2 id="related-products-heading">Related products</h2><p>More items that match your interests</p></div></div>
+    <div id="related-products" class="product-grid recommendation-grid"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts & Keepsakes</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="navigation.js"></script>
+  <script src="recommendations.js"></script>
+  <script src="rich-text.js"></script>
+
+  <script>
+    const loading = document.getElementById("loading");
+    const error = document.getElementById("error");
+    const productSection = document.getElementById("product-section");
+    const productTrustStrip = document.getElementById("product-trust-strip");
+    const addToCartBtn = document.getElementById("add-to-cart");
+    const shareProductBtn = document.getElementById("share-product");
+    const productImage = document.getElementById("product-image");
+    const productThumbnails = document.getElementById("product-thumbnails");
+    const imageDialog = document.getElementById("product-image-dialog");
+    const largeImage = document.getElementById("product-image-large");
+    let productImages = [];
+    let activeImageIndex = 0;
+    let zoom = 1;
+
+    function selectProductImage(index) {
+      activeImageIndex = index;
+      const src = productImages[index];
+      productImage.src = src;
+      largeImage.src = src;
+      productImage.alt = `${currentProduct?.productName || "Product"} image ${index + 1}`;
+      largeImage.alt = productImage.alt;
+      productThumbnails.querySelectorAll("button").forEach((button, i) => {
+        button.classList.toggle("active", i === index);
+        button.setAttribute("aria-pressed", String(i === index));
+      });
+      resetImageZoom();
+    }
+
+    function resetImageZoom() {
+      zoom = 1;
+      largeImage.style.transform = "scale(1)";
+    }
+
+    function changeImageZoom(amount) {
+      zoom = Math.max(1, Math.min(4, zoom + amount));
+      largeImage.style.transform = `scale(${zoom})`;
+    }
+
+    function setProductShareMetadata(product) {
+      const name = product.productName || "Creative Souls 3D Product";
+      const description = String(product.description || "Personalized 3D printed creation from Creative Souls 3D.").replace(/\s+/g, " ").trim().slice(0, 300);
+      const image = productImages[0] || "logo_creativesouls.jpg";
+      const absoluteImage = new URL(image, window.location.href).href;
+      const canonicalUrl = window.location.href;
+      document.title = `${name} | Creative Souls 3D`;
+      document.querySelector('meta[name="description"]').content = description;
+      document.querySelector('meta[property="og:title"]').content = name;
+      document.querySelector('meta[property="og:description"]').content = description;
+      document.querySelector('meta[property="og:image"]').content = absoluteImage;
+      document.querySelector('meta[property="og:url"]').content = canonicalUrl;
+      document.querySelector('meta[name="twitter:title"]').content = name;
+      document.querySelector('meta[name="twitter:description"]').content = description;
+      document.querySelector('meta[name="twitter:image"]').content = absoluteImage;
+    }
+
+    productImage.addEventListener("click", () => imageDialog.showModal());
+    imageDialog.querySelector(".product-image-dialog-close").addEventListener("click", () => imageDialog.close());
+    imageDialog.querySelector(".product-image-zoom-in").addEventListener("click", () => changeImageZoom(0.25));
+    imageDialog.querySelector(".product-image-zoom-out").addEventListener("click", () => changeImageZoom(-0.25));
+    imageDialog.querySelector(".product-image-reset").addEventListener("click", resetImageZoom);
+    imageDialog.addEventListener("click", event => { if (event.target === imageDialog) imageDialog.close(); });
+    imageDialog.addEventListener("wheel", event => {
+      event.preventDefault();
+      changeImageZoom(event.deltaY < 0 ? 0.15 : -0.15);
+    }, { passive: false });
+    largeImage.addEventListener("dblclick", () => changeImageZoom(zoom > 1 ? 1 - zoom : 1));
+    const buyNowBtn = document.getElementById("buy-now-btn");
+    const reviewsSection = document.getElementById("reviews-section");
+    const reviewSummary = document.getElementById("review-summary");
+    const reviewsList = document.getElementById("reviews-list");
+    const reviewForm = document.getElementById("review-form");
+    const reviewRating = document.getElementById("review-rating");
+    const reviewComment = document.getElementById("review-comment");
+    const reviewMessage = document.getElementById("review-message");
+    const reviewAuthMessage = document.getElementById("review-auth-message");
+    const reviewLoginBtn = document.getElementById("review-login-btn");
+    const starPicker = document.getElementById("star-picker");
+
+    // Quantity selector
+    let selectedQuantity = 1;
+    const qtyDisplay = document.getElementById("qty-display");
+    const qtyMinus = document.getElementById("qty-minus");
+    const qtyPlus = document.getElementById("qty-plus");
+
+    qtyMinus.addEventListener("click", () => {
+      if (selectedQuantity > 1) {
+        selectedQuantity -= 1;
+        qtyDisplay.textContent = selectedQuantity;
+      }
+    });
+
+    qtyPlus.addEventListener("click", () => {
+      selectedQuantity += 1;
+      qtyDisplay.textContent = selectedQuantity;
+    });
+
+    // Star Picker Interaction
+    if (starPicker) {
+      const stars = starPicker.querySelectorAll("span");
+      
+      function updateStars(val) {
+        stars.forEach(s => {
+          const sVal = Number(s.dataset.value);
+          s.classList.toggle("selected", sVal <= val);
+        });
+      }
+
+      stars.forEach(star => {
+        star.addEventListener("mouseenter", () => {
+          const val = Number(star.dataset.value);
+          stars.forEach(s => s.classList.toggle("hovered", Number(s.dataset.value) <= val));
+        });
+
+        star.addEventListener("mouseleave", () => {
+          stars.forEach(s => s.classList.remove("hovered"));
+        });
+
+        star.addEventListener("click", () => {
+          const val = Number(star.dataset.value);
+          reviewRating.value = val;
+          updateStars(val);
+        });
+      });
+      updateStars(5);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("id");
+    let currentProduct = null;
+    let currentUser = null;
+    let currentUserPurchasedProduct = false;
+    let selectedColour = "";
+    let selectedColourPrice = 0;
+    let selectedSize = "";
+    let selectedSizePrice = null;
+
+    function orderedMapEntries(map) {
+      return Object.entries(map).map(([label, value], index) => ({ label, value, index })).sort((a, b) => {
+        const aOrder = Number(a.value && typeof a.value === "object" ? a.value.order ?? a.value.position : NaN);
+        const bOrder = Number(b.value && typeof b.value === "object" ? b.value.order ?? b.value.position : NaN);
+        const aHasOrder = Number.isFinite(aOrder);
+        const bHasOrder = Number.isFinite(bOrder);
+        if (aHasOrder && bHasOrder) return aOrder - bOrder || a.index - b.index;
+        if (aHasOrder) return -1;
+        if (bHasOrder) return 1;
+        return a.label.localeCompare(b.label) || a.index - b.index;
+      });
+    }
+
+    function getSizeOptions(product) {
+      const raw = product.sizes ?? product.sizeOptions ?? product.size_options ?? product.availableSizes ?? product.available_sizes;
+      const prices = product.sizePrices ?? product.size_prices ?? product.pricesBySize ?? product.prices_by_size ?? {};
+      if (Array.isArray(raw)) return raw.map(entry => {
+        if (entry && typeof entry === "object") {
+          const label = String(entry.size ?? entry.label ?? entry.name ?? "").trim();
+          const price = Number(entry.price ?? entry.amount ?? prices[label]);
+          return label ? { label, price: Number.isFinite(price) && price > 0 ? price : null } : null;
+        }
+        const label = String(entry ?? "").trim();
+        const price = Number(prices[label]);
+        return label ? { label, price: Number.isFinite(price) && price > 0 ? price : null } : null;
+      }).filter(Boolean);
+      if (raw && typeof raw === "object") return orderedMapEntries(raw).map(({ label, value }) => {
+        const mapped = prices[label];
+        const price = Number((value && typeof value === "object" ? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.price ?? mapped.amount : mapped));
+        return { label: String(label).trim(), price: Number.isFinite(price) && price > 0 ? price : null };
+      }).filter(option => option.label);
+      if (typeof raw === "string" && raw.trim()) return raw.split(",").map(label => {
+        label = label.trim(); const price = Number(prices[label]);
+        return { label, price: Number.isFinite(price) && price > 0 ? price : null };
+      }).filter(option => option.label);
+      return [];
+    }
+
+    function renderSizeSelector(product) {
+      const options = getSizeOptions(product).map((option, index) => ({ ...option, index }))
+        .sort((a, b) => (a.price ?? Number(product.price || 0)) - (b.price ?? Number(product.price || 0)) || a.index - b.index);
+      if (!options.length) return;
+      const selector = document.getElementById("size-selector");
+      const optionsContainer = document.getElementById("size-options");
+      selector.hidden = false;
+      selectedSize = options[0].label;
+      selectedSizePrice = options[0].price;
+      options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "size-option";
+        button.dataset.size = option.label;
+        button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        button.textContent = option.label;
+        button.addEventListener("click", () => {
+          selectedSize = option.label;
+          selectedSizePrice = option.price;
+          optionsContainer.querySelectorAll(".size-option").forEach(item => item.setAttribute("aria-pressed", item === button ? "true" : "false"));
+          document.getElementById("selected-size-label").textContent = `Selected: ${option.label}`;
+          updateDisplayedPrice();
+        });
+        optionsContainer.appendChild(button);
+      });
+      document.getElementById("selected-size-label").textContent = `Selected: ${selectedSize}`;
+    }
+
+    function updateDisplayedPrice() {
+      if (!currentProduct) return;
+      const basePrice = selectedSizePrice ?? Number(currentProduct.price || 0);
+      const price = basePrice + (selectedColourPrice || 0);
+      document.getElementById("product-price").textContent = formatPrice(price);
+      document.getElementById("product-original-price").textContent = formatPrice(getOriginalPrice(price));
+    }
+
+    function isCustomizable(product) {
+      const value = product.customizable ?? product.isCustomizable ?? product.is_customizable;
+      return value === true || /^(yes|true|1|customizable|custom)$/i.test(String(value || "").trim());
+    }
+
+    function formatPrice(value) {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0
+      }).format(Number(value || 0));
+    }
+
+    function getOriginalPrice(value) {
+      return Math.round(Number(value || 0) * 1.3);
+    }
+
+    function renderColourSelector(rawValue, product = {}) {
+      const selector = document.getElementById("colour-selector");
+      const optionsContainer = document.getElementById("colour-options");
+      const raw = rawValue;
+      const priceMap = product.colourPrices ?? product.colorPrices ?? product.colour_prices ?? product.color_prices ?? product.pricesByColour ?? product.pricesByColor ?? {};
+      let options;
+      if (Array.isArray(raw)) {
+        options = raw.map(entry => {
+          const label = String(entry && typeof entry === "object" ? entry.colour ?? entry.color ?? entry.label ?? entry.name ?? "" : entry ?? "").trim();
+          const rawPrice = entry && typeof entry === "object" ? entry.additionalPrice ?? entry.additional_price ?? entry.price ?? entry.amount : priceMap[label];
+          const price = Number(rawPrice);
+          return label ? { label, price: Number.isFinite(price) && price >= 0 ? price : 0 } : null;
+        }).filter(Boolean);
+      } else if (raw && typeof raw === "object") {
+        options = orderedMapEntries(raw).map(({ label, value }) => {
+          const mapped = priceMap[label];
+          const price = Number((value && typeof value === "object" ? value.additionalPrice ?? value.additional_price ?? value.price ?? value.amount : value) ?? (mapped && typeof mapped === "object" ? mapped.additionalPrice ?? mapped.additional_price ?? mapped.price ?? mapped.amount : mapped));
+          return { label: String(label).trim(), price: Number.isFinite(price) && price >= 0 ? price : 0 };
+        }).filter(option => option.label);
+      } else {
+        const labels = String(raw || "").trim().split(",").map(value => value.trim()).filter(Boolean);
+        options = labels.map(label => {
+          const mapped = priceMap[label];
+          const price = Number(mapped && typeof mapped === "object" ? mapped.additionalPrice ?? mapped.additional_price ?? mapped.price ?? mapped.amount : mapped);
+          return { label, price: Number.isFinite(price) && price >= 0 ? price : 0 };
+        });
+      }
+
+      if (!options.length) return;
+      selector.style.display = "block";
+      options = options.map((option, index) => ({ ...option, index }))
+        .sort((a, b) => a.price - b.price || a.index - b.index);
+      selectedColour = options[0].label;
+      selectedColourPrice = options[0].price;
+      options.forEach(({ label, price }, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "colour-option";
+        button.dataset.colour = label;
+        button.setAttribute("aria-label", `Colour ${label}`);
+        button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        button.title = label;
+
+        const swatch = document.createElement("span");
+        swatch.className = "colour-swatch";
+        swatch.setAttribute("aria-hidden", "true");
+        if (/multi[ -]?colou?red|rainbow/i.test(label)) {
+          swatch.style.background = "linear-gradient(90deg, #ef4444 0 16.66%, #f97316 16.66% 33.33%, #eab308 33.33% 50%, #22c55e 50% 66.66%, #3b82f6 66.66% 83.33%, #a855f7 83.33% 100%)";
+        } else {
+        const colours = label.split(/\s+/).filter(Boolean).slice(0, 2);
+        const validColours = colours.map(colour => CSS.supports("color", colour) ? colour : "#cbd5e1");
+        swatch.style.background = validColours.length > 1
+          ? `linear-gradient(90deg, ${validColours[0]} 0 50%, ${validColours[1]} 50% 100%)`
+          : validColours[0] || "#cbd5e1";
+        }
+
+        const text = document.createElement("span");
+        text.textContent = label;
+        button.append(swatch, text);
+        button.addEventListener("click", () => {
+          selectedColour = label;
+          selectedColourPrice = price;
+          optionsContainer.querySelectorAll(".colour-option").forEach(option => {
+            option.setAttribute("aria-pressed", option === button ? "true" : "false");
+          });
+          document.getElementById("selected-colour-label").textContent = `Selected: ${label}`;
+          updateDisplayedPrice();
+        });
+        optionsContainer.appendChild(button);
+      });
+      document.getElementById("selected-colour-label").textContent = `Selected: ${selectedColour}`;
+    }
+
+    function applyVariantFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const requestedColour = params.get("colour") || params.get("color");
+      const requestedSize = params.get("size");
+      if (requestedColour) {
+        const button = [...document.querySelectorAll("#colour-options .colour-option")]
+          .find(option => option.dataset.colour.toLowerCase() === requestedColour.toLowerCase());
+        button?.click();
+      }
+      if (requestedSize) {
+        const button = [...document.querySelectorAll("#size-options .size-option")]
+          .find(option => option.dataset.size.toLowerCase() === requestedSize.toLowerCase());
+        button?.click();
+      }
+    }
+
+    function escapeHTML(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatReviewDate(timestamp) {
+      if (!timestamp) return "";
+      return new Date(Number(timestamp)).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    function normalizeEmail(email) {
+      return String(email || "").trim().replace(/\\/g, "").toLowerCase();
+    }
+
+    function reviewDocumentId(email) {
+      return normalizeEmail(email);
+    }
+
+    function getReviewsRef() {
+      return db.collection("products").doc(productId).collection("reviews");
+    }
+
+    function orderContainsProduct(order) {
+      return (order.items || []).some(item => {
+        const itemId = String(item.id || item.productId || item.product_id || "");
+        return itemId === productId;
+      });
+    }
+
+    function isDelivered(order) {
+      return String(order.status || "").toLowerCase().includes("delivered");
+    }
+
+    async function hasPurchasedProduct(user) {
+      if (!user || !productId) return false;
+      const email = normalizeEmail(user.email);
+      if (!email) return false;
+      const snapshot = await db.collection("orders").where("email", "==", user.email).get();
+      return snapshot.docs.some(doc => {
+        const order = doc.data();
+        return normalizeEmail(order.email) === email && isDelivered(order) && orderContainsProduct(order);
+      });
+    }
+
+    function renderReviews(reviews) {
+      const ratingJumpEl = document.getElementById("rating-jump");
+      if (reviews.length === 0) {
+        reviewSummary.innerHTML = "<strong>0/5</strong><span>No reviews yet</span>";
+        reviewsList.innerHTML = "<div class='empty-state'>No reviews yet.</div>";
+        if (ratingJumpEl) ratingJumpEl.style.display = "none";
+        return;
+      }
+
+      if (ratingJumpEl) ratingJumpEl.style.display = "inline-flex";
+      const total = reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+      const average = (total / reviews.length).toFixed(1);
+      reviewSummary.innerHTML = `<strong>${average}/5</strong><span>${reviews.length} review${reviews.length === 1 ? "" : "s"}</span>`;
+      document.getElementById("product-rating-label").textContent = `${average}/5 (${reviews.length} review${reviews.length === 1 ? "" : "s"})`;
+
+      reviewsList.innerHTML = reviews.map(review => {
+        const rating = Math.max(1, Math.min(5, Math.round(Number(review.rating || 5))));
+        const starsText = "★".repeat(rating) + "☆".repeat(5 - rating);
+        const userInitial = (review.userName || "U")[0].toUpperCase();
+        const isOwner = currentUser && normalizeEmail(review.email) === normalizeEmail(currentUser.email);
+
+        return `
+          <div class="review-card">
+            <div class="review-card-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.88rem;">${userInitial}</div>
+                <div>
+                  <strong>${escapeHTML(review.userName || "Customer")}</strong>
+                  <div class="review-date">${escapeHTML(formatReviewDate(review.timestamp))}</div>
+                </div>
+              </div>
+              <div class="review-rating">${starsText}</div>
+            </div>
+            <p style="color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">${escapeHTML(review.comment || "")}</p>
+            ${isOwner ? `<button type="button" class="review-delete-btn" data-review-email="${escapeHTML(review.email || "")}" style="margin-top:10px;">Delete my review</button>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadReviews() {
+      if (!productId) return;
+
+      try {
+        const snapshot = await getReviewsRef().orderBy("timestamp", "desc").get();
+        const reviews = [];
+        snapshot.forEach(doc => reviews.push({ ...doc.data(), _docId: doc.id }));
+        renderReviews(reviews);
+
+        let ownReview = null;
+        if (currentUser) {
+          ownReview = reviews.find(review => normalizeEmail(review.email) === normalizeEmail(currentUser.email) || normalizeEmail(review._docId) === normalizeEmail(currentUser.email));
+          if (ownReview) {
+            reviewRating.value = String(ownReview.rating || 5);
+            reviewComment.value = ownReview.comment || "";
+            reviewMessage.textContent = "You have already reviewed this item. Delete your review before submitting a new one.";
+            reviewForm.querySelector("button[type='submit']").disabled = true;
+            if (starPicker) {
+              const stars = starPicker.querySelectorAll("span");
+              stars.forEach(s => s.classList.toggle("selected", Number(s.dataset.value) <= (ownReview.rating || 5)));
+            }
+          }
+        }
+        if (currentUserPurchasedProduct && currentUser) {
+          reviewForm.style.display = ownReview ? "none" : "grid";
+        }
+      } catch (err) {
+        console.error("Error loading reviews:", err);
+        reviewsList.innerHTML = "<div class='empty-state'>Unable to load reviews right now.</div>";
+      }
+    }
+
+    firebase.auth().onAuthStateChanged(async (user) => {
+      currentUser = user;
+      currentUserPurchasedProduct = false;
+
+      if (user) {
+        reviewLoginBtn.style.display = "none";
+        reviewForm.style.display = "none";
+        reviewAuthMessage.textContent = "Checking your purchase history...";
+
+        try {
+          currentUserPurchasedProduct = await hasPurchasedProduct(user);
+
+          if (currentUserPurchasedProduct) {
+            reviewAuthMessage.textContent = `Reviewing as ${user.displayName || user.email}`;
+            const ownReview = await getReviewsRef().doc(reviewDocumentId(user.email)).get();
+            reviewForm.style.display = ownReview.exists ? "none" : "grid";
+          } else {
+            reviewAuthMessage.textContent = "Verified buyers only: order this item to write a review.";
+          }
+
+          loadReviews();
+        } catch (err) {
+          console.error("Error checking purchase history:", err);
+          reviewAuthMessage.textContent = "Could not verify purchase history.";
+        }
+      } else {
+        reviewAuthMessage.textContent = "Login to write a verified review.";
+        reviewLoginBtn.style.display = "inline-flex";
+        reviewForm.style.display = "none";
+      }
+    });
+
+    reviewLoginBtn.addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).catch(err => {
+        reviewAuthMessage.textContent = "Login failed: " + err.message;
+      });
+    });
+
+    reviewsList.addEventListener("click", async event => {
+      const button = event.target.closest(".review-delete-btn");
+      if (!button) return;
+      if (!currentUser || !currentUser.email) {
+        reviewAuthMessage.textContent = "Login with the account that wrote this review to delete it.";
+        return;
+      }
+
+      const reviewEmail = button.dataset.reviewEmail;
+      if (normalizeEmail(reviewEmail) !== normalizeEmail(currentUser.email)) return;
+      button.disabled = true;
+      try {
+        const reviewRef = getReviewsRef().doc(reviewDocumentId(reviewEmail));
+        const reviewDoc = await reviewRef.get();
+        if (!reviewDoc.exists || normalizeEmail(reviewDoc.data().email) !== normalizeEmail(currentUser.email)) {
+          throw new Error("Review ownership could not be verified.");
+        }
+        await reviewRef.delete();
+        reviewForm.querySelector("button[type='submit']").disabled = false;
+        reviewComment.value = "";
+        reviewRating.value = "5";
+        await loadReviews();
+        reviewMessage.textContent = "Your review was deleted.";
+      } catch (err) {
+        console.error("Error deleting review:", err);
+        button.disabled = false;
+        reviewMessage.textContent = "Could not delete the review. Please try again.";
+      }
+    });
+
+    document.getElementById("rating-jump")?.addEventListener("click", () => {
+      reviewsSection.scrollIntoView({ behavior: "smooth" });
+    });
+
+    if (!productId) {
+      loading.style.display = "none";
+      error.style.display = "block";
+    } else {
+      db.collection("products").doc(productId).get()
+        .then(doc => {
+          if (!doc.exists) {
+            loading.style.display = "none";
+            error.style.display = "block";
+            return;
+          }
+
+          const data = doc.data();
+          currentProduct = { id: productId, ...data };
+          window.ProductRecommendations?.record(currentProduct);
+          const renderRelatedProducts = products => window.ProductRecommendations?.render(
+            document.getElementById("related-products"),
+            products,
+            { currentId: productId, limit: 4, anchorProduct: currentProduct }
+          );
+          try {
+            const cachedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+            if (Array.isArray(cachedProducts) && cachedProducts.length) renderRelatedProducts(cachedProducts);
+          } catch { /* Fetch below supplies the product list if the local cache is invalid. */ }
+          db.collection("products").get().then(snapshot => {
+            renderRelatedProducts(snapshot.docs.map(item => ({ id: item.id, productId: item.id, ...item.data() })));
+          }).catch(err => console.warn("Could not refresh related products:", err));
+          document.getElementById("product-viewer-count").textContent = String(18 + Math.floor(Math.random() * 24));
+          renderColourSelector(data.colourOptions || data.colorOptions || data.colours || data.colors || data.colour || data.color || "", data);
+      renderSizeSelector(data);
+          applyVariantFromUrl();
+
+          productImages = String(data.imageUrl || "logo_creativesouls.jpg").split(",").map(url => url.trim()).filter(Boolean);
+          if (!productImages.length) productImages = ["logo_creativesouls.jpg"];
+          productThumbnails.replaceChildren();
+          productImages.forEach((src, index) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "product-thumbnail";
+            button.setAttribute("aria-label", `Show product image ${index + 1}`);
+            const thumbnail = document.createElement("img");
+            thumbnail.src = src;
+            thumbnail.alt = "";
+            button.appendChild(thumbnail);
+            button.addEventListener("click", () => selectProductImage(index));
+            productThumbnails.appendChild(button);
+          });
+          productThumbnails.hidden = productImages.length < 2;
+          selectProductImage(0);
+          setProductShareMetadata(data);
+          document.getElementById("product-name").textContent = data.productName || "Untitled product";
+          updateDisplayedPrice();
+          document.getElementById("product-description").innerHTML = window.sanitizeProductDescription(data.description || "Custom handcrafted 3D printed piece by Creative Souls 3D.");
+          initDescriptionToggle();
+          document.getElementById("product-customization-wrap").hidden = !isCustomizable(data);
+          document.getElementById("product-category").textContent = data.category || "Custom 3D Print";
+          document.getElementById("breadcrumb-name").textContent = data.productName || "Product";
+          document.getElementById("breadcrumb-category").textContent = data.category || "Products";
+
+          loading.style.display = "none";
+          productSection.style.display = "grid";
+          productTrustStrip.style.display = "grid";
+          reviewsSection.style.display = "grid";
+          loadReviews();
+        })
+        .catch(err => {
+          console.error("Error loading product:", err);
+          loading.style.display = "none";
+          error.style.display = "block";
+        });
+    }
+
+    async function createShareCardFile(imageUrl, title, teaser, productUrl) {
+      if (!imageUrl || !window.File || !HTMLCanvasElement.prototype.toBlob) return null;
+      const response = await fetch(imageUrl, { mode: "cors" });
+      if (!response.ok) throw new Error("Product image could not be loaded for sharing.");
+      const imageBlob = await response.blob();
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(imageBlob);
+      try {
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error("Product image could not be opened for sharing."));
+          image.src = objectUrl;
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = 1350;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#fffaf0";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        const imageArea = { x: 60, y: 45, width: 960, height: 750 };
+        const scale = Math.min(imageArea.width / image.naturalWidth, imageArea.height / image.naturalHeight);
+        const drawWidth = image.naturalWidth * scale;
+        const drawHeight = image.naturalHeight * scale;
+        context.drawImage(image, imageArea.x + (imageArea.width - drawWidth) / 2, imageArea.y + (imageArea.height - drawHeight) / 2, drawWidth, drawHeight);
+
+        const gradient = context.createLinearGradient(0, 820, 0, canvas.height);
+        gradient.addColorStop(0, "#fffaf0");
+        gradient.addColorStop(1, "#ffedd5");
+        context.fillStyle = gradient;
+        context.fillRect(0, 820, canvas.width, 530);
+        context.fillStyle = "#b45309";
+        context.font = "700 28px Arial, sans-serif";
+        context.fillText("CREATIVE SOULS 3D  ·  MADE TO MAKE YOU LOOK TWICE", 64, 875, 950);
+        context.fillStyle = "#111827";
+        context.font = "700 54px Arial, sans-serif";
+        const wrap = (text, font, maxWidth, maxLines) => {
+          context.font = font;
+          const words = String(text).split(/\s+/);
+          const lines = [];
+          let line = "";
+          words.forEach(word => {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && context.measureText(candidate).width > maxWidth) {
+              lines.push(line);
+              line = word;
+            } else line = candidate;
+          });
+          if (line) lines.push(line);
+          return lines.slice(0, maxLines);
+        };
+        const titleLines = wrap(title, "700 54px Arial, sans-serif", 950, 2);
+        let textY = 950;
+        titleLines.forEach(line => { context.fillText(line, 64, textY, 950); textY += 64; });
+        context.fillStyle = "#475569";
+        const teaserLines = wrap(teaser, "400 31px Arial, sans-serif", 950, 3);
+        teaserLines.forEach(line => { context.fillText(line, 64, textY + 7, 950); textY += 42; });
+        context.fillStyle = "#b45309";
+        context.font = "700 23px Arial, sans-serif";
+        context.fillText("VIEW PRODUCT", 64, 1285);
+        context.fillStyle = "#334155";
+        context.font = "400 21px Arial, sans-serif";
+        context.fillText(productUrl, 64, 1323, 950);
+
+        const cardBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
+        if (!cardBlob) return null;
+        const safeName = title.replace(/[^a-z0-9_-]/gi, "-").slice(0, 60) || "product";
+        return new File([cardBlob], `${safeName}-creative-souls.jpg`, { type: "image/jpeg" });
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    shareProductBtn.addEventListener("click", async () => {
+      const title = document.getElementById("product-name").textContent;
+      const description = String(currentProduct?.description || "A custom handcrafted 3D printed piece by Creative Souls 3D.").replace(/\s+/g, " ").trim();
+      const teaser = description.length > 150 ? `${description.slice(0, 147).trimEnd()}…` : description;
+      const imageUrl = productImages[0] || "";
+      const shareUrl = new URL(window.location.href);
+      if (selectedColour) shareUrl.searchParams.set("colour", selectedColour);
+      if (selectedSize) shareUrl.searchParams.set("size", selectedSize);
+      const productUrl = shareUrl.href;
+      const shareData = {
+        title: `${title} | Creative Souls 3D`,
+        text: `${title}\n\n${teaser}\n\nDiscover it at Creative Souls 3D:`,
+        url: productUrl
+      };
+      const shareMessage = `${shareData.text}\n${productUrl}`;
+
+      try {
+        if (navigator.share) {
+          let payload = shareData;
+          if (imageUrl && navigator.canShare && window.File) {
+            try {
+              const imageFile = await createShareCardFile(imageUrl, title, teaser, productUrl);
+              const withImage = { ...shareData, files: imageFile ? [imageFile] : [] };
+              if (imageFile && navigator.canShare(withImage)) payload = withImage;
+            } catch (imageError) {
+              console.info("Share card could not be created; sharing the product link instead:", imageError);
+            }
+          }
+          if (payload.files?.length && navigator.clipboard?.writeText) {
+            try {
+              await navigator.clipboard.writeText(shareMessage);
+              window.showToast?.("Share image ready. Caption copied so you can paste it in Instagram.", "success");
+            } catch { /* Clipboard access is optional; the title and teaser are also on the image. */ }
+          }
+          await navigator.share(payload);
+        } else if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareMessage);
+          window.showToast?.("Product title, description, and link copied to clipboard.", "success");
+        } else {
+          window.prompt("Copy this product message:", shareMessage);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Could not share product link:", err);
+          window.prompt("Copy this product message:", shareMessage);
+        }
+      }
+    });
+
+    function addCurrentProductToCart(qty = 1) {
+      if (!currentProduct) return;
+
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const customizable = isCustomizable(currentProduct);
+      const customization = customizable ? document.getElementById("product-customization").value.trim() : "";
+      const price = (selectedSizePrice ?? Number(currentProduct.price || 0)) + (selectedColourPrice || 0);
+      const existing = cart.find(item => item.id === productId && (item.colour || "") === selectedColour && (item.size || "") === selectedSize && (item.customization || "") === customization);
+
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        cart.push({
+          id: productId,
+          productName: currentProduct.productName || "Untitled product",
+          imageUrl: productImages[0] || String(currentProduct.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg",
+          price,
+          colour: selectedColour,
+          size: selectedSize,
+          customizable,
+          customization,
+          quantity: qty
+        });
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+      if (typeof window.updateHeaderCartCount === "function") {
+        window.updateHeaderCartCount();
+      }
+    }
+
+    addToCartBtn.addEventListener("click", () => {
+      addCurrentProductToCart(selectedQuantity);
+      addToCartBtn.textContent = `✓ Added ${selectedQuantity} to Cart!`;
+      if (typeof window.showToast === "function") {
+        window.showToast(`Added ${selectedQuantity}x "${currentProduct?.productName || "Item"}" to cart!`, "success", "View Cart", "cart.html");
+      }
+      setTimeout(() => {
+        addToCartBtn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add to Cart
+        `;
+      }, 1600);
+    });
+
+    buyNowBtn.addEventListener("click", () => {
+      addCurrentProductToCart(selectedQuantity);
+      window.location.href = "cart.html";
+    });
+
+    reviewForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (!currentUser) {
+        reviewMessage.textContent = "Please login to submit a review.";
+        return;
+      }
+
+      if (!currentUserPurchasedProduct) {
+        reviewMessage.textContent = "Only verified purchasers can submit a review.";
+        return;
+      }
+
+      const existingReview = await getReviewsRef().doc(reviewDocumentId(currentUser.email)).get();
+      if (existingReview.exists) {
+        reviewMessage.textContent = "You already reviewed this item. Delete your review before submitting another.";
+        return;
+      }
+
+      const comment = reviewComment.value.trim();
+      const rating = Number(reviewRating.value);
+
+      if (!comment || rating < 1 || rating > 5) {
+        reviewMessage.textContent = "Please add a rating and comment.";
+        return;
+      }
+
+      reviewMessage.textContent = "Saving review...";
+
+      try {
+        await getReviewsRef().doc(reviewDocumentId(currentUser.email)).set({
+          comment,
+          email: currentUser.email,
+          ownReview: false,
+          rating,
+          timestamp: Date.now(),
+          userName: currentUser.displayName || currentUser.email
+        });
+
+        reviewMessage.textContent = "✓ Review saved successfully!";
+        reviewMessage.style.color = "var(--accent-emerald)";
+        loadReviews();
+      } catch (err) {
+        console.error("Error saving review:", err);
+        reviewMessage.textContent = "Could not save review. Please try again.";
+        reviewMessage.style.color = "var(--danger)";
+      }
+    });
+
+    function initDescriptionToggle() {
+      const descEl = document.getElementById("product-description");
+      const toggleBtn = document.getElementById("product-desc-toggle");
+      if (!descEl || !toggleBtn) return;
+
+      // Reset state each time a new product loads
+      descEl.classList.remove("product-description--expanded");
+      toggleBtn.setAttribute("aria-expanded", "false");
+      toggleBtn.hidden = true;
+
+      // Use rAF to let the DOM paint so scrollHeight is accurate
+      requestAnimationFrame(() => {
+        const lineHeight = parseFloat(getComputedStyle(descEl).lineHeight) || 28;
+        const clampLines = 4;
+        const clampHeight = lineHeight * clampLines;
+
+        if (descEl.scrollHeight > clampHeight + 4) {
+          descEl.classList.add("product-description--clamped");
+          toggleBtn.hidden = false;
+
+          toggleBtn.addEventListener("click", function handler() {
+            const expanded = descEl.classList.toggle("product-description--expanded");
+            descEl.classList.toggle("product-description--clamped", !expanded);
+            toggleBtn.setAttribute("aria-expanded", String(expanded));
+            toggleBtn.innerHTML = expanded
+              ? `Show less <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"></polyline></svg>`
+              : `Show more <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+          });
+        }
+      });
+    }
+  </script>
+  <script src="site-footer.js"></script>
+</body>
+</html>

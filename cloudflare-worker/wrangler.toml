@@ -1,0 +1,8 @@
+name = "creative-souls-product-marketing"
+main = "src/index.js"
+compatibility_date = "2026-11-02"
+workers_dev = true
+
+[vars]
+FIREBASE_PROJECT_ID = "creative-souls-3d"
+GEMINI_MODEL = "gemini-3.5-flash-lite"

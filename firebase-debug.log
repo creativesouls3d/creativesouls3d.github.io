@@ -1,0 +1,140 @@
+[debug] [2026-11-03T08:46:20.796Z] ----------------------------------------------------------------------
+[debug] [2026-11-03T08:46:20.804Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:getTrackingOrder --project creative-souls-3d
+[debug] [2026-11-03T08:46:20.805Z] CLI Version:   14.8.0
+[debug] [2026-11-03T08:46:20.805Z] Platform:      win32
+[debug] [2026-11-03T08:46:20.805Z] Node Version:  v20.17.0
+[debug] [2026-11-03T08:46:20.805Z] Time:          Tue Nov 03 2026 14:16:20 GMT+0530 (India Standard Time)
+[debug] [2026-11-03T08:46:20.805Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-03T08:46:20.809Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-11-03T08:46:21.175Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-03T08:46:21.177Z] > authorizing via signed-in user (ls.projects.base@gmail.com)
+[debug] [2026-11-03T08:46:21.178Z] [iam] checking project creative-souls-3d for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-11-03T08:46:21.180Z] Checked if tokens are valid: false, expires at: 1793604424355
+[debug] [2026-11-03T08:46:21.181Z] Checked if tokens are valid: false, expires at: 1793604424355
+[debug] [2026-11-03T08:46:21.181Z] > refreshing access token with scopes: []
+[debug] [2026-11-03T08:46:21.183Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-03T08:46:21.183Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-03T08:46:21.516Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-03T08:46:21.516Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-03T08:46:21.533Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions [none]
+[debug] [2026-11-03T08:46:21.533Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:46:21.533Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-11-03T08:46:21.759Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-11-03T08:46:21.759Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-11-03T08:46:23.146Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions 200
+[debug] [2026-11-03T08:46:23.146Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-11-03T08:46:23.149Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:23.151Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:23.152Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-11-03T08:46:23.152Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-11-03T08:46:24.835Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-11-03T08:46:24.836Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'creative-souls-3d'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-11-03T08:46:24.843Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:24.843Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:24.844Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d [none]
+[debug] [2026-11-03T08:46:25.206Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d 200
+[debug] [2026-11-03T08:46:25.207Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d {"projectNumber":"909080221258","projectId":"creative-souls-3d","lifecycleState":"ACTIVE","name":"Creative Souls 3D","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-13T09:21:48.238520Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2026-11-03T08:46:25.217Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:25.218Z] Checked if tokens are valid: true, expires at: 1793699180517
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-11-03T08:46:25.219Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:25.219Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:25.220Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com [none]
+[debug] [2026-11-03T08:46:25.220Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:46:25.222Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com [none]
+[debug] [2026-11-03T08:46:25.223Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:46:27.131Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com 200
+[debug] [2026-11-03T08:46:27.131Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudbuild.googleapis.com. Enabling now... 
+[debug] [2026-11-03T08:46:27.132Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:27.132Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:27.132Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable [none]
+[debug] [2026-11-03T08:46:27.133Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:46:27.138Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com 200
+[debug] [2026-11-03T08:46:27.138Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com [omitted]
+[warn] !  artifactregistry: missing required API artifactregistry.googleapis.com. Enabling now... 
+[debug] [2026-11-03T08:46:27.138Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:27.138Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:46:27.139Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable [none]
+[debug] [2026-11-03T08:46:27.139Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:46:27.581Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable 400
+[debug] [2026-11-03T08:46:27.581Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable [omitted]
+[error] 
+[error] Error: Your project creative-souls-3d must be on the Blaze (pay-as-you-go) plan to complete this command. Required API cloudbuild.googleapis.com can't be enabled until the upgrade is complete. To upgrade, visit the following URL:
+
+https://console.firebase.google.com/project/creative-souls-3d/usage/details
+[debug] [2026-11-03T08:47:05.913Z] ----------------------------------------------------------------------
+[debug] [2026-11-03T08:47:05.915Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Luv\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:getTrackingOrder --project creative-souls-3d
+[debug] [2026-11-03T08:47:05.915Z] CLI Version:   14.8.0
+[debug] [2026-11-03T08:47:05.915Z] Platform:      win32
+[debug] [2026-11-03T08:47:05.915Z] Node Version:  v20.17.0
+[debug] [2026-11-03T08:47:05.915Z] Time:          Tue Nov 03 2026 14:17:05 GMT+0530 (India Standard Time)
+[debug] [2026-11-03T08:47:05.915Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-03T08:47:06.051Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-03T08:47:06.052Z] > authorizing via signed-in user (ls.projects.base@gmail.com)
+[debug] [2026-11-03T08:47:06.052Z] [iam] checking project creative-souls-3d for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-11-03T08:47:06.054Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:06.054Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:06.055Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions [none]
+[debug] [2026-11-03T08:47:06.055Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:47:06.055Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-11-03T08:47:07.690Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions 200
+[debug] [2026-11-03T08:47:07.690Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-11-03T08:47:07.691Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:07.691Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:07.691Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-11-03T08:47:07.691Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-11-03T08:47:09.429Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-11-03T08:47:09.430Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/creative-souls-3d/serviceAccounts/creative-souls-3d@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'creative-souls-3d'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-11-03T08:47:09.439Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:09.439Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:09.439Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d [none]
+[debug] [2026-11-03T08:47:09.776Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d 200
+[debug] [2026-11-03T08:47:09.776Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/creative-souls-3d {"projectNumber":"909080221258","projectId":"creative-souls-3d","lifecycleState":"ACTIVE","name":"Creative Souls 3D","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-13T09:21:48.238520Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2026-11-03T08:47:09.782Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:09.782Z] Checked if tokens are valid: true, expires at: 1793699180517
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-11-03T08:47:09.784Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:09.784Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:09.785Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com [none]
+[debug] [2026-11-03T08:47:09.786Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:47:09.789Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com [none]
+[debug] [2026-11-03T08:47:09.789Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:47:11.683Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com 200
+[debug] [2026-11-03T08:47:11.683Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudbuild.googleapis.com. Enabling now... 
+[debug] [2026-11-03T08:47:11.684Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:11.684Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:11.685Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable [none]
+[debug] [2026-11-03T08:47:11.686Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:47:11.692Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com 200
+[debug] [2026-11-03T08:47:11.693Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com [omitted]
+[warn] !  artifactregistry: missing required API artifactregistry.googleapis.com. Enabling now... 
+[debug] [2026-11-03T08:47:11.693Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:11.694Z] Checked if tokens are valid: true, expires at: 1793699180517
+[debug] [2026-11-03T08:47:11.694Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable [none]
+[debug] [2026-11-03T08:47:11.695Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable x-goog-quota-user=projects/creative-souls-3d
+[debug] [2026-11-03T08:47:13.422Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable 400
+[debug] [2026-11-03T08:47:13.422Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/artifactregistry.googleapis.com:enable [omitted]
+[error] 
+[error] Error: Your project creative-souls-3d must be on the Blaze (pay-as-you-go) plan to complete this command. Required API artifactregistry.googleapis.com can't be enabled until the upgrade is complete. To upgrade, visit the following URL:
+
+https://console.firebase.google.com/project/creative-souls-3d/usage/details
+[debug] [2026-11-03T08:47:13.443Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable 400
+[debug] [2026-11-03T08:47:13.443Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/creative-souls-3d/services/cloudbuild.googleapis.com:enable [omitted]

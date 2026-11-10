@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Creative Souls 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       SIGN-IN SCREEN
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="admin-signin-screen" class="admin-signin-screen" hidden>
+    <div class="admin-signin-card">
+      <div class="admin-signin-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure Admin Portal
+      </div>
+      <div class="admin-signin-logo-wrap">
+        <img class="admin-signin-logo" src="logo_creativesouls.jpg" alt="Creative Souls 3D" />
+      </div>
+      <h1>Creative Souls 3D</h1>
+      <p class="signin-subtitle">Executive Store Operations &amp; Order Management</p>
+      
+      <p id="admin-identity">Sign in with the authorized administrator account.</p>
+
+      <button id="admin-login" type="button">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+          <path fill="#34A853" d="M6.3 14.7l7 5.1C15.2 17.2 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/>
+          <path fill="#FBBC05" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.7-5.5C29.9 36.8 27.1 38 24 38c-6 0-11.1-3.9-12.9-9.4l-7 5.4C7.7 41.3 15.3 46 24 46z"/>
+          <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.4-2.3 4.5-4.3 6l6.7 5.5C41.8 36.8 45 31 45 24c0-1.3-.2-2.7-.5-4z"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <p id="admin-status-signin" class="admin-status"></p>
+
+      <div class="admin-signin-notice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span><strong>Access Control:</strong> Administrative write permissions are guarded by Firestore Security Rules. Unauthorized sign-ins will be refused.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ADMIN SHELL
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="admin-shell" id="admin-shell" hidden>
+
+    <div class="admin-sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ── MOBILE BOTTOM NAV ────────────────────────────────────── -->
+    <nav class="admin-bottom-nav" aria-label="Mobile navigation">
+      <button class="admin-bottom-nav-item active" data-section="dashboard" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Home
+      </button>
+      <button class="admin-bottom-nav-item" data-section="orders" aria-label="Orders">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Orders
+      </button>
+      <button class="admin-bottom-nav-item" data-section="attention" aria-label="Needs Attention">
+        <span class="bnav-badge" id="bnav-attention-badge" hidden>0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Alerts
+      </button>
+      <button class="admin-bottom-nav-item" data-section="tickets" aria-label="Support Tickets">
+        <span class="bnav-badge" id="bnav-tickets-badge" hidden>0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Tickets
+      </button>
+      <button class="admin-bottom-nav-item" data-section="products" aria-label="Products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Products
+      </button>
+      <button class="admin-bottom-nav-item" data-section="analytics" aria-label="Analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </button>
+    </nav>
+
+    <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <button class="admin-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">‹</button>
+
+      <!-- Brand -->
+      <div class="admin-sidebar-brand">
+        <img src="logo_creativesouls.jpg" alt="Logo" />
+        <div class="admin-brand-text">
+          <strong>Creative Souls 3D</strong>
+          <span class="admin-brand-badge">Admin Suite</span>
+        </div>
+        <button class="admin-sidebar-mobile-close" id="sidebar-mobile-close" aria-label="Close navigation">✕</button>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="admin-nav" role="navigation" aria-label="Admin navigation">
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Overview</div>
+          <button class="admin-nav-item active" data-section="dashboard" data-tip="Dashboard">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </span>
+            <span class="admin-nav-label">Dashboard</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Operations</div>
+          <button class="admin-nav-item" data-section="orders" data-tip="All Orders">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            </span>
+            <span class="admin-nav-label">All Orders</span>
+          </button>
+          <button class="admin-nav-item" data-section="attention" data-tip="Needs Attention">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <span class="admin-nav-label">Needs Attention</span>
+            <span class="nav-badge" id="nav-attention-badge">0</span>
+          </button>
+          <button class="admin-nav-item" data-section="tickets" data-tip="Support Tickets">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <span class="admin-nav-label">Support Tickets</span>
+            <span class="nav-badge" id="nav-tickets-badge">0</span>
+          </button>
+          <button class="admin-nav-item" data-section="feedback" data-tip="Customer Feedback">
+            <span class="admin-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3z"/></svg></span>
+            <span class="admin-nav-label">Customer Feedback</span>
+            <span class="nav-badge" id="nav-feedback-badge" style="display:none">0</span>
+          </button>
+          <button class="admin-nav-item" data-section="wallets" data-tip="Customer Wallets &amp; Refunds">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                <path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path>
+              </svg>
+            </span>
+            <span class="admin-nav-label">Wallets &amp; Refunds</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Reports &amp; Data</div>
+          <button class="admin-nav-item" data-section="analytics" data-tip="Sales Analytics">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </span>
+            <span class="admin-nav-label">Sales Analytics</span>
+          </button>
+          <button class="admin-nav-item" data-section="explorer" data-tip="Data Explorer">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </span>
+            <span class="admin-nav-label">Data Explorer</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-divider"></div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Catalog</div>
+          <button class="admin-nav-item" data-section="products" data-tip="Product Catalog">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </span>
+            <span class="admin-nav-label">Products Catalog</span>
+          </button>
+        </div>
+
+        <div class="admin-nav-divider"></div>
+
+        <div class="admin-nav-group">
+          <div class="admin-nav-group-label">Storefront</div>
+          <button class="admin-nav-item" onclick="window.open('index.html', '_blank')" data-tip="Live Storefront">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </span>
+            <span class="admin-nav-label">Live Store ↗</span>
+          </button>
+        </div>
+
+      </nav>
+
+      <!-- Footer & User -->
+      <div class="admin-sidebar-footer">
+        <div class="admin-user-pill">
+          <div class="admin-user-avatar" id="user-avatar-initials">A</div>
+          <div class="admin-user-info">
+            <strong id="user-email-display">Administrator</strong>
+            <span>Active Admin</span>
+          </div>
+        </div>
+        <button type="button" class="admin-sidebar-logout" id="admin-logout-btn" title="Sign out of Admin Dashboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ──────────────────────────────────────────────────── -->
+    <div class="admin-main">
+
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-topbar-hamburger" id="topbar-hamburger" aria-label="Open navigation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="admin-topbar-breadcrumb">
+            <h2 id="topbar-section-title">Dashboard</h2>
+            <span id="topbar-section-subtitle">Store overview &amp; live performance</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div class="admin-status-pill">
+            <span class="admin-status-dot"></span>
+            <span id="admin-status">Connected</span>
+          </div>
+          <button type="button" class="admin-topbar-btn" id="topbar-refresh-btn" onclick="document.getElementById('refresh-orders').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Refresh</span>
+          </button>
+          <button type="button" class="admin-topbar-btn" id="topbar-new-product-btn" onclick="document.getElementById('create-product').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Product</span>
+          </button>
+          <button type="button" class="admin-topbar-btn primary" id="topbar-new-order-btn" onclick="document.getElementById('create-order').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Order</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="admin-content">
+
+        <!-- ══════════════════════════════════════════════════════════
+             DASHBOARD SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section active" id="section-dashboard">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Real-Time Operations</p>
+              <h1>Executive Dashboard</h1>
+              <p class="sub">Key metrics, store health, and operational highlights.</p>
+            </div>
+          </div>
+
+          <!-- Stat Cards -->
+          <div class="admin-stats-grid" aria-label="Order overview">
+            <article class="admin-stat-card blue">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                </div>
+                <span class="admin-stat-tag">ALL TIME</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Total Orders</div>
+                <div class="admin-stat-value" id="stat-total-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Cumulative recorded customer orders</div>
+            </article>
+
+            <article class="admin-stat-card amber">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <span class="admin-stat-tag">ATTENTION</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Needs Action</div>
+                <div class="admin-stat-value" id="stat-open-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Pending production, dispatch &amp; approval</div>
+            </article>
+
+            <article class="admin-stat-card green">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <span class="admin-stat-tag">FULFILLED</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Product Delivered</div>
+                <div class="admin-stat-value" id="stat-delivered-orders">—</div>
+              </div>
+              <div class="admin-stat-sub">Successfully fulfilled to customers</div>
+            </article>
+
+            <article class="admin-stat-card purple">
+              <div class="admin-stat-card-top">
+                <div class="admin-stat-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                </div>
+                <span class="admin-stat-tag">REVENUE</span>
+              </div>
+              <div>
+                <div class="admin-stat-label">Gross Order Value</div>
+                <div class="admin-stat-value" id="stat-order-value">—</div>
+              </div>
+              <div class="admin-stat-sub">Combined value of placed orders</div>
+            </article>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="admin-action-grid">
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('orders')" onkeydown="if(event.key==='Enter')navigateTo('orders')">
+              <div class="admin-action-card-icon" style="background:#eff6ff; color:#2563eb">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+              </div>
+              <h3>Order Fulfillment</h3>
+              <p>Filter, edit, update fulfillment status, and generate invoices</p>
+              <div class="admin-action-card-arrow">Open orders table →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('analytics')" onkeydown="if(event.key==='Enter')navigateTo('analytics')">
+              <div class="admin-action-card-icon" style="background:#ecfdf5; color:#059669">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <h3>Sales Analytics</h3>
+              <p>Explore revenue trends, top-selling models, and status shares</p>
+              <div class="admin-action-card-arrow">View analytics →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('attention')" onkeydown="if(event.key==='Enter')navigateTo('attention')">
+              <div class="admin-action-card-icon" style="background:#fffbeb; color:#d97706">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <h3>Needs Attention</h3>
+              <p>Resolve orders open 3+ days or missing delivery contact info</p>
+              <div class="admin-action-card-arrow">Triage queue →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('explorer')" onkeydown="if(event.key==='Enter')navigateTo('explorer')">
+              <div class="admin-action-card-icon" style="background:#f5f3ff; color:#7c3aed">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <h3>Database Explorer</h3>
+              <p>Directly browse, query, and edit Firestore collections &amp; docs</p>
+              <div class="admin-action-card-arrow">Open database →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="document.getElementById('create-product').click()" onkeydown="if(event.key==='Enter')document.getElementById('create-product').click()">
+              <div class="admin-action-card-icon" style="background:#fdf2f8; color:#db2777">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <h3>Create Product</h3>
+              <p>Add a new catalog product with pricing, images, variants, and tags</p>
+              <div class="admin-action-card-arrow">New product →</div>
+            </div>
+
+            <div class="admin-action-card" role="button" tabindex="0" onclick="navigateTo('tickets')" onkeydown="if(event.key==='Enter')navigateTo('tickets')">
+              <div class="admin-action-card-icon" style="background:#fff7ed; color:#c2410c">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <h3>Support Tickets</h3>
+              <p>Review customer issues, inspect photos, and reply through Gmail</p>
+              <div class="admin-action-card-arrow">Open tickets →</div>
+            </div>
+          </div>
+          <article class="admin-panel" style="margin-top: 18px;">
+            <div class="admin-panel-hdr">
+              <div>
+                <div class="admin-panel-title">Open Support Tickets</div>
+                <div class="admin-panel-sub">Customer issues waiting for a reply.</div>
+              </div>
+              <button type="button" class="btn-secondary" onclick="navigateTo('tickets')">View all tickets →</button>
+            </div>
+            <div id="dashboard-open-tickets" class="admin-dashboard-recent-orders"></div>
+          </article>
+          <!-- Recent Orders Card -->
+          <article class="admin-panel" style="margin-top: 18px;">
+            <div class="admin-panel-hdr">
+              <div>
+                <div class="admin-panel-title">Recent Customer Orders</div>
+                <div class="admin-panel-sub">Latest customer orders requiring production and delivery.</div>
+              </div>
+              <button type="button" class="btn-secondary" onclick="navigateTo('orders')">View All Orders →</button>
+            </div>
+            <div id="dashboard-recent-orders" class="admin-dashboard-recent-orders"></div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ANALYTICS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-analytics">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Performance &amp; Revenue</p>
+              <h1>Sales Analytics</h1>
+              <p class="sub">Filter orders by date to examine volume, revenue, and product trends.</p>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+            <div class="admin-analytics-head">
+              <div>
+                <div class="admin-panel-title">Revenue &amp; Volume Trends</div>
+                <div class="admin-panel-sub">Select a preset or custom date range to update all charts.</div>
+              </div>
+              <div class="admin-date-tools">
+                <label>From<input id="orders-date-from" type="date" aria-label="Filter orders from date"/></label>
+                <label>To<input id="orders-date-to" type="date" aria-label="Filter orders to date"/></label>
+                <button id="clear-order-dates" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="admin-date-preset" role="group" aria-label="Quick date ranges">
+              <span class="admin-helper">Range:</span>
+              <button type="button" data-date-preset="7">7 Days</button>
+              <button type="button" data-date-preset="30">30 Days</button>
+              <button type="button" data-date-preset="90">90 Days</button>
+              <button type="button" data-date-preset="all" aria-pressed="true">All Time</button>
+            </div>
+
+            <div class="admin-chart-grid">
+              <section class="admin-chart-card" aria-labelledby="orders-trend-heading">
+                <h3 id="orders-trend-heading">Orders Over Time</h3>
+                <p id="orders-trend-caption">Order volume · all dates</p>
+                <div id="orders-trend-chart" class="admin-chart" role="group" aria-label="Order volume chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="orders-status-heading">
+                <h3 id="orders-status-heading">Orders by Status</h3>
+                <p>Categorized lifecycle distribution</p>
+                <div id="orders-status-chart" class="admin-chart" role="group" aria-label="Orders by status chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="orders-status-pie-heading">
+                <h3 id="orders-status-pie-heading">Order Status Share</h3>
+                <p>Percentage share of active and fulfilled orders</p>
+                <div id="orders-status-pie-chart" class="admin-chart" role="group" aria-label="Status share pie chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="revenue-trend-heading">
+                <h3 id="revenue-trend-heading">Revenue Over Time</h3>
+                <p id="revenue-trend-caption">Calculated gross earnings in the selected window</p>
+                <div id="revenue-trend-chart" class="admin-chart" role="group" aria-label="Revenue chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="top-products-heading">
+                <h3 id="top-products-heading">Top Products</h3>
+                <p>Catalog units ordered in the selected timeframe</p>
+                <div id="top-products-chart" class="admin-chart" role="group" aria-label="Top products chart"></div>
+              </section>
+
+              <section class="admin-chart-card" aria-labelledby="payment-methods-heading">
+                <h3 id="payment-methods-heading">Payment Modes</h3>
+                <p>Breakdown of recorded customer payment types</p>
+                <div id="payment-methods-chart" class="admin-chart" role="group" aria-label="Payment modes chart"></div>
+              </section>
+            </div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ATTENTION SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-attention">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Action Required</p>
+              <h1>Needs Attention</h1>
+              <p class="sub">Triage overdue orders or orders missing essential customer delivery details.</p>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <details class="admin-attention-details" open>
+              <summary>
+                <span class="admin-attention-heading">
+                  <strong>Open orders requiring immediate review</strong>
+                  <small>Flagged orders open for 3+ business days or lacking phone/address.</small>
+                </span>
+                <span id="admin-attention-count" class="admin-attention-count">0</span>
+              </summary>
+              <div id="admin-attention-queue" class="admin-attention-list" aria-live="polite"></div>
+            </details>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             SUPPORT TICKETS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-feedback">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Voice of the Customer</p>
+              <h1>Customer Feedback</h1>
+              <p class="sub">Review post-purchase ratings, comments, photos, and customer suggestions.</p>
+            </div>
+            <div class="admin-page-hdr-actions">
+              <button id="feedback-export" type="button" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export CSV
+              </button>
+              <button id="feedback-refresh" type="button" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Metric cards injected by JS -->
+          <div id="feedback-metrics" class="fb-metrics-grid"></div>
+
+          <!-- Rating distribution bar -->
+          <div id="feedback-rating-dist" class="fb-rating-dist admin-panel" hidden></div>
+
+          <!-- Toolbar + list -->
+          <article class="admin-panel">
+            <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="feedback-search" type="search" aria-label="Search customer feedback" placeholder="Search order ID, customer, email, comments…" />
+              </div>
+              <div class="admin-toolbar-actions">
+                <div class="fb-filter-pills" id="feedback-filter-pills" role="group" aria-label="Filter feedback">
+                  <button type="button" class="admin-filter-pill active" data-fb-filter="all">All</button>
+                  <button type="button" class="admin-filter-pill" data-fb-filter="5">⭐ 5 Stars</button>
+                  <button type="button" class="admin-filter-pill" data-fb-filter="4">⭐ 4 Stars</button>
+                  <button type="button" class="admin-filter-pill" data-fb-filter="3">⭐ 3 Stars</button>
+                  <button type="button" class="admin-filter-pill" data-fb-filter="negative">⚠️ Flagged</button>
+                </div>
+              </div>
+            </div>
+            <p id="feedback-count-label" class="fb-count-label" aria-live="polite">Load feedback to view responses.</p>
+            <div id="feedback-list"></div>
+          </article>
+        </section>
+
+        <section class="admin-section" id="section-tickets">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Customer Support</p>
+              <h1>Support Tickets</h1>
+              <p class="sub">Read order issues, review photos and videos, then reply in Gmail with one click. You can also raise a ticket on a customer's behalf.</p>
+            </div>
+            <div class="admin-page-hdr-actions">
+              <button id="create-ticket-btn" type="button" class="btn btn-primary">+ Create Ticket</button>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <div class="admin-quick-filters" id="tickets-quick-filters" role="group" aria-label="Ticket status filters">
+              <button type="button" class="admin-filter-pill active" data-ticket-filter="open">Open</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="replied">Replied</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="resolved">Resolved</button>
+              <button type="button" class="admin-filter-pill" data-ticket-filter="all">All tickets</button>
+            </div>
+            <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="ticket-search" type="search" aria-label="Search tickets" placeholder="Search by ticket ID, order, customer, or issue…"/>
+              </div>
+              <div class="admin-toolbar-actions">
+                <button id="refresh-tickets" type="button" class="btn btn-secondary">Refresh</button>
+              </div>
+            </div>
+            <p id="ticket-count-label" aria-live="polite">Loading tickets…</p>
+            <div id="tickets-list"></div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             ORDERS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-orders">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Store Management</p>
+              <h1>All Customer Orders</h1>
+              <p class="sub">Search, inspect, update status, issue invoices, and manage dispatch.</p>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+                      <!-- Quick Status Filter Pills -->
+          <div class="admin-quick-filters" id="orders-quick-filters" role="group" aria-label="Quick status filters">
+            <button type="button" class="admin-filter-pill active" data-quick-status="all">All Orders</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="action">⚠️ Needs Action</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="In Production">⚙️ In Production</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Ready for Dispatch">📦 Ready for Dispatch</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Shipped">🚚 Shipped</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Delivered">✅ Delivered</button>
+          </div>
+
+          <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="order-search" type="search" aria-label="Search orders" placeholder="Search by order ID, customer name, email, phone…"/>
+              </div>
+
+              <div class="admin-toolbar-actions">
+                <details id="order-status-filter" class="admin-status-filter">
+                  <summary id="order-status-filter-label">All Statuses</summary>
+                  <div id="order-status-options" class="admin-status-options"></div>
+                </details>
+
+                <details id="ignored-customers-control" class="admin-ignored-customers">
+                  <summary>Ignored (<span id="ignored-customer-count">0</span>)</summary>
+                  <div id="ignored-customer-list" class="admin-ignored-customer-list"></div>
+                </details>
+
+                <button id="export-orders" type="button" class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Export CSV
+                </button>
+
+                <button id="refresh-orders" type="button" class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  Refresh
+                </button>
+
+                <button id="create-order" type="button" class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  + Create Order
+                </button>
+              </div>
+            </div>
+
+            <!-- Bulk Toolbar -->
+            <div class="admin-bulk-toolbar">
+              <span id="bulk-selection-label" aria-live="polite">No orders selected</span>
+              <button id="select-all-matching-orders" class="admin-secondary-action" type="button">Select all matching</button>
+              <button id="clear-order-selection" class="admin-secondary-action" type="button" disabled>Clear selection</button>
+              <div class="admin-bulk-status">
+                <input type="text" id="bulk-order-status" aria-label="New status for selected orders" placeholder="Type new status…" />
+                <button id="apply-bulk-status" class="admin-status-action" type="button" disabled>Update status</button>
+              </div>
+              <button id="delete-selected-orders" type="button" disabled>Delete (0)</button>
+            </div>
+
+            <p id="order-count-label" aria-live="polite">Loading orders…</p>
+            <p id="chart-filter-notice" class="admin-chart-filter-notice" hidden>
+              <span>Chart filter active: <strong id="chart-filter-label"></strong></span>
+              <button id="clear-chart-filter" type="button">Clear filter</button>
+            </p>
+
+            <!-- Table -->
+            <div class="admin-table-scroll-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Swipe horizontally to view all order details and actions</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+            <div id="orders-list"></div>
+
+            <!-- Pagination -->
+            <div class="admin-pagination" aria-label="Order table pagination">
+              <span id="orders-page-info">Page 1</span>
+              <div class="admin-pagination-controls">
+                <label for="orders-page-size" style="font-weight:600;font-size:0.8rem">Rows:</label>
+                <select id="orders-page-size" aria-label="Rows per page">
+                  <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                </select>
+                <button id="orders-previous-page" type="button">← Previous</button>
+                <button id="orders-next-page" type="button">Next →</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             WALLETS & REFUNDS SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-wallets">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Store Management</p>
+              <h1>Customer Wallets &amp; Refunds</h1>
+              <p class="sub">Manage customer balances, credit instant refunds, issue loyalty rewards, and audit transactions storewide.</p>
+            </div>
+            <div class="admin-page-hdr-right" style="display: flex; gap: 10px; align-items: center;">
+              <button id="wallet-export-all-btn" type="button" class="btn btn-secondary" title="Export all wallet logs as CSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Export Audit CSV
+              </button>
+              <button id="refresh-wallets-btn" type="button" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Storewide Metrics KPI Strip -->
+          <div class="wallet-stats-grid" id="wallet-kpi-grid">
+            <div class="admin-stat-card green">
+              <div class="admin-stat-card-top">
+                <span class="admin-stat-label">Total Credited / Refunded</span>
+                <span class="admin-stat-tag">Store Refunds</span>
+              </div>
+              <strong id="wallet-kpi-credited" class="admin-stat-value" style="color: #059669;">₹0.00</strong>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Lifetime store refunds &amp; goodwill</span>
+            </div>
+
+            <div class="admin-stat-card red">
+              <div class="admin-stat-card-top">
+                <span class="admin-stat-label">Total Debited / Spent</span>
+                <span class="admin-stat-tag">Redeemed</span>
+              </div>
+              <strong id="wallet-kpi-debited" class="admin-stat-value" style="color: #dc2626;">₹0.00</strong>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Wallet balances used at checkout</span>
+            </div>
+
+            <div class="admin-stat-card blue">
+              <div class="admin-stat-card-top">
+                <span class="admin-stat-label">Storewide Ledger</span>
+                <span class="admin-stat-tag">Audit Logs</span>
+              </div>
+              <strong id="wallet-kpi-count" class="admin-stat-value" style="color: #2563eb;">0 entries</strong>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Total wallet audit transactions</span>
+            </div>
+
+            <div class="admin-stat-card amber">
+              <div class="admin-stat-card-top">
+                <span class="admin-stat-label">Active Customer Wallets</span>
+                <span class="admin-stat-tag">Customers</span>
+              </div>
+              <strong id="wallet-kpi-users" class="admin-stat-value" style="color: #d97706;">0</strong>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Known customer accounts in system</span>
+            </div>
+          </div>
+
+          <!-- Customer Finder & Search Console -->
+          <article class="wallet-finder-panel">
+            <div class="wallet-finder-row">
+              <!-- Unified autocomplete search -->
+              <div class="wallet-search-wrap" id="wallet-search-container">
+                <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="wallet-customer-search" class="wallet-search-input" type="text" autocomplete="off" spellcheck="false"
+                  placeholder="Type name, email or phone to find a customer…" aria-label="Search customer" aria-autocomplete="list" aria-controls="wallet-suggestions-list" />
+                <button type="button" id="wallet-customer-search-clear" class="wallet-search-clear" style="display: none;" title="Clear search">✕</button>
+                <!-- Live suggestion dropdown -->
+                <ul id="wallet-suggestions-list" class="wallet-suggestions" role="listbox" aria-label="Customer suggestions" style="display:none;"></ul>
+              </div>
+
+              <!-- Hidden select kept for JS compat but visually replaced by autocomplete -->
+              <select id="wallet-quick-customer-select" class="wallet-customer-select" aria-label="Select customer" style="display:none;">
+                <option value="">— Select from Known Customers —</option>
+              </select>
+
+              <button type="button" id="wallet-load-customer-btn" class="btn btn-primary" style="height: 42px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Load Wallet
+              </button>
+
+              <button type="button" id="wallet-clear-customer-btn" class="btn btn-secondary" style="height: 42px; display: none;">
+                Close Profile
+              </button>
+            </div>
+
+            <!-- Customer Quick Filter Pills -->
+            <div class="wallet-filter-pills-row">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-3); text-transform: uppercase;">Filter:</span>
+              <button type="button" class="admin-filter-pill active" id="wallet-cust-filter-all" data-cust-filter="all">All Known (<span id="wallet-filter-all-count">0</span>)</button>
+              <button type="button" class="admin-filter-pill" id="wallet-cust-filter-orders" data-cust-filter="orders">With Orders (<span id="wallet-filter-orders-count">0</span>)</button>
+              <button type="button" class="admin-filter-pill" id="wallet-cust-filter-balance" data-cust-filter="balance">Has Balance (₹ &gt; 0)</button>
+            </div>
+          </article>
+
+          <!-- Selected Customer Wallet Workspace -->
+          <div id="wallet-workspace-wrap" style="display: none;">
+            <div class="wallet-workspace-grid">
+
+              <!-- Customer Profile & Action Console -->
+              <article class="wallet-card-panel">
+                <!-- Customer Header -->
+                <div class="wallet-customer-header">
+                  <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+                    <div id="wallet-customer-avatar" class="wallet-avatar">?</div>
+                    <div class="wallet-cust-meta">
+                      <h3 id="wallet-customer-name" class="wallet-cust-name">Customer Name</h3>
+                      <div class="wallet-cust-email-row">
+                        <span id="wallet-customer-email" class="wallet-cust-email">email@example.com</span>
+                        <button type="button" id="wallet-copy-email-btn" class="wallet-copy-btn" title="Copy email address">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                          <span id="wallet-copy-email-text">Copy</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <span id="wallet-customer-phone-badge" class="nav-badge" style="display: inline-block;">Phone</span>
+                </div>
+
+                <!-- Customer Lifetime Summary Strip -->
+                <div class="wallet-stats-strip-cust">
+                  <span class="wallet-mini-badge">
+                    <span>Lifetime Spend:</span>
+                    <strong id="wallet-customer-spend">₹0.00</strong>
+                  </span>
+                  <span class="wallet-mini-badge">
+                    <span>Total Orders:</span>
+                    <strong id="wallet-customer-orders-count">0</strong>
+                  </span>
+                  <button type="button" id="wallet-customer-view-orders-btn" class="btn-table-action btn-secondary" style="margin-left: auto; font-size: 0.74rem;">
+                    View Orders ↗
+                  </button>
+                </div>
+
+                <!-- Balances Display -->
+                <div class="wallet-balances-grid">
+                  <div class="wallet-balance-box">
+                    <span class="wallet-box-label">
+                      Available Balance
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                    </span>
+                    <strong id="wallet-customer-balance" class="wallet-box-val wallet-balance-val">₹0.00</strong>
+                    <span class="wallet-box-sub">Usable at checkout instantly</span>
+                  </div>
+
+                  <div class="wallet-points-box">
+                    <span class="wallet-box-label">
+                      Reward Points
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </span>
+                    <strong id="wallet-customer-points" class="wallet-box-val wallet-points-val">0 pts</strong>
+                    <span id="wallet-customer-points-sub" class="wallet-box-sub">Loyalty reward credits</span>
+                  </div>
+                </div>
+
+                <!-- Smart Transaction Console -->
+                <form id="wallet-action-form" class="wallet-action-box">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <strong style="font-size: 0.94rem; color: var(--text-1);">Quick Wallet Adjustment</strong>
+                    <span style="font-size: 0.75rem; color: var(--text-3); font-weight: 600;">⚡ Instant real-time update</span>
+                  </div>
+
+                  <!-- Segmented Mode Tabs -->
+                  <div class="wallet-mode-tabs" role="tablist">
+                    <button type="button" class="wallet-mode-tab active" data-wallet-mode="credit" id="tab-mode-credit">
+                      <span>+</span> Credit / Refund
+                    </button>
+                    <button type="button" class="wallet-mode-tab" data-wallet-mode="debit" id="tab-mode-debit">
+                      <span>−</span> Debit / Deduction
+                    </button>
+                    <button type="button" class="wallet-mode-tab" data-wallet-mode="points" id="tab-mode-points">
+                      <span>★</span> Adjust Points
+                    </button>
+                  </div>
+                  <input type="hidden" id="wallet-action-type" value="credit" />
+
+                  <!-- Autofill from Customer's Previous Orders -->
+                  <div id="wallet-autofill-order-wrap" style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
+                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-2); margin-bottom: 6px;">
+                      🎯 Autofill from Recent Customer Order (Optional):
+                    </label>
+                    <select id="wallet-customer-orders-select" class="admin-select" style="width: 100%; height: 36px; font-size: 0.84rem;">
+                      <option value="">— Select an order to autofill amount &amp; reason —</option>
+                    </select>
+                  </div>
+
+                  <!-- Amount Field with Quick Presets -->
+                  <div>
+                    <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--text-2); margin-bottom: 4px;">
+                      <span id="wallet-action-amount-label">Amount (₹)</span>
+                      <span style="font-size: 0.72rem; color: var(--text-3); font-weight: normal;">Click a chip to quick-fill</span>
+                    </label>
+                    <input type="number" id="wallet-action-amount" min="1" step="any" required placeholder="e.g. 150" style="width: 100%; height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 1rem; font-weight: 700; background: #fff;" />
+
+                    <div class="wallet-chip-group" id="wallet-amount-chips">
+                      <button type="button" class="wallet-chip-btn" data-chip-amount="50">+₹50</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-amount="100">+₹100</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-amount="250">+₹250</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-amount="500">+₹500</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-amount="1000">+₹1,000</button>
+                      <button type="button" class="wallet-chip-btn" id="wallet-chip-full-balance" style="display: none;">Full Balance</button>
+                    </div>
+                  </div>
+
+                  <!-- Associated Order ID Field -->
+                  <div id="wallet-order-id-wrap">
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-2); margin-bottom: 4px;">
+                      Associated Order ID (optional)
+                    </label>
+                    <input type="text" id="wallet-action-order-id" placeholder="e.g. #25827151" style="width: 100%; height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88rem; background: #fff;" />
+                  </div>
+
+                  <!-- Reason Field with Quick Tags -->
+                  <div>
+                    <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--text-2); margin-bottom: 4px;">
+                      <span>Reason / Description (shown to customer)</span>
+                      <span style="font-size: 0.72rem; color: var(--text-3); font-weight: normal;">Click a tag to autofill</span>
+                    </label>
+                    <input type="text" id="wallet-action-reason" required placeholder="e.g. Refund for returned item / Damaged print credit" style="width: 100%; height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.88rem; background: #fff;" />
+
+                    <div class="wallet-chip-group" id="wallet-reason-chips">
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Damaged in Transit">Damaged in Transit</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Print Quality Defect">Print Quality Defect</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Order Cancelled">Order Cancelled</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Customer Goodwill Credit">Goodwill Compensation</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Return Approved">Return Approved</button>
+                      <button type="button" class="wallet-chip-btn" data-chip-reason="Store Promotion Bonus">Promo Bonus</button>
+                    </div>
+                  </div>
+
+                  <!-- Submit Action Button -->
+                  <button type="submit" id="wallet-action-submit-btn" class="wallet-submit-btn btn-credit">
+                    ✓ Process Credit Transaction
+                  </button>
+                </form>
+              </article>
+
+              <!-- Customer Transaction History Ledger -->
+              <article class="wallet-card-panel">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                  <div>
+                    <h3 style="margin: 0; font-family: var(--font-display); font-size: 1.12rem; font-weight: 800;">Customer Wallet Audit Log</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: var(--text-2);">Complete recorded credits and debits for this customer</p>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="wallet-customer-tx-count" class="nav-badge">0 entries</span>
+                    <button type="button" id="wallet-customer-export-csv" class="btn-table-action btn-secondary" title="Export this customer's statement as CSV">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Statement CSV
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Customer Ledger Filter Toolbar -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                  <div class="wallet-search-wrap" style="flex: 1; min-width: 180px;">
+                    <input id="wallet-customer-history-search" class="wallet-search-input" style="height: 34px; font-size: 0.82rem; padding-left: 32px;" type="search" placeholder="Filter customer records…" />
+                    <svg class="admin-search-icon" style="left: 10px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </div>
+                  <div class="admin-quick-filters" style="margin-bottom: 0;">
+                    <button type="button" class="admin-filter-pill active" data-cust-tx-filter="all">All</button>
+                    <button type="button" class="admin-filter-pill" data-cust-tx-filter="credit">Credits (+)</button>
+                    <button type="button" class="admin-filter-pill" data-cust-tx-filter="debit">Debits (−)</button>
+                  </div>
+                </div>
+
+                <!-- Customer Ledger Table -->
+                <div class="admin-table-wrap" style="max-height: 480px; overflow-y: auto;">
+                  <table class="admin-orders-table" style="font-size: 0.84rem;">
+                    <thead>
+                      <tr>
+                        <th>Date &amp; Time</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Reason / Title</th>
+                        <th>Order ID</th>
+                        <th>By</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wallet-customer-history-tbody">
+                      <tr><td colspan="6" style="text-align: center; color: var(--text-3); padding: 24px;">Select a customer to view their wallet ledger.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Storewide Recent Wallet Activity -->
+          <article class="wallet-card-panel" style="margin-top: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 style="margin: 0; font-family: var(--font-display); font-size: 1.15rem; font-weight: 800;">Storewide Wallet &amp; Refund Activity</h3>
+                <p style="margin: 2px 0 0; font-size: 0.82rem; color: var(--text-2);">Recent refund and store credit events across all customers</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="wallet-global-log-count" class="nav-badge">0 entries</span>
+                <button type="button" id="wallet-global-export-csv" class="btn btn-secondary" style="height: 34px; font-size: 0.82rem; padding: 0 12px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Export Activity CSV
+                </button>
+              </div>
+            </div>
+
+            <!-- Global Activity Filter Toolbar -->
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+              <div class="wallet-search-wrap" style="flex: 1; min-width: 260px;">
+                <input id="wallet-global-search" class="wallet-search-input" style="height: 38px; font-size: 0.86rem; padding-left: 36px;" type="search" placeholder="Filter storewide logs by customer, email, order #, reason…" />
+                <svg class="admin-search-icon" style="left: 12px;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+
+              <div class="admin-quick-filters" style="margin-bottom: 0;">
+                <button type="button" class="admin-filter-pill active" data-global-tx-filter="all">All Transactions</button>
+                <button type="button" class="admin-filter-pill" data-global-tx-filter="credit">Refunds &amp; Credits (+)</button>
+                <button type="button" class="admin-filter-pill" data-global-tx-filter="debit">Debits (−)</button>
+              </div>
+            </div>
+
+            <!-- Global Activity Table -->
+            <div class="admin-table-wrap">
+              <table class="admin-orders-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th>Order ID</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="wallet-global-logs-tbody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-3); padding: 24px;">Loading storewide wallet transactions…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="wallet-global-pagination-note" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.78rem; color: var(--text-3);">
+              <span>Showing recent audit records</span>
+            </div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             PRODUCTS CATALOG SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-products">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Store Management</p>
+              <h1>Products Catalog</h1>
+              <p class="sub">Browse, manage, and export your full product catalog as a PDF.</p>
+            </div>
+          </div>
+
+          <!-- Catalog Stats Strip -->
+          <div class="catalog-stats-strip" id="catalog-stats-strip" aria-label="Catalog overview">
+            <div class="catalog-stat-pill">
+              <span>Total Products</span>
+              <strong id="catalog-stat-total">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>In Stock</span>
+              <strong id="catalog-stat-instock">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Made to Order</span>
+              <strong id="catalog-stat-mto">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Out of Stock</span>
+              <strong id="catalog-stat-oos">—</strong>
+            </div>
+            <div class="catalog-stat-divider"></div>
+            <div class="catalog-stat-pill">
+              <span>Customizable</span>
+              <strong id="catalog-stat-custom">—</strong>
+            </div>
+          </div>
+
+          <article class="admin-panel">
+            <!-- Toolbar -->
+            <div class="catalog-toolbar-row">
+              <div class="catalog-toolbar-left">
+                <div class="admin-search-wrap catalog-search-wrap">
+                  <svg class="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input id="catalog-search" type="search" aria-label="Search products" placeholder="Search products by name, category, tags…"/>
+                </div>
+                <select id="catalog-category-filter" aria-label="Filter by category" class="catalog-filter-select">
+                  <option value="">All Categories</option>
+                  <option>Keychains</option>
+                  <option>Home Decor</option>
+                  <option>Idols</option>
+                  <option>Desk Accessories</option>
+                  <option>Gifts</option>
+                  <option>Car Accessories</option>
+                  <option>Custom Products</option>
+                  <option>Other</option>
+                </select>
+                <select id="catalog-availability-filter" aria-label="Filter by availability" class="catalog-filter-select">
+                  <option value="">All Availability</option>
+                  <option>In Stock</option>
+                  <option>Made to Order</option>
+                  <option>Out of Stock</option>
+                </select>
+                <select id="catalog-customizable-filter" aria-label="Filter by customizable" class="catalog-filter-select">
+                  <option value="">All Types</option>
+                  <option value="yes">Customizable</option>
+                  <option value="no">Non-Customizable</option>
+                </select>
+                <div class="catalog-toolbar-divider" aria-hidden="true"></div>
+                <select id="catalog-sort" aria-label="Sort products" class="catalog-filter-select">
+                  <option value="name-asc">Name A → Z</option>
+                  <option value="name-desc">Name Z → A</option>
+                  <option value="price-asc">Price: Low → High</option>
+                  <option value="price-desc">Price: High → Low</option>
+                  <option value="availability">Availability</option>
+                  <option value="category">Category</option>
+                </select>
+              </div>
+              <div class="catalog-toolbar-actions">
+                <button type="button" class="btn-primary" onclick="document.getElementById('create-product').click()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  + Add Product
+                </button>
+                <button id="catalog-refresh" type="button" class="btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  Refresh
+                </button>
+                <button id="catalog-select-all" type="button" class="btn-secondary">Select All</button>
+                <button id="catalog-deselect-all" type="button" class="btn-secondary" disabled>Deselect All</button>
+                <button id="catalog-export-pdf" type="button">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                  Export Catalog PDF
+                </button>
+              </div>
+            </div>
+
+            <p id="catalog-count-label" class="catalog-count-label" aria-live="polite">Loading products…</p>
+
+            <!-- Product Grid -->
+            <div id="catalog-product-grid" class="catalog-product-grid" aria-live="polite"></div>
+          </article>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             EXPLORER SECTION
+        ══════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-explorer">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Database Administration</p>
+              <h1>Firestore Data Explorer</h1>
+              <p class="sub">Inspect, create, update, and manage documents across all collections.</p>
+            </div>
+          </div>
+          <article class="admin-panel">
+            <div class="admin-explorer-presets">
+              <span>Quick collections:</span>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='orders'; byId('browse-collection').click()">orders</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='products'; byId('browse-collection').click()">products</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='service_requests'; byId('browse-collection').click()">service_requests</button>
+              <button type="button" class="admin-preset-chip" onclick="byId('collection-name').value='tickets'; byId('browse-collection').click()">tickets</button>
+            </div>
+
+            <div class="admin-toolbar admin-explorer-toolbar">
+              <input id="collection-name" value="products" aria-label="Firestore collection path" placeholder="Collection path (e.g. products, orders)"/>
+              <button id="browse-collection" type="button">Browse Collection</button>
+              <button id="create-document" type="button">+ New Document</button>
+              <button id="create-product" type="button">+ New Product</button>
+            </div>
+            <div id="collection-list"></div>
+          </article>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       MODALS & DIALOGS
+  ════════════════════════════════════════════════════════════════ -->
+  <dialog id="document-editor" class="admin-dialog" aria-labelledby="editor-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow" id="editor-eyebrow">Record Details</p>
+        <h2 id="editor-title">Edit Details</h2>
+      </div>
+      <button type="button" id="editor-close" aria-label="Close dialog">✕</button>
+    </div>
+    
+    <div class="admin-modal-body">
+      <p id="editor-location" class="admin-helper admin-editor-location" style="font-family:var(--font-mono); color:var(--text-3);"></p>
+      <p id="editor-intro" class="admin-helper admin-editor-intro" style="margin:4px 0 12px; color:var(--text-2); font-size:0.86rem;"></p>
+
+      <div id="order-customer-record-picker" class="order-customer-record-picker" hidden>
+        <div class="order-customer-record-heading">
+          <div><strong>Customer details</strong><span>Reuse contact and delivery details from a past order.</span></div>
+          <button type="button" id="toggle-customer-records" class="btn-secondary">Customer Records</button>
+        </div>
+        <div id="customer-record-selector" class="customer-record-selector" hidden>
+          <label for="customer-record-search">Search customer records
+            <input id="customer-record-search" type="search" placeholder="Name, email, or phone" autocomplete="off" />
+          </label>
+          <label for="customer-record-select">Select a customer
+            <select id="customer-record-select"><option value="">Choose a past customer…</option></select>
+          </label>
+          <p id="customer-record-count" class="admin-helper" aria-live="polite"></p>
+        </div>
+      </div>
+      
+      <div id="order-item-builder" class="order-item-builder" hidden>
+        <div class="order-item-builder-heading">
+          <div><h3>Products in this Order</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Select catalog products and adjust quantities or prices.</p></div>
+        </div>
+        <div class="order-product-picker">
+          <label for="order-product-select">Select Product
+            <select id="order-product-select"><option value="">Choose a catalog product…</option></select>
+          </label>
+          <button type="button" id="add-order-product">+ Add Product</button>
+        </div>
+        <div class="order-product-variant-picker">
+          <label id="order-product-colour-field" for="order-product-colour-select" hidden>Colour
+            <select id="order-product-colour-select"><option value="">Choose a product first</option></select>
+          </label>
+          <label id="order-product-size-field" for="order-product-size-select" hidden>Size
+            <select id="order-product-size-select"><option value="">Choose a product first</option></select>
+          </label>
+          <span id="order-product-price-preview" class="order-product-price-preview" aria-live="polite"></span>
+        </div>
+        <div id="order-item-rows" class="order-item-rows"></div>
+        <strong id="order-item-subtotal" class="order-item-subtotal">Items subtotal: ₹0</strong>
+      </div>
+
+      <div id="product-variant-builder" class="order-item-builder" hidden>
+        <div class="order-item-builder-heading">
+          <div><h3>Product Variants</h3><p style="font-size:0.8rem;color:var(--text-3);margin-top:2px;">Colour prices are extra charges. Size prices are full product prices, not extra charges. Rows are saved in the order shown.</p></div>
+        </div>
+        <div class="product-variant-group">
+          <div class="product-variant-head">
+            <strong>Colour options</strong>
+            <button type="button" id="add-product-colour" class="btn-secondary">+ Add Colour</button>
+          </div>
+          <div id="product-colour-rows" class="product-variant-rows"></div>
+        </div>
+        <div class="product-variant-group">
+          <div class="product-variant-head">
+            <strong>Size options</strong>
+            <button type="button" id="add-product-size" class="btn-secondary">+ Add Size</button>
+          </div>
+          <div id="product-size-rows" class="product-variant-rows"></div>
+        </div>
+      </div>
+
+      <div id="product-media-builder" class="order-item-builder product-gallery-manager" hidden>
+        <div class="product-gallery-header">
+          <div class="product-gallery-title-group">
+            <div class="product-gallery-title-row">
+              <h3>Product Images</h3>
+              <span id="product-image-count-badge" class="product-gallery-badge">0 images</span>
+            </div>
+            <p class="admin-helper">The first image is the <strong>Primary Cover Image</strong> shown on catalog cards and store listings. Reorder using arrow buttons or drag &amp; drop. Max 25 MB per image.</p>
+          </div>
+        </div>
+
+        <!-- Upload Dropzone & Action Bar -->
+        <div class="product-gallery-toolbar">
+          <div id="product-image-dropzone" class="product-dropzone" role="button" tabindex="0" aria-label="Drop images here or click to browse">
+            <svg class="product-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <div class="product-dropzone-text">
+              <strong>Drag &amp; drop images here</strong> or <span>browse from device</span>
+            </div>
+            <input id="product-image-files" type="file" accept="image/*" multiple />
+          </div>
+
+          <div class="product-gallery-actions">
+            <button type="button" id="btn-browse-product-images" class="btn-secondary product-gallery-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              + Upload Images
+            </button>
+            <button type="button" id="btn-toggle-url-input" class="btn-secondary product-gallery-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              + Add by URL
+            </button>
+          </div>
+        </div>
+
+        <!-- Add by URL input bar (collapsible) -->
+        <div id="product-url-input-bar" class="product-url-bar" hidden>
+          <div class="product-url-input-group">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <input id="product-url-input" type="url" placeholder="Paste image URL (https://...)" aria-label="Image URL to add" />
+            <button type="button" id="btn-add-product-url" class="btn-primary">Add Image</button>
+            <button type="button" id="btn-cancel-product-url" class="btn-secondary">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Live Gallery Grid -->
+        <div id="product-image-preview" class="ticket-attachments product-gallery-grid" aria-label="Product image gallery"></div>
+        <div id="product-image-selection" class="ticket-media-selection" aria-live="polite"></div>
+
+        <!-- Animated GIF Section -->
+        <div class="product-gif-manager">
+          <div class="product-gif-header">
+            <div>
+              <strong>Optional Animated GIF</strong>
+              <p class="admin-helper">Shown in product modal for 360° spin or animated showcases.</p>
+            </div>
+            <button id="product-remove-gif" type="button" class="btn-secondary" hidden>Remove GIF</button>
+          </div>
+          <div class="product-gif-body">
+            <div id="product-gif-preview-box" class="product-gif-preview-box" hidden></div>
+            <div class="product-gif-input-wrap">
+              <input id="product-gif-file" type="file" accept="image/gif" />
+              <div id="product-gif-selection" class="ticket-media-selection" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="editor-fields" class="admin-field-grid"></div>
+
+      <div class="admin-toolbar admin-add-field">
+        <input id="new-field-name" aria-label="New field name" placeholder="New field name (e.g. trackingNumber)"/>
+        <select id="new-field-type" aria-label="New field type">
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+          <option value="boolean">Yes / No</option>
+        </select>
+        <button type="button" id="add-editor-field">Add Field</button>
+      </div>
+
+      <details id="advanced-editor" class="admin-advanced">
+        <summary id="advanced-editor-summary">Advanced: Edit Raw Document Data</summary>
+        <p id="advanced-editor-help" class="admin-helper" style="margin-top:4px;">Edit nested data structures or line items as JSON.</p>
+        <textarea id="document-json" spellcheck="false" aria-label="Advanced document data"></textarea>
+      </details>
+
+      <p id="editor-error" class="admin-status" role="alert"></p>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="editor-duplicate" class="btn-secondary" hidden>Duplicate</button>
+      <button type="button" id="editor-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="editor-save">Save Changes</button>
+    </div>
+  </dialog>
+
+  <!-- Product Picture Editor Dialog -->
+  <dialog id="product-image-editor-dialog" class="admin-dialog product-img-editor-modal" aria-labelledby="pie-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">IMAGE STUDIO</p>
+        <h2 id="pie-title">Edit Product Picture</h2>
+      </div>
+      <button type="button" id="pie-close" aria-label="Close image editor">✕</button>
+    </div>
+
+    <div class="admin-modal-body pie-modal-body">
+      <!-- Left: Interactive Canvas Preview -->
+      <div class="pie-workspace">
+        <div class="pie-canvas-viewport" id="pie-canvas-viewport">
+          <canvas id="pie-canvas"></canvas>
+          <div id="pie-crop-box" class="pie-crop-box">
+            <div class="pie-crop-grid">
+              <div class="pie-grid-line line-h1"></div>
+              <div class="pie-grid-line line-h2"></div>
+              <div class="pie-grid-line line-v1"></div>
+              <div class="pie-grid-line line-v2"></div>
+            </div>
+            <div class="pie-crop-handle handle-nw" data-handle="nw"></div>
+            <div class="pie-crop-handle handle-ne" data-handle="ne"></div>
+            <div class="pie-crop-handle handle-sw" data-handle="sw"></div>
+            <div class="pie-crop-handle handle-se" data-handle="se"></div>
+            <div class="pie-crop-dim-badge" id="pie-crop-dim">0 × 0</div>
+          </div>
+        </div>
+        <div class="pie-toolbar-bar">
+          <span class="pie-info-text" id="pie-dimensions-info">0 × 0 px</span>
+          <div class="pie-quick-aspect">
+            <button type="button" class="pie-aspect-btn active" data-aspect="free">Free</button>
+            <button type="button" class="pie-aspect-btn" data-aspect="1:1">1:1 Square</button>
+            <button type="button" class="pie-aspect-btn" data-aspect="4:3">4:3</button>
+            <button type="button" class="pie-aspect-btn" data-aspect="16:9">16:9</button>
+            <button type="button" class="pie-aspect-btn" data-aspect="full">Reset Crop</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Tools & Adjustments -->
+      <div class="pie-controls-sidebar">
+        <!-- Transforms: Rotate & Flip -->
+        <div class="pie-control-group">
+          <label class="pie-group-label">Transform &amp; Orientation</label>
+          <div class="pie-btn-row">
+            <button type="button" id="pie-rotate-left" class="btn-secondary pie-tool-btn" title="Rotate 90° counter-clockwise">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Rotate ↺
+            </button>
+            <button type="button" id="pie-rotate-right" class="btn-secondary pie-tool-btn" title="Rotate 90° clockwise">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+              Rotate ↻
+            </button>
+          </div>
+          <div class="pie-btn-row">
+            <button type="button" id="pie-flip-h" class="btn-secondary pie-tool-btn" title="Flip Horizontally">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="8 6 4 12 8 18"/><polyline points="16 6 20 12 16 18"/></svg>
+              Flip H
+            </button>
+            <button type="button" id="pie-flip-v" class="btn-secondary pie-tool-btn" title="Flip Vertically">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="2" y1="12" x2="22" y2="12"/><polyline points="6 8 12 4 18 8"/><polyline points="6 16 12 20 18 16"/></svg>
+              Flip V
+            </button>
+          </div>
+        </div>
+
+        <!-- Adjustments: Brightness, Contrast, Saturation -->
+        <div class="pie-control-group">
+          <div class="pie-group-header">
+            <label class="pie-group-label" style="margin:0;">Visual Adjustments</label>
+            <button type="button" id="pie-reset-sliders" class="pie-link-btn">Reset</button>
+          </div>
+          
+          <div class="pie-slider-row">
+            <div class="pie-slider-head">
+              <span>Brightness</span>
+              <span id="pie-val-brightness">100%</span>
+            </div>
+            <input type="range" id="pie-brightness" min="50" max="150" value="100" step="1" />
+          </div>
+
+          <div class="pie-slider-row">
+            <div class="pie-slider-head">
+              <span>Contrast</span>
+              <span id="pie-val-contrast">100%</span>
+            </div>
+            <input type="range" id="pie-contrast" min="50" max="150" value="100" step="1" />
+          </div>
+
+          <div class="pie-slider-row">
+            <div class="pie-slider-head">
+              <span>Saturation</span>
+              <span id="pie-val-saturation">100%</span>
+            </div>
+            <input type="range" id="pie-saturation" min="0" max="200" value="100" step="1" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-actions pie-actions">
+      <button type="button" id="pie-reset-all" class="btn-secondary">Reset All</button>
+      <div style="flex:1;"></div>
+      <button type="button" id="pie-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="pie-apply" class="btn-primary">Apply &amp; Save Picture</button>
+    </div>
+  </dialog>
+
+  <!-- Order Detail Dialog -->
+  <dialog id="order-detail-dialog" class="admin-order-detail" aria-labelledby="order-detail-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Order Summary</p>
+        <h2 id="order-detail-title">Order Information</h2>
+      </div>
+      <button type="button" id="order-detail-close" aria-label="Close order details">✕</button>
+    </div>
+    
+    <div id="order-detail-content"></div>
+
+    <div class="admin-actions admin-order-detail-actions">
+      <div class="admin-actions-secondary">
+        <button type="button" id="order-detail-ignore" class="btn-secondary btn-ignore">Ignore Customer</button>
+        <button type="button" id="order-detail-duplicate" class="btn-secondary">Duplicate Order</button>
+        <button type="button" id="order-detail-invoice" class="btn-secondary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          Download Invoice
+        </button>
+        <button type="button" id="order-detail-refund" class="btn-secondary" style="color:var(--brand-dark); font-weight:700;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+          Refund to Wallet
+        </button>
+      </div>
+      <div class="admin-actions-primary">
+        <button type="button" id="order-detail-notify" class="btn-primary" style="display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Notify Order Status
+        </button>
+        <button type="button" id="order-detail-edit">Edit This Order</button>
+        <button type="button" id="order-detail-done" class="btn-secondary">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Wallet Refund Dialog -->
+  <dialog id="wallet-refund-dialog" class="admin-order-detail" aria-labelledby="wallet-refund-modal-title" style="max-width: 520px;">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Customer Wallet</p>
+        <h2 id="wallet-refund-modal-title">Issue Wallet Refund</h2>
+      </div>
+      <button type="button" id="wallet-refund-close" aria-label="Close refund dialog">✕</button>
+    </div>
+    <form id="wallet-refund-modal-form" style="padding: 20px 24px; display: grid; gap: 16px;">
+      <div style="background: var(--surface-2); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-2); font-weight: 700; text-transform: uppercase;">Customer</div>
+        <strong id="wallet-refund-customer-email" style="font-size: 0.95rem; color: var(--text-1); word-break: break-all;">customer@example.com</strong>
+        <div id="wallet-refund-order-tag" style="margin-top: 4px; font-size: 0.82rem; color: var(--text-2);">Order: #25827151</div>
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">
+          <span>Refund Amount (₹)</span>
+          <span style="font-size: 0.72rem; color: var(--text-3); font-weight: normal;">Select quick proportion:</span>
+        </label>
+        <input type="number" id="wallet-refund-amount" min="1" step="any" required placeholder="e.g. 250" style="height: 42px; width: 100%; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 1rem; font-weight: 700; background: #fff;" />
+        <div class="wallet-chip-group" style="margin-top: 6px;">
+          <button type="button" class="wallet-chip-btn" id="modal-refund-100">100% (Full Total)</button>
+          <button type="button" class="wallet-chip-btn" id="modal-refund-50">50% (Half)</button>
+          <button type="button" class="wallet-chip-btn" id="modal-refund-25">25% (Quarter)</button>
+        </div>
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">
+          <span>Reason for Refund / Credit</span>
+          <span style="font-size: 0.72rem; color: var(--text-3); font-weight: normal;">Click tag to autofill:</span>
+        </label>
+        <input type="text" id="wallet-refund-reason" required placeholder="e.g. Refund for cancelled item / print issue" style="height: 40px; width: 100%; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; background: #fff;" />
+        <div class="wallet-chip-group" style="margin-top: 6px;">
+          <button type="button" class="wallet-chip-btn" data-modal-reason="Damaged in Transit">Damaged in Transit</button>
+          <button type="button" class="wallet-chip-btn" data-modal-reason="Print Quality Defect">Print Quality Defect</button>
+          <button type="button" class="wallet-chip-btn" data-modal-reason="Order Cancelled">Order Cancelled</button>
+          <button type="button" class="wallet-chip-btn" data-modal-reason="Goodwill Credit">Goodwill Compensation</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+        <button type="button" id="wallet-refund-cancel" class="btn-secondary">Cancel</button>
+        <button type="submit" id="wallet-refund-submit" class="btn-primary" style="background: #047857; border-color: #047857; color: #fff;">
+          ✓ Credit to Wallet
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="ticket-detail-dialog" class="admin-order-detail" aria-labelledby="ticket-detail-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Support Ticket</p>
+        <h2 id="ticket-detail-title">Ticket</h2>
+      </div>
+      <button type="button" id="ticket-detail-close" aria-label="Close ticket">✕</button>
+    </div>
+    <div id="ticket-detail-content" class="admin-modal-body"></div>
+    <div class="admin-actions">
+      <button type="button" id="ticket-mark-resolved" class="btn-secondary">Mark resolved</button>
+      <button type="button" id="ticket-open-gmail" class="btn-primary">Open reply in Gmail</button>
+      <button type="button" id="ticket-detail-done" class="btn-secondary">Done</button>
+    </div>
+  </dialog>
+
+  <dialog id="ticket-image-viewer" class="admin-dialog ticket-image-viewer" aria-labelledby="ticket-image-title">
+    <div class="admin-dialog-head">
+      <div><p class="eyebrow">Ticket attachment</p><h2 id="ticket-image-title">Examine image</h2></div>
+      <button type="button" id="ticket-image-close" aria-label="Close image viewer">✕</button>
+    </div>
+    <div class="ticket-image-toolbar" role="toolbar" aria-label="Image tools">
+      <button type="button" class="btn-secondary" id="ticket-image-prev" aria-label="Previous image">← Previous</button>
+      <span id="ticket-image-counter" aria-live="polite"></span>
+      <button type="button" class="btn-secondary" id="ticket-image-next" aria-label="Next image">Next →</button>
+      <span class="ticket-image-tool-divider"></span>
+      <button type="button" class="btn-secondary" id="ticket-image-zoom-out" aria-label="Zoom out">−</button>
+      <span id="ticket-image-zoom-label">100%</span>
+      <button type="button" class="btn-secondary" id="ticket-image-zoom-in" aria-label="Zoom in">+</button>
+      <button type="button" class="btn-secondary" id="ticket-image-zoom-fit">Fit</button>
+      <span class="ticket-image-tool-divider"></span>
+      <button type="button" class="btn-secondary active" id="ticket-image-draw">Draw</button>
+      <button type="button" class="btn-secondary" id="ticket-image-text">Text</button>
+      <button type="button" class="btn-secondary" id="ticket-image-stamp">Date &amp; time</button>
+      <input id="ticket-image-text-value" type="text" maxlength="120" placeholder="Type, then click image; click text to edit" aria-label="Annotation text" />
+      <label class="ticket-text-size-control">Size <input id="ticket-image-text-size" type="range" min="2" max="12" value="5" aria-label="Text size" /><output id="ticket-image-text-size-value" for="ticket-image-text-size">5%</output></label>
+      <label class="ticket-text-color-control" title="Text color">Color <input id="ticket-image-text-color" type="color" value="#e11d48" aria-label="Text color" /></label>
+      <button type="button" class="btn-secondary active" id="ticket-image-text-bold" aria-pressed="true">Bold</button>
+      <button type="button" class="btn-secondary active" id="ticket-image-text-background" aria-pressed="true">Background</button>
+      <button type="button" class="btn-secondary" id="ticket-image-text-delete" disabled>Delete text</button>
+      <button type="button" class="btn-secondary" id="ticket-image-undo">Undo</button>
+      <button type="button" class="btn-secondary" id="ticket-image-redo">Redo</button>
+      <button type="button" class="btn-secondary" id="ticket-image-revert">Revert to original</button>
+    </div>
+    <div class="ticket-image-stage" id="ticket-image-stage">
+      <canvas id="ticket-image-canvas" aria-label="Image annotation canvas"></canvas>
+      <div id="ticket-image-loading" class="ticket-image-loading" hidden>Loading image…</div>
+    </div>
+    <div class="ticket-image-footer">
+      <span>Choose Text to add or edit notes; adjust size, color, bold, and background. Stamp the date and time. Ctrl/⌘+Z undo · Ctrl/⌘+Shift+Z redo.</span>
+      <button type="button" class="btn-primary" id="ticket-image-save">Save annotated copy</button>
+    </div>
+  </dialog>
+
+  <!-- Create Ticket Dialog (admin raises a ticket for a customer) -->
+  <dialog id="ticket-create-dialog" class="admin-dialog" aria-labelledby="ticket-create-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Support Ticket</p>
+        <h2 id="ticket-create-title">Create Ticket for Customer</h2>
+      </div>
+      <button type="button" id="ticket-create-close" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="admin-modal-body">
+      <p class="admin-helper" style="margin:0 0 12px; color:var(--text-2); font-size:0.86rem;">Enter an order ID to auto-fill the customer's details and pick the affected products, or fill in the details manually.</p>
+
+      <div class="admin-field-grid">
+        <div class="admin-field" style="grid-column:1 / -1;">
+          <div class="admin-field-label"><label for="tc-order">Order ID (optional)</label></div>
+          <input id="tc-order" list="tc-order-options" placeholder="e.g. #123456" autocomplete="off" />
+          <datalist id="tc-order-options"></datalist>
+          <span id="tc-order-hint" class="admin-field-help" style="font-size:0.74rem; color:var(--text-3);"></span>
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-name">Customer name</label></div>
+          <input id="tc-name" placeholder="Customer name" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-email">Customer email *</label></div>
+          <input id="tc-email" type="email" placeholder="customer@example.com" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-phone">Phone</label></div>
+          <input id="tc-phone" type="tel" placeholder="Phone number" autocomplete="off" />
+        </div>
+        <div class="admin-field">
+          <div class="admin-field-label"><label for="tc-address">Address</label></div>
+          <input id="tc-address" placeholder="Delivery / pickup address" autocomplete="off" />
+        </div>
+      </div>
+
+      <div id="tc-products-wrap" class="admin-detail-section" style="margin-top:12px;" hidden>
+        <h3>Products affected</h3>
+        <div id="tc-products" class="ticket-create-products"></div>
+      </div>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-product-extra">Other product (optional)</label></div>
+        <input id="tc-product-extra" placeholder="Product name, if not part of an order" autocomplete="off" />
+      </div>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-issue">Issue / description *</label></div>
+        <textarea id="tc-issue" style="min-height:110px;" placeholder="Describe the customer's issue (e.g. reported by phone / WhatsApp / Instagram)…"></textarea>
+      </div>
+
+      <label class="ticket-create-check">
+        <input type="checkbox" id="tc-send-email" checked />
+        <span>Pre-fill a confirmation reply with the ticket ID (send it from Gmail on the next screen)</span>
+      </label>
+
+      <div class="admin-field" style="margin-top:12px;">
+        <div class="admin-field-label"><label for="tc-media">Photos &amp; videos (optional)</label></div>
+        <div id="tc-media-dropzone" class="ticket-media-dropzone">
+          <span class="ticket-media-upload-icon" aria-hidden="true">＋</span>
+          <strong>Drop photos or videos here</strong>
+          <span>or</span>
+          <label class="btn-secondary ticket-media-browse" for="tc-media">Choose files</label>
+          <input id="tc-media" class="ticket-media-input" type="file" accept="image/*,video/*" multiple aria-describedby="tc-media-help" />
+        </div>
+        <span id="tc-media-help" class="admin-field-help">JPG, PNG, GIF, MP4 and more · Up to 25 MB each · Stored securely in ImageKit</span>
+        <div id="tc-media-preview" class="ticket-media-selection" aria-live="polite"></div>
+      </div>
+
+      <p id="tc-error" class="admin-status" role="alert"></p>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="ticket-create-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="ticket-create-save" class="btn-primary">Create Ticket</button>
+    </div>
+  </dialog>
+
+  <!-- Customer Email Notification Preview Dialog -->
+  <dialog id="email-preview-dialog" class="admin-dialog" style="max-width: 680px; width: 95vw; max-height: 92vh; padding: 0; overflow: hidden;" aria-labelledby="email-preview-title">
+    <div class="admin-dialog-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border, #e2e8f0);">
+      <div>
+        <p class="eyebrow" style="color: var(--accent-dark, #b45309); font-weight: 800; margin: 0 0 2px;">Email Notification</p>
+        <h2 id="email-preview-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Customer Email Preview</h2>
+      </div>
+      <button type="button" id="email-preview-close" aria-label="Close dialog" style="background: none; border: 0; font-size: 1.25rem; cursor: pointer; color: #64748b; line-height: 1; padding: 6px;">✕</button>
+    </div>
+
+    <div class="admin-modal-body" style="padding: 14px 20px; display: flex; flex-direction: column; gap: 12px; max-height: calc(92vh - 140px); overflow-y: auto;">
+      <!-- Email Meta Strip -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; line-height: 1.6;">
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">From:</strong> <span style="color: #0f172a; font-weight: 700;">hello.creative.souls3d@gmail.com</span></div>
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">To:</strong> <span id="email-preview-to" style="color: #0f172a; font-weight: 700;">—</span></div>
+        <div><strong style="color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;">Subject:</strong> <span id="email-preview-subject" style="color: #0f172a; font-weight: 700;">—</span></div>
+      </div>
+
+      <!-- Quick tip banner -->
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 12px; font-size: 0.8rem; color: #92400e; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem; flex-shrink: 0;">✨</span>
+        <span>Click <strong>Open in Gmail</strong>: the brand-styled HTML template is copied to your clipboard. Simply press <strong>Ctrl+V</strong> (Paste) in Gmail to send this rich design!</span>
+      </div>
+
+      <!-- Live HTML Preview Frame -->
+      <div id="email-preview-frame-wrap" style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #f1f5f9; height: 380px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);">
+        <iframe id="email-preview-frame" style="width: 100%; height: 100%; border: 0; display: block;" title="Email Template Preview"></iframe>
+      </div>
+    </div>
+
+    <div class="admin-actions" style="padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: #f8fafc;">
+      <button type="button" id="email-preview-copy-btn" class="btn-secondary" style="height: 36px; font-size: 0.8rem; font-weight: 700; gap: 6px; display: flex; align-items: center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>Copy Styled HTML</span>
+      </button>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="email-preview-cancel" class="btn-secondary" style="height: 36px; font-size: 0.8rem;">Cancel</button>
+        <button type="button" id="email-preview-gmail-btn" class="btn-primary" style="height: 36px; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; gap: 7px; display: flex; align-items: center; border: 0; padding: 0 16px; border-radius: 8px; cursor: pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span>Open in Gmail (Copy &amp; Paste)</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Catalog PDF Export Dialog -->
+  <dialog id="catalog-pdf-dialog" class="admin-dialog" aria-labelledby="pdf-dialog-title">
+    <div class="admin-dialog-head">
+      <div>
+        <p class="eyebrow">Catalog Export</p>
+        <h2 id="pdf-dialog-title">Export Product Catalog PDF</h2>
+      </div>
+      <button type="button" id="pdf-dialog-close" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="admin-modal-body">
+      <!-- Filter info -->
+      <div class="pdf-filter-note" id="pdf-filter-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="pdf-filter-note-text">Exporting all <strong id="pdf-product-count">0</strong> products currently visible in the catalog.</span>
+      </div>
+
+      <!-- Layout -->
+      <p class="pdf-section-title">Layout Style</p>
+      <div class="pdf-layout-row" role="group" aria-label="PDF layout style">
+        <button type="button" class="pdf-layout-btn selected" data-layout="grid" id="layout-btn-grid">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Grid (2 per row)
+        </button>
+        <button type="button" class="pdf-layout-btn" data-layout="grid3" id="layout-btn-grid3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="5" height="7" rx="1"/><rect x="9.5" y="3" width="5" height="7" rx="1"/><rect x="17" y="3" width="5" height="7" rx="1"/><rect x="2" y="14" width="5" height="7" rx="1"/><rect x="9.5" y="14" width="5" height="7" rx="1"/><rect x="17" y="14" width="5" height="7" rx="1"/></svg>
+          Compact (3 per row)
+        </button>
+        <button type="button" class="pdf-layout-btn" data-layout="list" id="layout-btn-list">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Detailed List
+        </button>
+      </div>
+
+      <!-- Accent Colour -->
+      <p class="pdf-section-title">Accent Colour</p>
+      <div class="pdf-color-row" role="group" aria-label="Accent colour">
+        <div class="pdf-color-swatch active" data-color="#f59e0b" id="color-amber">
+          <div class="pdf-color-circle" style="background:#f59e0b;"></div>
+          <span>Amber</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#3b82f6" id="color-blue">
+          <div class="pdf-color-circle" style="background:#3b82f6;"></div>
+          <span>Blue</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#10b981" id="color-green">
+          <div class="pdf-color-circle" style="background:#10b981;"></div>
+          <span>Green</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#8b5cf6" id="color-violet">
+          <div class="pdf-color-circle" style="background:#8b5cf6;"></div>
+          <span>Violet</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#ef4444" id="color-red">
+          <div class="pdf-color-circle" style="background:#ef4444;"></div>
+          <span>Red</span>
+        </div>
+        <div class="pdf-color-swatch" data-color="#0f172a" id="color-dark">
+          <div class="pdf-color-circle" style="background:#0f172a;"></div>
+          <span>Dark</span>
+        </div>
+      </div>
+
+      <!-- Content Options -->
+      <p class="pdf-section-title">Content to Include</p>
+      <div class="pdf-options-grid">
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-cover" checked>
+          <div class="pdf-option-text">
+            <strong>Cover Page</strong>
+            <span>Brand header with catalog title, date, and product count</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-image" checked>
+          <div class="pdf-option-text">
+            <strong>Product Images</strong>
+            <span>Load and display product photos in the PDF</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-price" checked>
+          <div class="pdf-option-text">
+            <strong>Price</strong>
+            <span>Show selling price (and original price if discounted)</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-description">
+          <div class="pdf-option-text">
+            <strong>Description</strong>
+            <span>Include the product description text</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-category" checked>
+          <div class="pdf-option-text">
+            <strong>Category / Best For</strong>
+            <span>Show product category and target audience tags</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-availability" checked>
+          <div class="pdf-option-text">
+            <strong>Availability Status</strong>
+            <span>In Stock / Made to Order / Out of Stock badge</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-variants" checked>
+          <div class="pdf-option-text">
+            <strong>Colour &amp; Size Variants</strong>
+            <span>List available colour options and sizes</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-customizable">
+          <div class="pdf-option-text">
+            <strong>Customization Badge</strong>
+            <span>Show "Personalizable" label on applicable products</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-tags">
+          <div class="pdf-option-text">
+            <strong>Search Tags</strong>
+            <span>Display the comma-separated keyword tags</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-product-id">
+          <div class="pdf-option-text">
+            <strong>Product ID / SKU</strong>
+            <span>Print the internal Firestore document ID</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-groupby-category" checked>
+          <div class="pdf-option-text">
+            <strong>Group by Category</strong>
+            <span>Organize products under category headings</span>
+          </div>
+        </label>
+        <label class="pdf-option-card">
+          <input type="checkbox" id="pdf-opt-page-numbers" checked>
+          <div class="pdf-option-text">
+            <strong>Page Numbers</strong>
+            <span>Print page numbers in the footer of each page</span>
+          </div>
+        </label>
+      </div>
+
+      <!-- Summary -->
+      <div class="pdf-preview-info">
+        <span>Ready to export <strong id="pdf-export-count">0</strong> products</span>
+        <span style="color:var(--text-3); font-size:0.78rem;">Opens browser print dialog — save as PDF from there</span>
+      </div>
+    </div>
+
+    <div class="admin-actions">
+      <button type="button" id="pdf-dialog-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="pdf-generate-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Generate &amp; Print PDF
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
+  <div id="admin-toast-container" class="admin-toast-container"></div>
+
+  <!-- Compatibility shim: admin.js references #admin-tools to show/hide -->
+  <div id="admin-tools" hidden style="display:none!important"></div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="cloudflare-worker-config.js"></script>
+  <script src="imagekit-config.js"></script>
+  <script src="navigation.js"></script>
+
+  <!-- Toast Helper -->
+  <script>
+    window.showAdminToast = function(message, type = 'info') {
+      const container = document.getElementById('admin-toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `admin-toast ${type}`;
+      toast.style.cursor = 'pointer';
+      toast.innerHTML = `<span style="flex:1">${message}</span><button type="button" aria-label="Close" style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 0 0 8px;line-height:1;">✕</button>`;
+      container.appendChild(toast);
+      
+      const removeToast = () => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 250);
+      };
+      toast.addEventListener('click', removeToast);
+      setTimeout(removeToast, 3500);
+    };
+
+    // Auto-dismiss dropdowns when clicking outside
+    document.addEventListener('click', (event) => {
+      document.querySelectorAll('.admin-status-filter[open], .admin-ignored-customers[open]').forEach(details => {
+        if (!details.contains(event.target)) {
+          details.removeAttribute('open');
+        }
+      });
+    });
+
+    // Auto-dismiss dialogs when clicking on backdrop
+    ['document-editor', 'order-detail-dialog', 'ticket-detail-dialog', 'ticket-create-dialog', 'catalog-pdf-dialog', 'wallet-refund-dialog'].forEach(id => {
+      const dlg = document.getElementById(id);
+      if (!dlg) return;
+      dlg.addEventListener('click', (event) => {
+        const rect = dlg.getBoundingClientRect();
+        const clickedOutside = (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        );
+        if (clickedOutside) {
+          dlg.close();
+        }
+      });
+    });
+
+    // Escape key dismisses all open popups, dropdowns, dialogs, and mobile drawer
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.admin-status-filter[open], .admin-ignored-customers[open]').forEach(details => {
+          details.removeAttribute('open');
+        });
+        document.querySelectorAll('dialog[open]').forEach(dlg => dlg.close());
+        document.getElementById('admin-sidebar')?.classList.remove('mobile-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('visible');
+        document.body.classList.remove('drawer-open');
+      }
+    });
+  </script>
+
+  <!-- Sidebar & section navigation -->
+  <script>
+    (function () {
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      const hamburger = document.getElementById('topbar-hamburger');
+      const mobileClose = document.getElementById('sidebar-mobile-close');
+
+      const openDrawer = () => {
+        sidebar?.classList.add('mobile-open');
+        overlay?.classList.add('visible');
+        document.body.classList.add('drawer-open');
+      };
+
+      const closeDrawer = () => {
+        sidebar?.classList.remove('mobile-open');
+        overlay?.classList.remove('visible');
+        document.body.classList.remove('drawer-open');
+      };
+
+      // Restore collapse state
+      if (localStorage.getItem('adminSidebarCollapsed') === '1') sidebar?.classList.add('collapsed');
+
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.toggle('collapsed');
+        localStorage.setItem('adminSidebarCollapsed', sidebar?.classList.contains('collapsed') ? '1' : '0');
+      });
+
+      // Mobile drawer
+      hamburger?.addEventListener('click', () => {
+        if (sidebar?.classList.contains('mobile-open')) {
+          closeDrawer();
+        } else {
+          openDrawer();
+        }
+      });
+      mobileClose?.addEventListener('click', closeDrawer);
+      overlay?.addEventListener('click', closeDrawer);
+
+      const META = {
+        dashboard: { title: 'Dashboard',         sub: 'Store overview & live performance' },
+        analytics: { title: 'Sales Analytics',   sub: 'Revenue, volume & order trends' },
+        attention: { title: 'Needs Attention',   sub: 'Orders requiring immediate triage' },
+        tickets:   { title: 'Support Tickets',    sub: 'Review issues and reply in Gmail' },
+        feedback:  { title: 'Customer Feedback',  sub: 'Ratings, comments & post-purchase insights' },
+        orders:    { title: 'All Orders',         sub: 'Search, filter, update & dispatch orders' },
+        wallets:   { title: 'Wallets & Refunds',  sub: 'Search client wallets, credit refunds, issue goodwill points & audit logs' },
+        products:  { title: 'Products Catalog',  sub: 'Browse, manage & export your product catalog PDF' },
+        explorer:  { title: 'Data Explorer',     sub: 'Browse & edit Firestore collections' },
+      };
+
+      const sectionFromURL = () => {
+        const id = window.location.search.slice(1);
+        return Object.prototype.hasOwnProperty.call(META, id) ? id : 'dashboard';
+      };
+
+      window.navigateTo = function (id, { historyMode = 'push' } = {}) {
+        if (!Object.prototype.hasOwnProperty.call(META, id)) id = 'dashboard';
+        const query = `?${id}`;
+        if (historyMode !== 'none' && window.location.search !== query) {
+          const url = `${window.location.pathname}${query}${window.location.hash}`;
+          if (historyMode === 'replace') window.history.replaceState(null, '', url);
+          else window.history.pushState(null, '', url);
+        }
+        document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(b => {
+          b.classList.toggle('active', b.dataset.section === id);
+        });
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+        const navBtn = document.querySelector(`.admin-nav-item[data-section="${id}"]`);
+        const section = document.getElementById(`section-${id}`);
+        if (navBtn) navBtn.classList.add('active');
+        if (section) section.classList.add('active');
+        const m = META[id] || { title: id, sub: '' };
+        document.getElementById('topbar-section-title').textContent = m.title;
+        document.getElementById('topbar-section-subtitle').textContent = m.sub;
+        closeDrawer();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return id;
+      };
+
+      document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+      });
+
+      // Restore the section on reload without adding a history entry.
+      window.navigateTo(sectionFromURL(), { historyMode: 'replace' });
+      window.addEventListener('popstate', () => {
+        window.navigateTo(sectionFromURL(), { historyMode: 'none' });
+      });
+
+      // Wire bottom nav buttons
+      document.querySelectorAll('.admin-bottom-nav-item[data-section]').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+      });
+
+      // Logout button
+      const handleLogout = () => {
+        if (!window.firebase?.auth) return;
+        firebase.auth().signOut().then(() => {
+          window.location.reload();
+        });
+      };
+      document.getElementById('admin-logout-btn')?.addEventListener('click', handleLogout);
+    })();
+  </script>
+
+  <script src="rich-text.js"></script>
+  <script src="admin.js"></script>
+
+  <!-- Auth state bridge -->
+  <script>
+    (function () {
+      const signinScreen = document.getElementById('admin-signin-screen');
+      const shell = document.getElementById('admin-shell');
+      const statusEl = document.getElementById('admin-status');
+      const statusSignin = document.getElementById('admin-status-signin');
+      const ALLOWED_ADMINS = ['luvs2006@gmail.com', 'hello.creative.souls3d@gmail.com'];
+
+      firebase.auth().onAuthStateChanged(function (user) {
+        const isAdmin = ALLOWED_ADMINS.includes(String(user?.email || '').trim().toLowerCase());
+
+        if (isAdmin) {
+          signinScreen.hidden = true;
+          shell.hidden = false;
+          const emailEl = document.getElementById('user-email-display');
+          const avatarEl = document.getElementById('user-avatar-initials');
+          if (emailEl) emailEl.textContent = user.email;
+          if (avatarEl) avatarEl.textContent = (user.email || 'A').charAt(0).toUpperCase();
+        } else {
+          signinScreen.hidden = false;
+          shell.hidden = true;
+          // Mirror status text to sign-in screen
+          if (statusEl && statusSignin) {
+            const obs = new MutationObserver(() => { statusSignin.textContent = statusEl.textContent; });
+            obs.observe(statusEl, { childList: true, characterData: true, subtree: true });
+          }
+        }
+
+        // Sync attention badge in sidebar and bottom nav
+        const countEl = document.getElementById('admin-attention-count');
+        const badge = document.getElementById('nav-attention-badge');
+        const bnavBadge = document.getElementById('bnav-attention-badge');
+        const syncBadge = () => {
+          const n = parseInt(countEl?.textContent || '0', 10);
+          if (badge) badge.textContent = countEl.textContent;
+          if (bnavBadge) {
+            bnavBadge.textContent = n;
+            bnavBadge.hidden = n < 1;
+          }
+        };
+        if (countEl) {
+          syncBadge();
+          new MutationObserver(syncBadge).observe(countEl, { childList: true, characterData: true, subtree: true });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

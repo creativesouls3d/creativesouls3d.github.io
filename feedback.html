@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Feedback | Creative Souls 3D</title>
+  <link rel="icon" type="image/png" href="logo_creativesouls.jpg" />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Feedback page container ── */
+    .feedback-container {
+      width: min(820px, calc(100% - 32px));
+      margin: 36px auto 64px;
+    }
+
+    .feedback-card {
+      padding: clamp(20px, 4vw, 36px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background: #fff;
+      box-shadow: var(--shadow-md);
+    }
+
+    .feedback-card > .eyebrow {
+      display: inline-flex;
+      padding: 3px 10px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-full);
+      color: var(--brand-dark);
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .feedback-card h1 {
+      font-size: clamp(1.55rem, 3.5vw, 2rem);
+      font-weight: 900;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .feedback-card > p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    /* ── Order Lookup ── */
+    .order-lookup {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 24px;
+    }
+
+    .order-lookup label {
+      flex: 1 1 260px;
+      display: grid;
+      gap: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .order-lookup input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      background: #fff;
+      font: inherit;
+      font-size: 1rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .order-lookup input:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .order-lookup input[readonly] {
+      background: var(--surface-alt);
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    .lookup-btn {
+      min-height: 46px;
+      padding: 10px 22px;
+      border-radius: var(--radius-full);
+      background: var(--brand-gradient);
+      color: #111827;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .lookup-btn:hover:not(:disabled) {
+      background: var(--brand-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .lookup-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    /* ── Order preview card ── */
+    .order-preview {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding: 14px 18px;
+      border: 1.5px solid var(--brand-border);
+      border-radius: var(--radius-md);
+      background: var(--brand-light);
+    }
+
+    .order-preview.visible {
+      display: flex;
+    }
+
+    .order-preview-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      border-radius: 12px;
+      background: var(--brand);
+      color: #111827;
+      font-size: 1.3rem;
+    }
+
+    .order-preview-info {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .order-preview-info strong {
+      color: var(--text-primary);
+      font-size: 0.96rem;
+    }
+
+    .order-preview-info span {
+      color: var(--text-secondary);
+      font-size: 0.84rem;
+    }
+
+    /* ── Feedback form ── */
+    .feedback-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .feedback-form[hidden] {
+      display: none;
+    }
+
+    .feedback-form label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .feedback-form input[readonly],
+    .feedback-form textarea[readonly] {
+      background: var(--surface-alt);
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    .feedback-form input,
+    .feedback-form textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      background: #fff;
+      font: inherit;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .feedback-form input:focus,
+    .feedback-form textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .feedback-form textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .fb-survey-section { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-alt); }
+    .fb-survey-section h3 { margin: 0 0 6px; color: var(--text-primary); font-size: 1rem; }
+    .fb-survey-section > p { margin: 0 0 14px; color: var(--text-muted); font-size: .84rem; }
+    .fb-rating-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .fb-rating-grid label { color: var(--text-secondary); }
+    .fb-rating-grid select { min-height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: #fff; color: var(--text-primary); font: inherit; }
+    .fb-scale { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fb-scale label { display: inline-flex; cursor: pointer; }
+    .fb-scale input { position: absolute; opacity: 0; pointer-events: none; }
+    .fb-scale span { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text-primary); }
+    .fb-scale input:checked + span { background: var(--text-primary); border-color: var(--text-primary); color: #fff; }
+    .fb-scale input:focus-visible + span { outline: 3px solid rgba(245,158,11,.45); }
+    .fb-conditional { display: grid; gap: 12px; margin-top: 14px; }
+    .fb-conditional[hidden] { display: none; }
+    .fb-issue-toggle { display: flex; align-items: flex-start; gap: 10px; color: var(--text-secondary); font-size: .9rem; }
+    .fb-issue-toggle input { width: 18px; min-height: 18px; margin: 2px 0 0; }
+    .fb-char-count { justify-self: end; color: var(--text-muted); font-size: .78rem; }
+
+    /* ── Two-column grid for name/email/phone ── */
+    .feedback-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    /* ── Star rating ── */
+    .star-rating-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .star-rating-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .star-rating {
+      display: flex;
+      gap: 6px;
+    }
+
+    .star-rating input[type="radio"] {
+      display: none;
+    }
+
+    .star-rating label {
+      font-size: 2rem;
+      color: #d1d5db;
+      cursor: pointer;
+      transition: color var(--transition-fast), transform var(--transition-fast);
+      line-height: 1;
+      display: block;
+    }
+
+    /* Highlight stars on hover and selection */
+    .star-rating:hover label,
+    .star-rating label:hover ~ label {
+      color: #d1d5db;
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      /* reset — overridden by next rule */
+    }
+
+    /* Reverse-order trick: stars are in reverse HTML so :hover + siblings work right */
+    .star-rating {
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      color: var(--brand);
+      transform: scale(1.15);
+    }
+
+    .star-rating input[type="radio"]:checked ~ label {
+      color: var(--brand);
+    }
+
+    .rating-hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      min-height: 1.2em;
+    }
+
+    /* ── Category chips ── */
+    .category-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .category-chips input[type="checkbox"] {
+      display: none;
+    }
+
+    .category-chips label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      background: #fff;
+      color: var(--text-secondary);
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .category-chips input[type="checkbox"]:checked + label {
+      background: var(--text-primary);
+      border-color: var(--text-primary);
+      color: #fff;
+    }
+
+    .category-chips label:hover {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+    }
+
+    /* ── Submit button ── */
+    .feedback-submit-btn {
+      min-height: 50px;
+      border-radius: var(--radius-full);
+      background: var(--brand-gradient);
+      color: #111827;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 850;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .feedback-submit-btn:hover:not(:disabled) {
+      background: var(--brand-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.38);
+    }
+
+    .feedback-submit-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    /* ── Lookup error ── */
+    #lookup-error {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--danger);
+      min-height: 1.4em;
+      margin-bottom: 4px;
+    }
+
+    /* ── Status message ── */
+    #feedback-message {
+      font-size: 0.95rem;
+      font-weight: 700;
+      min-height: 1.4em;
+      margin-top: 4px;
+    }
+
+    /* ── Success state ── */
+    .feedback-success {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    .feedback-success.visible {
+      display: flex;
+    }
+
+    .feedback-success-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--accent-emerald-bg);
+      border: 2px solid var(--accent-emerald-border);
+      display: grid;
+      place-items: center;
+      color: var(--accent-emerald);
+    }
+
+    .feedback-success h2 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--text-primary);
+    }
+
+    .feedback-success p {
+      color: var(--text-secondary);
+      max-width: 380px;
+    }
+
+    /* ── Login prompt ── */
+    #feedback-login-prompt {
+      display: none;
+    }
+
+    /* ── Divider ── */
+    .feedback-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0 18px;
+    }
+
+    @media (max-width: 600px) {
+      .feedback-fields-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .fb-rating-grid { grid-template-columns: 1fr; }
+      .fb-survey-section { padding: 14px; }
+      .fb-scale { gap: 5px; }
+      .fb-scale span { width: 36px; height: 38px; }
+
+      .order-lookup {
+        flex-direction: column;
+      }
+
+      .order-lookup label {
+        flex: 1 1 100%;
+      }
+
+      .lookup-btn {
+        width: 100%;
+      }
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <button class="back-nav" type="button" data-back data-fallback="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back
+    </button>
+    <div class="logo-section" onclick="window.location.href='index.html'">
+      <img src="logo_creativesouls.jpg" alt="Creative Souls 3D Logo" />
+      <span>Creative Souls <strong>3D</strong></span>
+    </div>
+    <nav class="cart-link" aria-label="Main navigation">
+      <a href="index.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        Shop
+      </a>
+      <a href="orders.html" class="nav-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        My Orders
+      </a>
+    </nav>
+  </header>
+
+  <main class="feedback-container">
+    <div class="feedback-card">
+      <span class="eyebrow">Share your experience</span>
+      <h1>Leave Feedback</h1>
+      <p>Your feedback helps us improve. Open the private link from your delivery email, or sign in and enter your Order ID.</p>
+
+      <!-- Login prompt (shown when signed out) -->
+      <div id="feedback-login-prompt" class="empty-state-card" style="margin: 20px 0;">
+        <p>Please sign in with the account used for your order, or open the private feedback link from your delivery email.</p>
+        <button id="feedback-login-btn" class="add-card-btn" type="button">Sign in with Google</button>
+      </div>
+
+      <!-- Order lookup -->
+      <div id="feedback-main-content">
+        <div class="order-lookup">
+          <label for="order-id-input">
+            Order ID
+            <input
+              id="order-id-input"
+              type="text"
+              placeholder="e.g. #123456 or 123456"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </label>
+          <button class="lookup-btn" id="lookup-btn" type="button">Look up Order</button>
+        </div>
+
+        <p id="lookup-error" role="alert" aria-live="polite"></p>
+
+        <!-- Order preview pill (shown after successful lookup) -->
+        <div class="order-preview" id="order-preview" aria-live="polite">
+          <div class="order-preview-icon">📦</div>
+          <div class="order-preview-info">
+            <strong id="preview-order-id">—</strong>
+            <span id="preview-order-meta">—</span>
+          </div>
+        </div>
+
+        <hr class="feedback-divider" />
+
+        <!-- Feedback form (hidden until order is found) -->
+        <form class="feedback-form" id="feedback-form" hidden novalidate>
+
+          <!-- Auto-filled details (read-only) -->
+          <div class="feedback-fields-grid">
+            <label>
+              Name
+              <input id="fb-name" type="text" readonly placeholder="Filled from your order" />
+            </label>
+            <label>
+              Email
+              <input id="fb-email" type="email" readonly placeholder="Filled from your order" />
+            </label>
+            <label>
+              Phone
+              <input id="fb-phone" type="tel" readonly placeholder="Filled from your order" />
+            </label>
+            <label>
+              Order Date
+              <input id="fb-date" type="text" readonly placeholder="Filled from your order" />
+            </label>
+          </div>
+
+          <!-- Star Rating -->
+          <div class="star-rating-wrap">
+            <span class="star-rating-label">Overall Rating <span style="color:var(--danger)">*</span></span>
+            <div class="star-rating" id="star-rating" role="radiogroup" aria-label="Rate your experience from 1 to 5 stars">
+              <!-- Reversed order so CSS sibling selector works correctly -->
+              <input type="radio" id="star5" name="rating" value="5" required />
+              <label for="star5" title="5 stars – Excellent">★</label>
+              <input type="radio" id="star4" name="rating" value="4" />
+              <label for="star4" title="4 stars – Good">★</label>
+              <input type="radio" id="star3" name="rating" value="3" />
+              <label for="star3" title="3 stars – Average">★</label>
+              <input type="radio" id="star2" name="rating" value="2" />
+              <label for="star2" title="2 stars – Poor">★</label>
+              <input type="radio" id="star1" name="rating" value="1" />
+              <label for="star1" title="1 star – Terrible">★</label>
+            </div>
+            <p class="rating-hint" id="rating-hint" aria-live="polite">Click a star to rate</p>
+          </div>
+
+          <section class="fb-survey-section" aria-labelledby="fb-detail-heading">
+            <h3 id="fb-detail-heading">A few more details</h3>
+            <p>These ratings help us spot what’s working and what needs attention.</p>
+            <div class="fb-rating-grid">
+              <label>Print quality <select data-rating-key="printing_quality" required><option value="">Choose 1–5</option><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Poor</option><option value="1">1 · Very poor</option></select></label>
+              <label>Colour accuracy <select data-rating-key="colour_quality" required><option value="">Choose 1–5</option><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Poor</option><option value="1">1 · Very poor</option></select></label>
+              <label>Packaging <select data-rating-key="packaging_quality" required><option value="">Choose 1–5</option><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Poor</option><option value="1">1 · Very poor</option></select></label>
+              <label>Delivery experience <select data-rating-key="delivery_rating" required><option value="">Choose 1–5</option><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Poor</option><option value="1">1 · Very poor</option></select></label>
+              <label>Delivery timing <select data-rating-key="timing_rating" required><option value="">Choose 1–5</option><option value="5">5 · Earlier than expected</option><option value="4">4 · On time</option><option value="3">3 · Slightly late</option><option value="2">2 · Late</option><option value="1">1 · Much later</option></select></label>
+              <label>Customer support <select data-rating-key="support_rating" required><option value="">Choose 1–5</option><option value="5">5 · Excellent</option><option value="4">4 · Good</option><option value="3">3 · Okay</option><option value="2">2 · Poor</option><option value="1">1 · Very poor</option></select></label>
+            </div>
+          </section>
+
+          <section class="fb-survey-section" aria-labelledby="fb-recommend-heading">
+            <h3 id="fb-recommend-heading">Would you recommend us?</h3>
+            <p>0 means “not at all likely”; 10 means “extremely likely”.</p>
+            <div class="fb-scale" role="radiogroup" aria-label="Likelihood to recommend from zero to ten">
+              <label><input type="radio" name="recommendation_nps" value="0" required><span>0</span></label>
+              <label><input type="radio" name="recommendation_nps" value="1"><span>1</span></label>
+              <label><input type="radio" name="recommendation_nps" value="2"><span>2</span></label>
+              <label><input type="radio" name="recommendation_nps" value="3"><span>3</span></label>
+              <label><input type="radio" name="recommendation_nps" value="4"><span>4</span></label>
+              <label><input type="radio" name="recommendation_nps" value="5"><span>5</span></label>
+              <label><input type="radio" name="recommendation_nps" value="6"><span>6</span></label>
+              <label><input type="radio" name="recommendation_nps" value="7"><span>7</span></label>
+              <label><input type="radio" name="recommendation_nps" value="8"><span>8</span></label>
+              <label><input type="radio" name="recommendation_nps" value="9"><span>9</span></label>
+              <label><input type="radio" name="recommendation_nps" value="10"><span>10</span></label>
+            </div>
+          </section>
+
+          <section class="fb-survey-section" aria-labelledby="fb-issues-heading">
+            <h3 id="fb-issues-heading">Anything we should follow up on?</h3>
+            <p>Only answer the parts that apply. Your notes stay attached to this order for our support team.</p>
+            <label class="fb-issue-toggle"><input type="checkbox" id="damage-reported"><span>My item arrived damaged or with a defect</span></label>
+            <div class="fb-conditional" id="damage-details-wrap" hidden><label for="damage-details">Tell us what happened<textarea id="damage-details" maxlength="1500" rows="3"></textarea></label></div>
+            <label class="fb-issue-toggle"><input type="checkbox" id="quality-reported"><span>The print or finish didn’t meet expectations</span></label>
+            <div class="fb-conditional" id="quality-details-wrap" hidden><label for="quality-details">What could be better?<textarea id="quality-details" maxlength="1500" rows="3"></textarea></label></div>
+            <label class="fb-issue-toggle"><input type="checkbox" id="delivery-delayed"><span>My order arrived later than expected</span></label>
+            <div class="fb-conditional" id="delay-details-wrap" hidden><label for="delay-details">Share any timing details<textarea id="delay-details" maxlength="1500" rows="3"></textarea></label></div>
+          </section>
+
+          <!-- What went well? -->
+          <div>
+            <p style="font-size:0.88rem;font-weight:700;color:var(--text-secondary);margin-bottom:10px;">What did you love? (optional)</p>
+            <div class="category-chips" id="category-chips">
+              <input type="checkbox" id="chip-quality" name="category" value="Print Quality" />
+              <label for="chip-quality">🎨 Print Quality</label>
+
+              <input type="checkbox" id="chip-delivery" name="category" value="Fast Delivery" />
+              <label for="chip-delivery">🚀 Fast Delivery</label>
+
+              <input type="checkbox" id="chip-packaging" name="category" value="Packaging" />
+              <label for="chip-packaging">📦 Packaging</label>
+
+              <input type="checkbox" id="chip-customization" name="category" value="Customization" />
+              <label for="chip-customization">✨ Customization</label>
+
+              <input type="checkbox" id="chip-support" name="category" value="Customer Support" />
+              <label for="chip-support">💬 Customer Support</label>
+
+              <input type="checkbox" id="chip-value" name="category" value="Value for Money" />
+              <label for="chip-value">💰 Value for Money</label>
+            </div>
+          </div>
+
+          <!-- Written review -->
+          <label>
+            Your Review <span style="color:var(--danger)">*</span>
+            <textarea
+              id="fb-review"
+              rows="5"
+              maxlength="2000"
+              required
+              placeholder="Tell us what you think about your order — what you loved, what could be better, or anything else you'd like us to know."
+            ></textarea>
+          </label>
+          <span class="fb-char-count" id="review-count" aria-live="polite">0 / 2,000</span>
+
+          <p id="feedback-message" role="status" aria-live="polite"></p>
+
+          <button type="submit" class="feedback-submit-btn" id="feedback-submit-btn">
+            Submit Feedback
+          </button>
+        </form>
+
+        <!-- Success state (shown after submission) -->
+        <div class="feedback-success" id="feedback-success">
+          <div class="feedback-success-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2>Thank you for your feedback! 🎉</h2>
+          <p>We really appreciate you taking the time to share your experience. It helps us make Creative Souls 3D better every day.</p>
+          <a href="orders.html" class="add-card-btn" style="margin-top:8px; display:inline-flex; max-width:180px;">View My Orders</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts &amp; Keepsakes</p>
+  </footer>
+
+  <script src="navigation.js"></script>
+  <script src="site-footer.js"></script>
+  <script src="feedback.js"></script>
+</body>
+</html>

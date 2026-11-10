@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk Orders & Printing Service | Creative Souls 3D</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <button class="back-nav" type="button" data-back data-fallback="index.html">Back</button>
+    <a class="logo-section" href="index.html"><span>Creative Souls <strong>3D</strong></span></a>
+    <nav class="cart-link"><a class="nav-pill" href="orders.html">My Requests &amp; Orders</a><a class="nav-pill" href="cart.html">Cart</a></nav>
+  </header>
+
+  <main class="service-request-container">
+    <div class="service-request-card">
+      <span class="eyebrow">Made for your project</span>
+      <h1>Bulk Orders &amp; 3D Printing Service</h1>
+      <p>Tell us what you need. We’ll review the details and contact you with pricing and next steps before production. Questions? <a href="https://www.instagram.com/creative.souls3d/" target="_blank" rel="noopener noreferrer">DM us on Instagram @creative.souls3d</a>.</p>
+
+      <div id="service-login-prompt" class="empty-state-card" style="display:none; margin:20px 0;">
+        <p>Please sign in to submit a request and track it with your orders.</p>
+        <button id="service-login-button" class="add-card-btn" type="button">Sign in with Google</button>
+      </div>
+
+      <div class="service-type-options" role="group" aria-label="Request type">
+        <button type="button" data-service-type="bulk_order" aria-pressed="true">Bulk Order</button>
+        <button type="button" data-service-type="printing_service" aria-pressed="false">Printing Service</button>
+      </div>
+
+      <form id="service-request-form" class="service-request-form" hidden>
+        <label>Name<input id="request-name" autocomplete="name" required /></label>
+        <label>Email<input id="request-email" type="email" autocomplete="email" readonly required /></label>
+        <label>Phone number<input id="request-phone" type="tel" autocomplete="tel" required /></label>
+        <label>How would you like to receive it?
+          <select id="request-fulfillment"><option value="delivery">Home delivery</option><option value="pickup">Store pickup (Andheri West, Mumbai)</option></select>
+        </label>
+        <label id="request-address-wrap" class="full-width">Delivery address<textarea id="request-address" autocomplete="street-address" rows="2" required></textarea></label>
+
+        <fieldset id="bulk-request-fields" class="service-fields full-width">
+          <legend>Bulk order details</legend>
+          <div class="service-request-form nested-service-form">
+            <label>Product or item description<textarea id="bulk-description" rows="3" placeholder="Describe the products, design, or personalization needed" required></textarea></label>
+            <label>Quantity<input id="bulk-quantity" type="number" min="1" step="1" inputmode="numeric" required /></label>
+            <label>Reference product or design link (optional)<input id="bulk-reference" type="url" placeholder="https://" /></label>
+            <label>Needed by (optional)<input id="bulk-needed-by" type="date" /></label>
+            <label class="full-width">Additional notes<textarea id="bulk-notes" rows="2" placeholder="Colors, names, packaging, or other requirements"></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset id="printing-request-fields" class="service-fields full-width" hidden>
+          <legend>3D printing details</legend>
+          <div class="service-request-form nested-service-form">
+            <label class="full-width">Link to your 3D file<input id="print-file-url" type="url" placeholder="https://drive.google.com/..." required /></label>
+            <label>Quantity<input id="print-quantity" type="number" min="1" step="1" inputmode="numeric" value="1" required /></label>
+            <label>Approximate size / dimensions<input id="print-dimensions" placeholder="For example: 10 × 8 × 5 cm" required /></label>
+            <label>Material preference<input id="print-material" placeholder="For example: PLA or resin" /></label>
+            <label>Color preference<input id="print-colour" placeholder="Color or multiple colors" /></label>
+            <label class="full-width">Finish and other instructions<textarea id="print-notes" rows="3" placeholder="Surface finish, supports, assembly, or other requirements"></textarea></label>
+          </div>
+          <p class="full-width service-file-note">Make sure the file link can be opened by anyone with the link. We’ll review the model before confirming a quote.</p>
+        </fieldset>
+
+        <button type="submit">Send Request for a Quote</button>
+      </form>
+      <p id="service-request-message" class="service-request-message" role="status" aria-live="polite"></p>
+    </div>
+  </main>
+
+  <footer></footer>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="navigation.js"></script>
+  <script src="site-footer.js"></script>
+  <script src="service-request.js"></script>
+</body>
+</html>
