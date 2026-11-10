@@ -31,12 +31,12 @@ if (primaryNav) {
   // tablets/phones. Keep this nav login button too; CSS hides it on desktop so
   // only one login button is ever visible.
   loginButton.addEventListener("click", () => {
-    if (!window.firebase?.auth || !window.firebase?.apps?.length) return;
+    if (!window.firebase?.auth) return;
     firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
       .catch(error => window.showToast?.(`Login failed: ${error.message}`, "danger"));
   });
 
-  if (window.firebase?.auth && window.firebase?.apps?.length) {
+  if (window.firebase?.auth) {
     firebase.auth().onAuthStateChanged(user => {
       const accountLink = primaryNav.querySelector(".account-nav-link");
       const accountWrap = primaryNav.querySelector(".account-nav-wrap");
@@ -80,10 +80,10 @@ if (accountPopup) {
     <button type="button" class="popup-logout-btn"><span aria-hidden="true">↪</span> Log out</button>`;
   const popupLogoutButton = accountPopup.querySelector(".popup-logout-btn");
   popupLogoutButton.addEventListener("click", () => {
-    if (window.firebase?.auth && window.firebase?.apps?.length) firebase.auth().signOut()
+    if (window.firebase?.auth) firebase.auth().signOut()
       .catch(error => window.showToast?.(`Could not log out: ${error.message}`, "danger"));
   });
-  if (window.firebase?.auth && window.firebase?.apps?.length) {
+  if (window.firebase?.auth) {
     firebase.auth().onAuthStateChanged(user => {
       const adminLink = accountPopup.querySelector(".admin-dashboard-link");
       if (adminLink) { const allowedAdmins = ["luvs2006@gmail.com", "hello.creative.souls3d@gmail.com"]; adminLink.hidden = !allowedAdmins.includes(String(user?.email || "").trim().toLowerCase()); }

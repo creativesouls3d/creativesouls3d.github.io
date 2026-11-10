@@ -1,5 +1,5 @@
 // Firebase Configuration
-var firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyBeQAXva6AgF24jo87iJZhY_JYE5mN0ip8",
   authDomain: "creative-souls-3d.firebaseapp.com",
   projectId: "creative-souls-3d",
@@ -15,5 +15,5 @@ if (!firebase.apps.length) {
 }
 
 // Initialize Services
-var db = firebase.firestore();
-var auth = firebase.auth();
+const db = firebase.firestore();
+const auth = firebase.auth();

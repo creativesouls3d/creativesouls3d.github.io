@@ -94,11 +94,10 @@
             <div style="margin-bottom: 8px;">
               <span class="eyebrow" style="margin-bottom: 12px;">Live 3D Print Stepper</span>
               <h1>Track Your Order</h1>
-              <p>Enter your Order ID and the phone number used at checkout to check your 3D print progress and delivery dispatch.</p>
+              <p>Enter your 6-digit Order ID to check your 3D print progress and delivery dispatch.</p>
             </div>
             <div class="track-input-row">
               <input id="order-id-input" type="text" placeholder="e.g. 253751 or #253751" autocomplete="off" required />
-              <input id="order-phone-input" type="tel" placeholder="Phone number used at checkout" autocomplete="tel" required />
               <button type="submit">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 Track
@@ -122,7 +121,7 @@
 
         const cleanId = orderId.replace("#", "");
         window.history.replaceState(null, "", `track-order.html?id=${encodeURIComponent(cleanId)}`);
-        loadOrder(orderId, phone);
+        loadOrder(orderId);
       });
     }
 
@@ -211,7 +210,7 @@
       return status || "Order Placed";
     }
 
-    async function loadOrder(orderId = getOrderId(), phone = "") {
+    async function loadOrder(orderId = getOrderId()) {
       const container = document.getElementById("track-info");
 
       if (!orderId) {
@@ -232,18 +231,20 @@
       `;
 
       try {
-        if (!window.PRODUCT_MARKETING_WORKER_URL) throw new Error("Order tracking service is not configured.");
-        const response = await fetch(`${window.PRODUCT_MARKETING_WORKER_URL.replace(/\/$/, "")}/get-tracking-order`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId, phone })
-        });
-        const tracked = await response.json();
-        if (!response.ok) throw new Error(tracked.error || "Could not retrieve tracking details.");
-        const data = tracked.order;
-        const doc = { id: data.id };
+        let doc = await db.collection("orders").doc(orderId).get();
+        if (!doc.exists) {
+          const cleanId = orderId.replace(/^#/, "");
+          doc = await db.collection("orders").doc(cleanId).get();
+        }
+
+        if (!doc.exists) {
+          showTrackForm(`Order ${orderId} not found. Please verify the ID and try again.`);
+          return;
+        }
+
+        const data = doc.data();
         const orderItems = await hydrateOrderItemImages(Array.isArray(data.items) ? data.items : []);
         const statusText = data.status ? data.status.toLowerCase() : "";
-        const feedbackLink = `feedback.html?id=${encodeURIComponent(String(data.order_id || doc.id).replace(/^#/, ""))}`;
-        const delivered = statusText.includes("deliver");
         const currentStep = getProgressIndex(statusText);
         const isRejected = statusText.includes("rejected");
         const isWaitingPayment = String(data.payment_status || "").toLowerCase() === "pending";
@@ -291,15 +292,7 @@
           });
         }
 
-        const finalProductImages = Array.isArray(data.final_product_images) ? data.final_product_images.filter(image => image && /^https:\/\//i.test(String(image.url || ""))) : [];
-        const finalProductImagesHTML = finalProductImages.map(image => `
-          <a class="final-product-image-link" href="${escapeHTML(image.url)}" target="_blank" rel="noopener noreferrer">
-            <img src="${escapeHTML(image.thumbnailUrl || image.url)}" alt="${escapeHTML(image.name || "Finished product photo")}" loading="lazy" />
-            <span>${escapeHTML(image.name || "Finished product photo")}</span>
-          </a>
-        `).join("");
-
-        const placedOn = data.timestamp ? new Date(data.timestamp).toLocaleString("en-IN", {
+        const placedOn = data.timestamp ? data.timestamp.toDate().toLocaleString("en-IN", {
           dateStyle: "medium",
           timeStyle: "short"
         }) : "-";
@@ -352,7 +345,8 @@
                 <h2>Shipping & Contact</h2>
                 <dl class="detail-list">
                   <div><dt>${data.fulfillment_type === "pickup" ? "Pickup Update" : "Expected Delivery"}</dt><dd style="color: var(--brand-dark); font-weight: 800;">${escapeHTML(data.expected_delivery || "Will be updated after payment")}</dd></div>
-                  <div><dt>Fulfillment</dt><dd>${data.fulfillment_type === "pickup" ? "Pickup" : "Delivery"}</dd></div>
+                  <div><dt>Contact Phone</dt><dd>${escapeHTML(maskPhone(data.phone || ""))}</dd></div>
+                  <div><dt>${data.fulfillment_type === "pickup" ? "Pickup Location" : "Delivery Address"}</dt><dd>${escapeHTML(data.pickup_location || data.address || "-")}</dd></div>
                 </dl>
               </article>
 
@@ -404,7 +398,7 @@
         console.error(error);
         container.innerHTML = `
           <div class="empty-state">
-            <p style="color: var(--danger); font-weight: 700;">${escapeHTML(error.message || "Error retrieving order tracking info. Please try again.")}</p>
+            <p style="color: var(--danger); font-weight: 700;">Error retrieving order tracking info. Please try again.</p>
           </div>
         `;
       }

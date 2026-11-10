@@ -262,15 +262,7 @@
         Share Product
       </button>
 
-      <div class="product-description-wrap">
-        <div class="product-description" id="product-description"></div>
-        <button type="button" class="product-desc-toggle" id="product-desc-toggle" hidden aria-expanded="false">
-          Show more
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-      </div>
+      <p class="product-description" id="product-description"></p>
 
       <div id="product-customization-wrap" class="product-customization" hidden>
         <label for="product-customization"><strong>Customization details</strong><span>Tell us the name, text, colors, or other changes you’d like.</span></label>
@@ -955,8 +947,7 @@
           setProductShareMetadata(data);
           document.getElementById("product-name").textContent = data.productName || "Untitled product";
           updateDisplayedPrice();
-          document.getElementById("product-description").innerHTML = window.sanitizeProductDescription(data.description || "Custom handcrafted 3D printed piece by Creative Souls 3D.");
-          initDescriptionToggle();
+          document.getElementById("product-description").textContent = data.description || "Custom handcrafted 3D printed piece by Creative Souls 3D.";
           document.getElementById("product-customization-wrap").hidden = !isCustomizable(data);
           document.getElementById("product-category").textContent = data.category || "Custom 3D Print";
           document.getElementById("breadcrumb-name").textContent = data.productName || "Product";

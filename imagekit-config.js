@@ -1,31 +1,25 @@
 const IMAGEKIT_PUBLIC_KEY = "public_QWPInA+QOboSQx0bQtEdRLP9w1M=";
+const IMAGEKIT_PRIVATE_KEY = "private_Bq0y/Hs1sGel5+XgbDIyrVoHBUM=";
 const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 const IMAGEKIT_FOLDER = "/order-tickets";
 const IMAGEKIT_MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-async function imageKitAuthParams(folder, context = {}) {
-  const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
-  if (!workerUrl) throw new Error("The secure upload service is not configured.");
-  const user = firebase.auth().currentUser;
-  if (!user) throw new Error("Sign in to your account before uploading files.");
-  const idToken = await user.getIdToken();
-  const response = await fetch(`${workerUrl.replace(/\/+$/, "")}/imagekit-auth`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
-    body: JSON.stringify({ folder, ...context })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || `Upload authorization failed (HTTP ${response.status}).`);
-  return result;
+function imageKitAuthParams() {
+  const token = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `ik_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const expire = Math.floor(Date.now() / 1000) + 2400;
+  const signature = CryptoJS.HmacSHA1(token + String(expire), IMAGEKIT_PRIVATE_KEY).toString(CryptoJS.enc.Hex);
+  return { token, expire, signature };
 }
 
-async function uploadFileToImageKit(file, folder = IMAGEKIT_FOLDER, authContext = {}) {
+async function uploadFileToImageKit(file, folder = IMAGEKIT_FOLDER) {
   if (!file) throw new Error("No file selected.");
   if (file.size > IMAGEKIT_MAX_FILE_BYTES) {
     throw new Error(`${file.name} is larger than 25 MB. Please upload a smaller photo or video.`);
   }
 
-  const { token, expire, signature } = await imageKitAuthParams(folder, authContext);
+  const { token, expire, signature } = imageKitAuthParams();
   const form = new FormData();
   form.append("file", file);
   form.append("fileName", file.name || `ticket-${Date.now()}`);
