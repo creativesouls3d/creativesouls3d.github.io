@@ -530,7 +530,7 @@ function renderProduct(data) {
   card.className = "product-card";
   card.productData = data;
 
-  const id = encodeURIComponent(data.productId || data.id || "");
+  const id = encodeURIComponent(String(data.productId || data.id || ""));
   const name = escapeHTML(data.productName || "Untitled product");
   const firstImage = String(data.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg";
   const image = escapeHTML(firstImage || "logo_creativesouls.jpg");
@@ -806,7 +806,7 @@ function fetchAndCacheProducts() {
   // Step 1: fetch all products
   db.collection("products").get().then(async (productSnap) => {
     const all = [];
-    productSnap.forEach(doc => all.push({ id: doc.id, productId: doc.id, ...doc.data() }));
+    productSnap.forEach(doc => all.push({ ...doc.data(), id: doc.id, productId: doc.id }));
     const productsCount = document.getElementById("total-products-count");
     if (productsCount) productsCount.textContent = productSnap.size.toLocaleString("en-IN");
     displayProducts(all);

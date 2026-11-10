@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Track Order | Creative Souls 3D</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Track your custom 3D printed order in real time - live 3D printing stages, packaging quality checks, and doorstep courier delivery.">
 
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
@@ -58,6 +59,60 @@
   <script src="navigation.js"></script>
 
   <script>
+    // ── STAGES DEFINITION WITH CUSTOM 3D CRAFT ICONS & DESCRIPTIONS ──
+    const STAGES = [
+      {
+        id: "placed",
+        title: "Order Placed",
+        sub: "Received & queued",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+        explainerTitle: "Order Confirmed & Queued",
+        explainerDesc: "We have received your custom 3D order! Our makers are currently reviewing your design geometry, color selections, and slicing setup."
+      },
+      {
+        id: "approved",
+        title: "Order Approved",
+        sub: "Specs & file verified",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+        explainerTitle: "Design Approved for Manufacturing",
+        explainerDesc: "Your 3D model files and print parameters have been verified. Build plate temperatures, print speeds, and premium filament are being prepared."
+      },
+      {
+        id: "printing",
+        title: "3D Printing",
+        sub: "Layer-by-layer crafting",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+        explainerTitle: "Actively on the 3D Printer",
+        explainerDesc: "✨ Your creation is printing on our precision 3D printer! Micro-fine layers are fusing together with strict temperature and flow calibration for superior strength and finish."
+      },
+      {
+        id: "dispatched",
+        title: "Order Dispatched",
+        sub: "QA checked & boxed",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+        explainerTitle: "Quality Inspected & Dispatched",
+        explainerDesc: "Your print completed successfully and passed manual quality inspection. It is securely packed with protective cushioning and handed to our courier partner."
+      },
+      {
+        id: "delivery",
+        title: "Out For Delivery",
+        sub: "Arriving today",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+        explainerTitle: "Out for Doorstep Delivery",
+        explainerDesc: "🚚 Your package is out with the delivery executive and will reach your address today! Please keep your phone reachable."
+      },
+      {
+        id: "delivered",
+        title: "Product Delivered",
+        sub: "Delivered safely",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/><circle cx="12" cy="12" r="10"/></svg>`,
+        explainerTitle: "Delivered Successfully!",
+        explainerDesc: "🎉 Package delivered! We hope you love your custom 3D printed piece. If you have any feedback or would like to share a photo, please rate your experience below."
+      }
+    ];
+
+    const CHECK_ICON = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
     function formatPrice(value) {
       return new Intl.NumberFormat("en-IN", {
         style: "currency",
@@ -84,45 +139,6 @@
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
       return normalizeOrderId(id);
-    }
-
-    function showTrackForm(message = "") {
-      const container = document.getElementById("track-info");
-      container.innerHTML = `
-        <div class="track-card">
-          <form id="track-form" class="track-form">
-            <div style="margin-bottom: 8px;">
-              <span class="eyebrow" style="margin-bottom: 12px;">Live 3D Print Stepper</span>
-              <h1>Track Your Order</h1>
-              <p>Enter your 6-digit Order ID to check your 3D print progress and delivery dispatch.</p>
-            </div>
-            <div class="track-input-row">
-              <input id="order-id-input" type="text" placeholder="e.g. 253751 or #253751" autocomplete="off" required />
-              <button type="submit">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                Track
-              </button>
-            </div>
-            ${message ? `<p id="track-message" style="color: var(--danger); font-weight: 700;">${escapeHTML(message)}</p>` : ""}
-          </form>
-        </div>
-      `;
-
-      document.getElementById("track-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const orderId = normalizeOrderId(document.getElementById("order-id-input").value);
-        const phone = document.getElementById("order-phone-input").value.trim();
-
-        if (!orderId) {
-          const msgEl = document.getElementById("track-message");
-          if (msgEl) msgEl.textContent = "Please enter an order ID.";
-          return;
-        }
-
-        const cleanId = orderId.replace("#", "");
-        window.history.replaceState(null, "", `track-order.html?id=${encodeURIComponent(cleanId)}`);
-        loadOrder(orderId);
-      });
     }
 
     function maskPhone(phone) {
@@ -210,6 +226,161 @@
       return status || "Order Placed";
     }
 
+    window.copyOrderIdToClipboard = function(orderId, btn) {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(orderId).then(() => {
+        const orig = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = orig;
+        }, 2000);
+      });
+    };
+
+    function showTrackForm(message = "") {
+      const container = document.getElementById("track-info");
+      container.innerHTML = `
+        <div class="track-hero-card">
+          <div class="track-hero-icon">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+          </div>
+          <span class="track-hero-eyebrow">
+            <span class="track-live-beacon"></span> Live 3D Print Stepper
+          </span>
+          <h1 class="track-hero-title">Track Your <span class="brand-gradient-text">3D Print Order</span></h1>
+          <p class="track-hero-sub">Follow every stage of your custom 3D printed piece — from slicer verification and print bed extrusion to packaging and doorstep courier delivery.</p>
+
+          <form id="track-form" class="track-form">
+            <div class="track-search-bar">
+              <div class="track-search-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <input id="order-id-input" type="text" placeholder="Enter Order ID (e.g. 253751 or #253751)" autocomplete="off" autofocus required />
+              <button type="submit" class="track-search-btn">
+                <span>Track Order</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+            ${message ? `
+              <div class="track-error-msg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>${escapeHTML(message)}</span>
+              </div>
+            ` : ""}
+            <div class="track-search-tips">
+              <span>Looking for your Order ID? Check your confirmation email, WhatsApp, or</span>
+              <a href="orders.html">view order history</a>.
+            </div>
+          </form>
+
+          <div id="track-recent-container"></div>
+
+          <div class="track-perks-grid">
+            <div class="track-perk-item">
+              <div class="track-perk-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div>
+                <strong>Live 3D Print Stages</strong>
+                <p>Monitor slicing, active print bed progress, and QA inspections in real time.</p>
+              </div>
+            </div>
+            <div class="track-perk-item">
+              <div class="track-perk-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+              <div>
+                <strong>Workshop Preview Photos</strong>
+                <p>Inspect physical finished photos of your 3D print right before dispatch.</p>
+              </div>
+            </div>
+            <div class="track-perk-item">
+              <div class="track-perk-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <strong>Doorstep Delivery Updates</strong>
+                <p>Stay updated with estimated delivery dates and courier handover notes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Form submission
+      document.getElementById("track-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const inputVal = document.getElementById("order-id-input").value;
+        const orderId = normalizeOrderId(inputVal);
+
+        if (!orderId) {
+          showTrackForm("Please enter a valid 6-digit order ID.");
+          return;
+        }
+
+        const cleanId = orderId.replace(/^#/, "");
+        window.history.replaceState(null, "", `track-order.html?id=${encodeURIComponent(cleanId)}`);
+        loadOrder(orderId);
+      });
+
+      // Show user's recent orders if authenticated
+      if (window.firebase?.auth) {
+        firebase.auth().onAuthStateChanged(async (user) => {
+          if (!user || !user.email) return;
+          const recentBox = document.getElementById("track-recent-container");
+          if (!recentBox) return;
+
+          try {
+            const snap = await db.collection("orders")
+              .where("email", "==", user.email)
+              .orderBy("timestamp", "desc")
+              .limit(3)
+              .get();
+
+            if (!snap.empty) {
+              const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+              recentBox.innerHTML = `
+                <div class="track-recent-box">
+                  <div class="track-recent-header">
+                    <span class="track-recent-title">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                      Your Recent Orders
+                    </span>
+                    <a href="orders.html" style="font-size:0.78rem;font-weight:700;color:var(--brand-dark);">View all &rarr;</a>
+                  </div>
+                  ${orders.map(ord => {
+                    const clean = (ord.order_id || ord.id).replace(/^#/, "");
+                    const date = ord.timestamp?.toDate ? ord.timestamp.toDate().toLocaleDateString("en-IN", { day:"numeric", month:"short" }) : "";
+                    const itemCount = Array.isArray(ord.items) ? ord.items.length : 1;
+                    return `
+                      <a href="track-order.html?id=${encodeURIComponent(clean)}" class="track-recent-item" onclick="event.preventDefault(); window.history.replaceState(null, '', 'track-order.html?id=${encodeURIComponent(clean)}'); loadOrder('#${clean}');">
+                        <div class="track-recent-info">
+                          <span class="track-recent-id">#${escapeHTML(clean)}</span>
+                          <span class="track-recent-meta">${escapeHTML(date)} &bull; ${itemCount} ${itemCount === 1 ? 'item' : 'items'} &bull; ${formatPrice(ord.total)}</span>
+                        </div>
+                        <span class="track-recent-action">
+                          <span>${escapeHTML(displayOrderStatus(ord.status))}</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
+                      </a>
+                    `;
+                  }).join("")}
+                </div>
+              `;
+            }
+          } catch (e) {
+            console.warn("Could not load recent orders:", e);
+          }
+        });
+      }
+    }
+
     async function loadOrder(orderId = getOrderId()) {
       const container = document.getElementById("track-info");
 
@@ -218,15 +389,11 @@
         return;
       }
 
-      if (!phone) {
-        showTrackForm();
-        document.getElementById("order-id-input").value = orderId.replace(/^#/, "");
-        return;
-      }
-
       container.innerHTML = `
-        <div class="empty-state">
-          <p style="font-weight: 700;">Loading order details for ${escapeHTML(orderId)}...</p>
+        <div class="track-loading-state">
+          <div class="track-loader-spinner"></div>
+          <h2>Locating 3D Print Order ${escapeHTML(orderId)}...</h2>
+          <p>Connecting to our workshop database to fetch the latest manufacturing & courier updates.</p>
         </div>
       `;
 
@@ -238,7 +405,7 @@
         }
 
         if (!doc.exists) {
-          showTrackForm(`Order ${orderId} not found. Please verify the ID and try again.`);
+          showTrackForm(`Order ${orderId} was not found. Please verify the 6-digit ID or check your confirmation email.`);
           return;
         }
 
@@ -246,47 +413,83 @@
         const orderItems = await hydrateOrderItemImages(Array.isArray(data.items) ? data.items : []);
         const statusText = data.status ? data.status.toLowerCase() : "";
         const currentStep = getProgressIndex(statusText);
-        const isRejected = statusText.includes("rejected");
+        const isRejected = statusText.includes("rejected") || statusText.includes("cancel");
         const isWaitingPayment = String(data.payment_status || "").toLowerCase() === "pending";
-        const steps = ["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Product Delivered"];
+        const cleanOrderId = String(data.order_id || orderId || "").replace(/^#/, "");
+        const displayId = `#${cleanOrderId}`;
 
+        // Build Steps HTML
         let stepsHTML = "";
+        STAGES.forEach((stage, index) => {
+          let stepClass = "";
+          let iconHtml = stage.icon;
 
-        steps.forEach((step, index) => {
-          let className = "";
           if (isRejected) {
-            if (index <= 1) className = "rejected";
+            if (index <= 1) stepClass = "rejected";
           } else if (index < currentStep) {
-            className = "completed";
+            stepClass = "completed";
+            iconHtml = CHECK_ICON;
           } else if (index === currentStep) {
-            className = "active";
+            stepClass = "active";
           }
 
           stepsHTML += `
-            <div class="step ${className}">
-              <div class="circle">${index + 1}</div>
-              <span>${step}</span>
+            <div class="step ${stepClass}">
+              <div class="circle" aria-label="${escapeHTML(stage.title)}">
+                ${iconHtml}
+              </div>
+              <div class="step-label">
+                <span class="step-title">${escapeHTML(stage.title)}</span>
+                <span class="step-sub">${escapeHTML(stage.sub)}</span>
+                ${index === currentStep && !isRejected ? `<span class="step-active-tag">Active</span>` : ""}
+              </div>
             </div>
           `;
         });
 
-        const progressWidth = (currentStep / (steps.length - 1)) * 100;
-        let itemsHTML = "";
+        // Stepper width calculations (connecting circle centers: 8.33% to 91.67%, span is 83.33%)
+        const progressWidth = (currentStep / (STAGES.length - 1)) * 83.33;
 
+        // Current phase description
+        const activeStage = STAGES[Math.min(currentStep, STAGES.length - 1)];
+        let phaseTitle = activeStage.explainerTitle;
+        let phaseDesc = activeStage.explainerDesc;
+        if (isRejected) {
+          phaseTitle = "Order Cancelled / Rejected";
+          phaseDesc = "This order has been cancelled. Any amount paid will be refunded according to our return policy. If you have questions, please contact our support team.";
+        }
+
+        // Build items HTML
+        let itemsHTML = "";
         if (orderItems.length > 0) {
           orderItems.forEach(item => {
+            const lineTotal = formatPrice(Number(item.quantity || 1) * Number(item.price || 0));
             itemsHTML += `
-              <div class="order-item-row" style="margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <img src="${escapeHTML(item.imageUrl)}" data-product-id="${escapeHTML(item.productId || item.product_id || item.id || item.productID || '')}" alt="${escapeHTML(item.productName || 'Product')}" onerror="recoverTrackedProductImage(this)" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: contain; background: #ffffff; border: 1px solid var(--border); padding: 4px;" />
-                  <div>
-                    <strong>${escapeHTML(item.productName || "Untitled product")}</strong>
-                    ${item.colour ? `<span>Colour: ${escapeHTML(item.colour)}</span>` : ""}
-                    ${item.size ? `<span>Size: ${escapeHTML(item.size)}</span>` : ""}
-                    <span>Quantity: ${item.quantity} &times; ${formatPrice(item.price)}</span>
+              <div class="track-product-item">
+                <div class="track-product-left">
+                  <img src="${escapeHTML(item.imageUrl)}"
+                       data-product-id="${escapeHTML(item.productId || item.product_id || item.id || item.productID || '')}"
+                       alt="${escapeHTML(item.productName || 'Product')}"
+                       onerror="recoverTrackedProductImage(this)"
+                       class="track-product-thumb" />
+                  <div class="track-product-details">
+                    <span class="track-product-name">${escapeHTML(item.productName || "Custom 3D Print")}</span>
+                    <div class="track-product-badges">
+                      ${item.colour ? `
+                        <span class="track-badge">
+                          <span class="track-badge-swatch" style="background:${escapeHTML(item.colour)};"></span>
+                          ${escapeHTML(item.colour)}
+                        </span>
+                      ` : ""}
+                      ${item.size ? `<span class="track-badge">Size: ${escapeHTML(item.size)}</span>` : ""}
+                      <span class="track-badge">Qty: ${Number(item.quantity || 1)}</span>
+                    </div>
+                    ${item.customText || item.notes ? `<p style="font-size:0.8rem;color:var(--text-muted);margin:2px 0 0;">Note: ${escapeHTML(item.customText || item.notes)}</p>` : ""}
                   </div>
                 </div>
-                <strong>${formatPrice(Number(item.quantity || 0) * Number(item.price || 0))}</strong>
+                <div class="track-product-price">
+                  <span>${lineTotal}</span>
+                </div>
               </div>
             `;
           });
@@ -296,109 +499,289 @@
           dateStyle: "medium",
           timeStyle: "short"
         }) : "-";
+
         const statusInfo = String(data.status_info || "").trim();
+        const delivered = statusText.includes("delivered");
+        const finalProductImages = Array.isArray(data.final_product_images)
+          ? data.final_product_images.filter(img => img && (img.url || img.thumbnailUrl))
+          : [];
+        const finalProductImagesHTML = finalProductImages.map(img =>
+          `<a href="${escapeHTML(img.url)}" target="_blank" rel="noopener noreferrer" title="Click to view full photo">
+             <img src="${escapeHTML(img.thumbnailUrl || img.url)}" alt="${escapeHTML(img.name || 'Workshop product photo')}" />
+           </a>`
+        ).join("");
+
+        const feedbackLink = `feedback.html?order=${encodeURIComponent(cleanOrderId)}`;
+        const invoiceLink = `order-details.html?id=${encodeURIComponent(cleanOrderId)}`;
+
+        const statusClass = isRejected ? "danger" :
+                            delivered || statusText.includes("approved") ? "success" :
+                            statusText.includes("printing") || statusText.includes("delivery") ? "active" :
+                            "pending";
+
+        const isPickup = data.fulfillment_type === "pickup";
 
         container.innerHTML = `
-          <div class="track-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
-              <div>
-                <h1 style="margin: 0;">Order ${escapeHTML(data.order_id || "")}</h1>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Placed on ${escapeHTML(placedOn)}</p>
+          <div class="track-card track-result-card">
+
+            <!-- Order Header -->
+            <div class="track-order-header">
+              <div class="track-order-header-left">
+                <div class="track-order-id-pill-row">
+                  <span class="track-order-chip">3D Print Order</span>
+                  <h1 class="track-order-id">${escapeHTML(displayId)}</h1>
+                  <button type="button" class="track-copy-btn" onclick="copyOrderIdToClipboard('${escapeHTML(displayId)}', this)" title="Copy Order ID">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy
+                  </button>
+                </div>
+                <span class="track-order-date">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Placed on ${escapeHTML(placedOn)}
+                </span>
               </div>
-              <div class="order-status ${
-                isRejected ? "danger" :
-                statusText.includes("delivered") || statusText.includes("approved") ? "success" :
-                statusText.includes("printing") || statusText.includes("delivery") ? "active" :
-                "pending"
-              }">${escapeHTML(displayOrderStatus(data.status || "Processing"))}</div>
+
+              <div class="order-status ${statusClass}">
+                ${escapeHTML(displayOrderStatus(data.status || "Processing"))}
+              </div>
+            </div>
+
+            <!-- Estimated Delivery Banner -->
+            <div class="track-est-banner">
+              <div class="track-est-left">
+                <div class="track-est-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                  </svg>
+                </div>
+                <div class="track-est-content">
+                  <span class="track-est-label">${isPickup ? "Pickup Availability" : "Expected Delivery"}</span>
+                  <div class="track-est-date">${escapeHTML(data.expected_delivery || "Will be scheduled after maker review")}</div>
+                </div>
+              </div>
+
+              <div class="track-est-right">
+                <span class="track-fulfillment-pill">
+                  ${isPickup ? `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Studio Pickup
+                  ` : `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Doorstep Courier
+                  `}
+                </span>
+                <a href="${invoiceLink}" class="track-btn-secondary" style="font-size:0.82rem;padding:6px 14px;">
+                  View Invoice &rarr;
+                </a>
+              </div>
             </div>
 
             ${isWaitingPayment ? `
-              <div style="padding: 14px 18px; background: var(--warning-bg); border: 1px solid #fde68a; border-radius: var(--radius-md); color: #92400e; font-weight: 700; margin-bottom: 20px;">
-                We’ve received your order details. Your UPI payment is awaiting verification; we’ll update the order status once it is verified.
+              <div class="track-alert track-alert-warning">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span><strong>Payment Verification Pending:</strong> We are verifying your UPI transaction reference. Once confirmed, production will begin immediately!</span>
               </div>
             ` : ""}
 
-            <div class="progress-container">
-              <div class="progress ${isRejected ? "rejected-bar" : ""}"
-                   style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
-              ${stepsHTML}
+            <!-- Live 3D Print Stepper -->
+            <div class="track-stepper-wrap">
+              <div class="track-stepper-head">
+                <span class="track-stepper-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Live 3D Print Stepper
+                </span>
+                <span class="track-stepper-counter">
+                  ${isRejected ? "Order Cancelled" : `Step ${Math.min(currentStep + 1, 6)} of 6`}
+                </span>
+              </div>
+
+              <div class="progress-container">
+                <div class="progress-track-bg"></div>
+                <div class="progress-track-fill ${isRejected ? "rejected-fill" : ""}"
+                     id="stepper-track-fill"
+                     style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
+                ${stepsHTML}
+              </div>
+
+              <!-- Phase Explainer Box -->
+              <div class="track-phase-explainer">
+                <div class="track-phase-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </div>
+                <div class="track-phase-content">
+                  <strong>${escapeHTML(phaseTitle)}</strong>
+                  <p>${escapeHTML(phaseDesc)}</p>
+                </div>
+              </div>
             </div>
 
+            <!-- Maker Workshop Dispatch Note (if any) -->
             ${statusInfo ? `
-              <section class="order-panel" style="margin-top: 20px;">
-                <h2>Status Update</h2>
-                <p style="margin: 0; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap;">${escapeHTML(statusInfo)}</p>
-              </section>
+              <div class="track-status-info">
+                <div class="track-status-info-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <strong>Maker's Workshop Update</strong>
+                  <p>${escapeHTML(statusInfo)}</p>
+                </div>
+              </div>
             ` : ""}
 
+            <!-- Finished Product Photos (Workshop Previews) -->
             ${finalProductImages.length ? `
-              <section class="order-panel final-product-images-panel" style="margin-top:20px;">
-                <h2>Photos of your finished product</h2>
-                <p>Your order is ready. Here are the final product photos from our team.</p>
-                <div class="final-product-images-grid">${finalProductImagesHTML}</div>
+              <section class="track-final-images-panel" aria-label="Workshop Photos">
+                <h2 class="track-panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Finished Product Workshop Photos
+                </h2>
+                <p class="track-panel-sub">Here are the finished photos taken right off the print bed by our makers before packaging.</p>
+                <div class="track-final-images-grid">${finalProductImagesHTML}</div>
               </section>
             ` : ""}
 
-            <div class="order-detail-grid" style="margin-top: 32px;">
-              <article class="order-panel">
-                <h2>Shipping & Contact</h2>
-                <dl class="detail-list">
-                  <div><dt>${data.fulfillment_type === "pickup" ? "Pickup Update" : "Expected Delivery"}</dt><dd style="color: var(--brand-dark); font-weight: 800;">${escapeHTML(data.expected_delivery || "Will be updated after payment")}</dd></div>
-                  <div><dt>Contact Phone</dt><dd>${escapeHTML(maskPhone(data.phone || ""))}</dd></div>
-                  <div><dt>${data.fulfillment_type === "pickup" ? "Pickup Location" : "Delivery Address"}</dt><dd>${escapeHTML(data.pickup_location || data.address || "-")}</dd></div>
+            <!-- Order Details 2-Column Grid -->
+            <div class="track-detail-grid">
+              <article class="track-panel">
+                <h2 class="track-panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${isPickup ? "Pickup & Contact" : "Shipping & Contact"}
+                </h2>
+                <dl class="track-kv-list">
+                  <div class="track-kv-row">
+                    <dt>Contact Phone</dt>
+                    <dd>${escapeHTML(maskPhone(data.phone || ""))}</dd>
+                  </div>
+                  <div class="track-kv-row">
+                    <dt>${isPickup ? "Pickup Address" : "Delivery Address"}</dt>
+                    <dd>${escapeHTML(data.pickup_location || data.address || "-")}</dd>
+                  </div>
+                  <div class="track-kv-row">
+                    <dt>Fulfillment</dt>
+                    <dd>${isPickup ? "Self Pickup at Studio" : "Express Courier Doorstep"}</dd>
+                  </div>
                 </dl>
               </article>
 
-              <article class="order-panel">
-                <h2>Payment Summary</h2>
-                <dl class="detail-list">
-                  <div><dt>Payment Mode</dt><dd>${escapeHTML(data.payment_ref || "Cash on Delivery")}</dd></div>
-                  <div><dt>Items Subtotal</dt><dd>${formatPrice(data.item_total)}</dd></div>
-                  <div><dt>Delivery Charge</dt><dd>${formatPrice(data.delivery_charge)}</dd></div>
-                  ${Number(data.discount || 0) > 0 ? `<div><dt>Discount</dt><dd style="color: var(--accent-emerald);">-${formatPrice(data.discount)}</dd></div>` : ""}
-                  <div><dt>Total Amount</dt><dd style="font-size: 1.2rem; font-weight: 900; color: var(--text-primary);">${formatPrice(data.total)}</dd></div>
+              <article class="track-panel">
+                <h2 class="track-panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  Payment Breakdown
+                </h2>
+                <dl class="track-kv-list">
+                  <div class="track-kv-row">
+                    <dt>Payment Mode</dt>
+                    <dd>${escapeHTML(data.payment_ref || "Cash on Delivery")}</dd>
+                  </div>
+                  <div class="track-kv-row">
+                    <dt>Items Subtotal</dt>
+                    <dd>${formatPrice(data.item_total)}</dd>
+                  </div>
+                  <div class="track-kv-row">
+                    <dt>Delivery Charge</dt>
+                    <dd>${Number(data.delivery_charge || 0) > 0 ? formatPrice(data.delivery_charge) : '<span style="color:var(--accent-emerald);">FREE</span>'}</dd>
+                  </div>
+                  ${Number(data.discount || 0) > 0 ? `
+                    <div class="track-kv-row">
+                      <dt>Discount</dt>
+                      <dd class="track-discount">&#8722;${formatPrice(data.discount)}</dd>
+                    </div>
+                  ` : ""}
+                  <div class="track-kv-row track-total-row">
+                    <dt style="font-weight:800;color:var(--text-primary);font-size:1.05rem;">Total Paid</dt>
+                    <dd class="track-grand-total">${formatPrice(data.total)}</dd>
+                  </div>
                 </dl>
               </article>
             </div>
 
-            <section class="order-panel" style="margin-top: 20px;">
-              <h2>Products in Order</h2>
-              <div class="order-items-list">
-                ${itemsHTML || "<p style='color: var(--text-muted);'>No items found.</p>"}
+            <!-- Products in Order -->
+            <section class="track-products-panel">
+              <h2 class="track-panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                Products in This Order (${orderItems.length})
+              </h2>
+              <div class="track-products-list">
+                ${itemsHTML || "<p style='color:var(--text-muted);'>No items found.</p>"}
               </div>
             </section>
 
-            ${delivered ? `<section id="track-feedback-card" class="order-panel" style="margin-top:20px;text-align:center;">${data.feedback_submitted ? `<h2>Thank you for your feedback!</h2><p>We appreciate you sharing your experience with Creative Souls 3D.</p>` : `<h2>Your order has been delivered!</h2><p>How was your experience with Creative Souls 3D?</p><a class="nav-pill" href="${feedbackLink}" style="display:inline-flex;background:#ffeb3b;color:#111;border-color:#ffeb3b;font-weight:800;">Rate Your Experience</a><p id="track-feedback-status" style="margin:10px 0 0;color:var(--text-muted)"></p>`}</section>` : ""}
+            <!-- Feedback CTA (for delivered orders) -->
+            ${delivered ? `
+              <section class="track-feedback-panel">
+                ${data.feedback_submitted
+                  ? `<div class="track-feedback-thanks">
+                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                       <div>
+                         <h2>Thank You for Your Feedback!</h2>
+                         <p>We are grateful for your review and love crafting personalized 3D art for you.</p>
+                       </div>
+                     </div>`
+                  : `<div class="track-feedback-cta">
+                       <div class="track-feedback-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
+                       <h2>Your 3D Print Has Arrived!</h2>
+                       <p>How was the print quality, detail, and delivery experience? We'd love to hear your thoughts!</p>
+                       <a class="track-feedback-btn" href="${feedbackLink}">
+                         <span>Rate Your 3D Print</span>
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                       </a>
+                     </div>`
+                }
+              </section>
+            ` : ""}
 
-            <div style="margin-top: 24px; text-align: center;">
-              <button onclick="showTrackForm()" class="nav-pill" style="color: var(--text-primary); border-color: var(--border); background: var(--surface-alt); margin: 0 auto;">
-                🔍 Track Another Order
+            <!-- Bottom Actions Bar -->
+            <div class="track-actions-bar">
+              <button onclick="showTrackForm()" class="track-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Track Another Order
               </button>
+
+              <a href="${invoiceLink}" class="track-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                View Full Invoice & Details
+              </a>
+
+              <a href="mailto:hello.creative.souls3d@gmail.com?subject=Question regarding Order ${encodeURIComponent(displayId)}" class="track-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Contact Support
+              </a>
             </div>
 
-            <section class="track-policy-notice" aria-labelledby="track-policy-title">
-              <h2 id="track-policy-title">Our Store Policies</h2>
-              <p>By placing your order with Creative Souls 3D, you agree to our store policies:</p>
-              <nav aria-label="Store policies">
-                <a href="https://creativesouls3d.github.io/shipping-policy.html">Shipping Policy</a>
-                <a href="https://creativesouls3d.github.io/return-refund-policy.html">Return &amp; Refund Policy</a>
-                <a href="https://creativesouls3d.github.io/privacy-policy.html">Privacy Policy</a>
-                <a href="https://creativesouls3d.github.io/terms-of-service.html">Terms of Service</a>
-              </nav>
-            </section>
           </div>
         `;
 
-        if (window.innerWidth <= 640 && !isRejected) {
-          const progress = document.querySelector(".progress");
-          if (progress) progress.style.height = progressWidth + "%";
+        // Responsive mobile vertical stepper height calculation
+        function adjustMobileStepper() {
+          const trackFill = document.getElementById("stepper-track-fill");
+          if (!trackFill) return;
+
+          if (window.innerWidth <= 640 && !isRejected) {
+            const circles = document.querySelectorAll(".progress-container .step .circle");
+            if (circles.length > currentStep) {
+              const firstRect = circles[0].getBoundingClientRect();
+              const activeRect = circles[currentStep].getBoundingClientRect();
+              const heightDiff = (activeRect.top + activeRect.height / 2) - (firstRect.top + firstRect.height / 2);
+              trackFill.style.height = Math.max(0, heightDiff) + "px";
+              trackFill.style.width = "4px";
+            }
+          } else if (!isRejected) {
+            trackFill.style.height = "6px";
+            trackFill.style.width = progressWidth + "%";
+          }
         }
+
+        adjustMobileStepper();
+        window.addEventListener("resize", adjustMobileStepper);
+
       } catch (error) {
         console.error(error);
         container.innerHTML = `
-          <div class="empty-state">
-            <p style="color: var(--danger); font-weight: 700;">Error retrieving order tracking info. Please try again.</p>
+          <div class="track-loading-state" style="border-color:var(--danger-border);background:var(--danger-bg);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <h2 style="color:var(--danger-text);">Error Retrieving Order Tracking</h2>
+            <p style="color:var(--danger-text);">We encountered a network issue trying to fetch your order status. Please refresh or try again shortly.</p>
+            <button onclick="loadOrder()" class="track-btn-primary" style="margin-top:10px;">Retry</button>
           </div>
         `;
       }
