@@ -3488,7 +3488,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
             </table>
 
             ${trackingCardHtml}
-            ${canonicalSt === "Product Delivered" ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been delivered! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
+            ${canonicalSt === "Product Delivered" && order._feedbackToken ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been delivered! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
             ${paymentPendingCardHtml}
             ${itemsSectionHtml}
             ${addressCardHtml}
@@ -3814,11 +3814,19 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     return false;
   }
 
-  function openOrderNotificationPreview(order) {
+  async function openOrderNotificationPreview(order) {
     const to = String(order.email || "").trim();
     if (!to || !to.includes("@")) {
       window.showAdminToast?.("This order has no valid customer email address.", "danger");
       return;
+    }
+    if (canonicalOrderStatus(order.status) === "Product Delivered" && !order._feedbackToken) {
+      try {
+        const link = await callWalletWorker("/feedback/issue-token", { orderId: order.order_id || order.id });
+        order = { ...order, _feedbackToken: link.token };
+      } catch (error) {
+        window.showAdminToast?.(`Email preview will omit the feedback link: ${error.message}`, "warning");
+      }
     }
     const dialog = byId("email-preview-dialog");
     if (!dialog) {
@@ -3896,7 +3904,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   }
 
   async function sendOrderNotificationEmail(order) {
-    openOrderNotificationPreview(order);
+    await openOrderNotificationPreview(order);
   }
 
   function visibleTickets() {
@@ -4974,6 +4982,328 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   byId("ticket-create-cancel")?.addEventListener("click", () => ticketCreateDialog.close());
   byId("ticket-create-close")?.addEventListener("click", () => ticketCreateDialog.close());
 
+  // ── Customer feedback ──────────────────────────────────────────────────
+  let customerFeedback = [];
+  let feedbackFilter = "all";
+  function feedbackDate(item) { return parseOrderDate(item.created_at || item.createdAt || item.timestamp); }
+  function feedbackRows() {
+    const query = (byId("feedback-search")?.value || "").trim().toLowerCase();
+    return customerFeedback.filter(item => {
+      const rating = Number(item.rating ?? item.overall_satisfaction ?? 0);
+      const flagged = item.damage_reported || item.poor_quality_reported || item.delivery_delayed || rating <= 3;
+      const matchesFilter = feedbackFilter === "all" || feedbackFilter === "negative" ? feedbackFilter === "all" || flagged : rating === Number(feedbackFilter);
+      const haystack = [item.order_id, item.order_doc_id, item.name, item.email, item.comments, item.review, item.product_liked, ...(item.categories || [])].join(" ").toLowerCase();
+      return matchesFilter && (!query || haystack.includes(query));
+    });
+  }
+  function renderCustomerFeedback() {
+    const rows = feedbackRows();
+    const list = byId("feedback-list"); if (!list) return;
+    list.replaceChildren();
+    const count = byId("feedback-count-label"); if (count) count.textContent = `${rows.length} of ${customerFeedback.length} feedback response${customerFeedback.length === 1 ? "" : "s"}`;
+    if (!rows.length) { list.innerHTML = '<p class="admin-helper" style="padding:24px;text-align:center;color:var(--text-3)">No feedback matches this search or filter.</p>'; return; }
+    rows.forEach(item => {
+      const card = document.createElement("article"); card.className = "admin-panel"; card.style.marginTop = "12px";
+      const head = document.createElement("div"); head.className = "admin-panel-hdr";
+      const identity = document.createElement("div");
+      const title = document.createElement("strong"); title.textContent = `${item.name || "Customer"} · ${item.order_id || item.order_doc_id || "Order"}`;
+      const sub = document.createElement("div"); sub.className = "admin-panel-sub"; sub.textContent = [item.email, feedbackDate(item)?.toLocaleString("en-IN")].filter(Boolean).join(" · ");
+      identity.append(title, sub);
+      const rating = document.createElement("strong"); rating.textContent = `${Number(item.rating ?? item.overall_satisfaction ?? 0) || "—"} / 5 ★`;
+      head.append(identity, rating); card.append(head);
+      const comment = document.createElement("p"); comment.style.whiteSpace = "pre-wrap"; comment.textContent = item.comments || item.review || "No written comment."; card.append(comment);
+      const details = [item.product_liked || (item.categories || []).join(", "), item.damage_details, item.quality_details, item.delay_details].filter(Boolean);
+      if (details.length) { const note = document.createElement("p"); note.className = "admin-helper"; note.textContent = details.join(" · "); card.append(note); }
+      list.append(card);
+    });
+  }
+  function renderFeedbackMetrics() {
+    const root = byId("feedback-metrics"); if (!root) return;
+    const count = customerFeedback.length;
+    const average = count ? customerFeedback.reduce((sum,item) => sum + (Number(item.rating ?? item.overall_satisfaction) || 0), 0) / count : 0;
+    const flagged = customerFeedback.filter(item => item.damage_reported || item.poor_quality_reported || item.delivery_delayed || Number(item.rating ?? item.overall_satisfaction) <= 3).length;
+    root.replaceChildren();
+    [["Responses", count], ["Average rating", count ? `${average.toFixed(1)} / 5` : "—"], ["Flagged for review", flagged]].forEach(([label,value]) => {
+      const card = document.createElement("article"); card.className = "admin-stat-card blue";
+      const name = document.createElement("span"); name.className = "admin-stat-label"; name.textContent = label;
+      const val = document.createElement("strong"); val.className = "admin-stat-value"; val.textContent = String(value);
+      card.append(name,val); root.append(card);
+    });
+  }
+  async function loadCustomerFeedback() {
+    const label = byId("feedback-count-label"); if (label) label.textContent = "Loading customer feedback…";
+    try {
+      const response = await callWalletWorker("/feedback/list");
+      customerFeedback = (response.feedback || []).flatMap(data => {
+        const entries = Array.isArray(data.feedbacks) ? data.feedbacks : Array.isArray(data.submissions) ? data.submissions : null;
+        const source = entries?.length ? entries : (data.rating || data.overall_satisfaction ? [data] : []);
+        return source.map((entry,index) => ({ ...data, ...entry, order_id: entry.order_id || data.order_id || data.id, order_doc_id: entry.order_doc_id || data.order_doc_id || data.id, id: entry.reference_id || `${data.id}-${index}` }));
+      }).sort((a,b) => (feedbackDate(b)?.getTime() || 0) - (feedbackDate(a)?.getTime() || 0));
+      renderFeedbackMetrics(); renderCustomerFeedback();
+    } catch (error) {
+      if (label) label.textContent = `Could not load customer feedback: ${errorText(error)}`;
+      reportError(error);
+    }
+  }
+  byId("feedback-refresh")?.addEventListener("click", loadCustomerFeedback);
+  byId("feedback-search")?.addEventListener("input", renderCustomerFeedback);
+  byId("feedback-filter-pills")?.addEventListener("click", event => {
+    const button = event.target.closest("button[data-fb-filter]"); if (!button) return;
+    feedbackFilter = button.dataset.fbFilter;
+    byId("feedback-filter-pills").querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
+    renderCustomerFeedback();
+  });
+  byId("feedback-export")?.addEventListener("click", () => {
+    if (!customerFeedback.length) return window.showAdminToast?.("There is no feedback to export yet.", "info");
+    const headers = ["order_id", "name", "email", "rating", "recommendation_nps", "comments", "product_liked", "damage_reported", "poor_quality_reported", "delivery_delayed", "created_at"];
+    const csv = [headers, ...customerFeedback.map(item => headers.map(key => key === "created_at" ? feedbackDate(item)?.toISOString() || "" : item[key] ?? ""))].map(row => row.map(value => `"${String(value).replaceAll('"','""')}"`).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "customer-feedback.csv"; link.click(); URL.revokeObjectURL(url);
+  });
+
+  // ── Customer wallets ───────────────────────────────────────────────────
+  // Keep the admin wallet UI backed by the same users/{email}/wallet_history
+  // records used by account.js and the adminRefundToWallet callable.
+  let walletCustomers = [];
+  let walletSelected = null;
+  let walletHistory = [];
+  let walletActivity = [];
+  let walletCustomerFilter = "all";
+  let walletActivityFilter = "all";
+  let walletRefundOrder = null;
+  async function callWalletWorker(path, data = {}) {
+    const user = auth.currentUser;
+    const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
+    if (!user || !workerUrl) throw new Error("The wallet service is not configured or you are signed out.");
+    const token = await user.getIdToken();
+    const response = await fetch(`${workerUrl}${path}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Wallet service returned HTTP ${response.status}.`);
+    return payload;
+  }
+  const walletMoney = value => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(Number(value) || 0);
+  const walletText = (id, value) => { const el = byId(id); if (el) el.textContent = value; };
+  const walletDate = value => { const date = value?.toDate ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null; return date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-IN") : "—"; };
+  function renderWalletHistory(rows = walletHistory) {
+    const tbody = byId("wallet-customer-history-tbody"); if (!tbody) return;
+    tbody.replaceChildren();
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-3)">No wallet activity found.</td></tr>'; return; }
+    rows.forEach(tx => {
+      const tr = document.createElement("tr");
+      [walletDate(tx.createdAt), tx.type || "credit", walletMoney(tx.amount), tx.orderId || "—", tx.title || "—", tx.processedBy || "—"].forEach(value => { const td = document.createElement("td"); td.textContent = value; tr.append(td); });
+      tbody.append(tr);
+    });
+    walletText("wallet-customer-tx-count", `${rows.length} entries`);
+  }
+  function renderWalletCustomers(query = "") {
+    const list = byId("wallet-suggestions-list"), select = byId("wallet-quick-customer-select");
+    if (select) { select.replaceChildren(new Option("— Select a customer —", "")); walletCustomers.forEach((c, i) => select.append(new Option(`${c.name || "Customer"} · ${c.email}`, String(i)))); }
+    if (!list) return;
+    list.replaceChildren();
+    const q = query.trim().toLowerCase();
+    const matches = walletCustomers.filter(c => {
+      const hasOrders = orderDocuments.some(doc => String(doc.data().email || "").toLowerCase() === c.email.toLowerCase());
+      const filterMatch = walletCustomerFilter === "all" || (walletCustomerFilter === "balance" ? Number(c.wallet_balance) > 0 : hasOrders);
+      return filterMatch && (!q || `${c.name} ${c.email} ${c.phone}`.toLowerCase().includes(q));
+    }).slice(0, 12);
+    matches.forEach(c => { const li = document.createElement("li"); li.setAttribute("role", "option"); li.textContent = `${c.name || "Customer"} · ${c.email}`; li.addEventListener("click", () => selectWalletCustomer(c)); list.append(li); });
+    list.style.display = q && matches.length ? "block" : "none";
+  }
+  async function selectWalletCustomer(customer) {
+    walletSelected = customer;
+    const wrap = byId("wallet-workspace-wrap"); if (wrap) wrap.style.display = "block";
+    walletText("wallet-customer-name", customer.name || "Customer"); walletText("wallet-customer-email", customer.email);
+    walletText("wallet-customer-avatar", (customer.name || customer.email || "?").slice(0, 1).toUpperCase());
+    walletText("wallet-customer-phone-badge", customer.phone || "Phone not available");
+    walletText("wallet-customer-balance", walletMoney(customer.wallet_balance)); walletText("wallet-customer-points", `${Number(customer.walletPoints) || 0} pts`);
+    const orders = orderDocuments.filter(doc => String(doc.data().email || "").toLowerCase() === customer.email.toLowerCase());
+    walletText("wallet-customer-orders-count", String(orders.length));
+    walletText("wallet-customer-spend", walletMoney(orders.reduce((sum, doc) => sum + Number(doc.data().total || 0), 0)));
+    const ordersSelect = byId("wallet-customer-orders-select");
+    if (ordersSelect) {
+      ordersSelect.replaceChildren(new Option("— Select an order to autofill amount & reason —", ""));
+      orders.forEach(doc => { const data = doc.data(); const id = data.order_id || doc.id; ordersSelect.append(new Option(`${id} · ${walletMoney(data.total)}`, id)); });
+    }
+    const input = byId("wallet-customer-search"); if (input) input.value = customer.email;
+    const suggestions = byId("wallet-suggestions-list"); if (suggestions) suggestions.style.display = "none";
+    const clear = byId("wallet-clear-customer-btn"); if (clear) clear.style.display = "inline-flex";
+    try {
+      const response = await callWalletWorker("/wallet/history", { userId: customer.id });
+      walletHistory = response.history || []; renderWalletHistory();
+    } catch (error) { renderWalletHistory([]); window.showAdminToast?.(`Could not load wallet history: ${error.message}`, "error"); }
+  }
+  function renderWalletGlobalActivity() {
+    const tbody = byId("wallet-global-logs-tbody"); if (!tbody) return;
+    const query = (byId("wallet-global-search")?.value || "").trim().toLowerCase();
+    const rows = walletActivity.filter(tx => {
+      const type = String(tx.type || "credit").toLowerCase();
+      const filterMatch = walletActivityFilter === "all" || type === walletActivityFilter;
+      const haystack = `${tx.name} ${tx.email} ${tx.orderId || ""} ${tx.title || ""} ${type}`.toLowerCase();
+      return filterMatch && (!query || haystack.includes(query));
+    });
+    tbody.replaceChildren();
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-3)">No wallet activity matches this filter.</td></tr>'; }
+    rows.forEach(tx => {
+      const tr = document.createElement("tr");
+      const customer = document.createElement("td");
+      customer.innerHTML = `<strong>${escapeHtml(tx.name || "Customer")}</strong><br><small>${escapeHtml(tx.email || "")}</small>`;
+      [walletDate(tx.createdAt), null, tx.type || "credit", walletMoney(tx.amount), tx.title || "—", tx.orderId || "—"].forEach((value, index) => {
+        if (index === 1) { tr.append(customer); return; }
+        const td = document.createElement("td"); td.textContent = value; tr.append(td);
+      });
+      const actionCell = document.createElement("td");
+      const open = document.createElement("button"); open.type = "button"; open.className = "btn-table-action btn-secondary"; open.textContent = "Open";
+      open.disabled = !walletCustomers.some(customerRecord => customerRecord.id === tx.userId);
+      open.addEventListener("click", () => { const found = walletCustomers.find(customerRecord => customerRecord.id === tx.userId); if (found) selectWalletCustomer(found); });
+      actionCell.append(open); tr.append(actionCell); tbody.append(tr);
+    });
+    walletText("wallet-global-log-count", `${rows.length} entries`);
+    const note = byId("wallet-global-pagination-note"); if (note) note.textContent = walletActivity.length >= 500 ? `Showing ${rows.length} matching recent records (latest 500 loaded).` : `Showing ${rows.length} matching records.`;
+  }
+  function openWalletRefundModal(orderId, order) {
+    walletRefundOrder = { id: orderId, ...order };
+    const dialog = byId("wallet-refund-dialog"); if (!dialog) return;
+    walletText("wallet-refund-customer-email", order.email || "Customer email unavailable");
+    walletText("wallet-refund-order-tag", `Order: ${order.order_id || orderId}`);
+    const amount = byId("wallet-refund-amount"); if (amount) amount.value = Number(order.total || 0) || "";
+    if (!dialog.open) dialog.showModal();
+  }
+  byId("wallet-refund-close")?.addEventListener("click", () => byId("wallet-refund-dialog")?.close());
+  byId("wallet-refund-cancel")?.addEventListener("click", () => byId("wallet-refund-dialog")?.close());
+  document.querySelectorAll("[id^='modal-refund-']").forEach(btn => btn.addEventListener("click", () => {
+    const portion = btn.id.endsWith("100") ? 1 : btn.id.endsWith("50") ? .5 : .25;
+    const amount = byId("wallet-refund-amount"); if (amount && walletRefundOrder) amount.value = (Number(walletRefundOrder.total || 0) * portion).toFixed(2);
+  }));
+  document.querySelectorAll("[data-modal-reason]").forEach(btn => btn.addEventListener("click", () => { byId("wallet-refund-reason").value = btn.dataset.modalReason; }));
+  byId("wallet-refund-modal-form")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!walletRefundOrder?.email) return window.showAdminToast?.("This order has no customer email to credit.", "error");
+    const amount = Number(byId("wallet-refund-amount").value), reason = byId("wallet-refund-reason").value.trim();
+    if (!(amount > 0) || !reason) return window.showAdminToast?.("Enter a positive refund amount and reason.", "error");
+    const submit = byId("wallet-refund-submit"); if (submit) submit.disabled = true;
+    try {
+      await callWalletWorker("/wallet/adjust", { userId: String(walletRefundOrder.email).trim().toLowerCase(), amount, type: "credit", orderId: walletRefundOrder.order_id || walletRefundOrder.id, reason });
+      byId("wallet-refund-dialog").close(); window.showAdminToast?.("Refund credited to the customer wallet.", "success");
+      if (walletSelected?.email?.toLowerCase() === String(walletRefundOrder.email).toLowerCase()) { await loadWalletsSection(); await selectWalletCustomer(walletSelected); }
+    } catch (error) { window.showAdminToast?.(error.message || "Wallet refund failed.", "error"); }
+    finally { if (submit) submit.disabled = false; }
+  });
+  async function loadWalletsSection() {
+    const status = byId("wallet-global-logs-tbody"); if (status && !walletCustomers.length) status.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">Loading wallet records…</td></tr>';
+    try {
+      const response = await callWalletWorker("/wallet/list");
+      walletCustomers = response.customers || [];
+      walletActivity = response.activity || [];
+      walletCustomers.sort((a,b) => (a.name || a.email).localeCompare(b.name || b.email));
+      renderWalletCustomers();
+      walletText("wallet-kpi-users", walletCustomers.length);
+      const credits = walletActivity.filter(tx => String(tx.type).toLowerCase() === "credit").reduce((sum,tx) => sum + (Number(tx.amount) || 0), 0);
+      const debits = walletActivity.filter(tx => String(tx.type).toLowerCase() === "debit").reduce((sum,tx) => sum + (Number(tx.amount) || 0), 0);
+      walletText("wallet-kpi-credited", walletMoney(credits));
+      walletText("wallet-kpi-debited", walletMoney(debits));
+      walletText("wallet-kpi-count", `${walletActivity.length} entries`);
+      walletText("wallet-filter-all-count", String(walletCustomers.length));
+      walletText("wallet-filter-orders-count", String(walletCustomers.filter(c => orderDocuments.some(doc => String(doc.data().email || "").toLowerCase() === c.email.toLowerCase())).length));
+      renderWalletGlobalActivity();
+    } catch (error) {
+      if (status) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 7;
+        cell.style.cssText = "text-align:center;padding:24px";
+        cell.textContent = error.message || "Unable to load wallet data";
+        row.append(cell);
+        status.replaceChildren(row);
+      }
+      window.showAdminToast?.(`Wallet data could not be loaded: ${error.message}`, "error");
+    }
+  }
+  byId("wallet-customer-search")?.addEventListener("input", e => renderWalletCustomers(e.target.value));
+  byId("wallet-load-customer-btn")?.addEventListener("click", () => {
+    const value = byId("wallet-customer-search")?.value.trim().toLowerCase();
+      const dropdown = byId("wallet-quick-customer-select");
+      const customer = walletCustomers.find(c => c.email.toLowerCase() === value) || (dropdown?.value ? walletCustomers[Number(dropdown.value)] : null);
+    if (customer) selectWalletCustomer(customer); else window.showAdminToast?.("Select a customer from the suggestions first.", "info");
+  });
+  byId("wallet-quick-customer-select")?.addEventListener("change", e => { const c = walletCustomers[Number(e.target.value)]; if (c) selectWalletCustomer(c); });
+  byId("wallet-clear-customer-btn")?.addEventListener("click", () => { walletSelected = null; byId("wallet-workspace-wrap").style.display = "none"; byId("wallet-customer-search").value = ""; byId("wallet-clear-customer-btn").style.display = "none"; });
+  byId("wallet-action-form")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!walletSelected) return window.showAdminToast?.("Load a customer wallet first.", "error");
+    const mode = byId("wallet-action-type")?.value || "credit";
+    const amount = Number(byId("wallet-action-amount")?.value), reason = byId("wallet-action-reason")?.value.trim();
+    if (!Number.isFinite(amount) || amount <= 0 || !reason) return window.showAdminToast?.("Enter a positive amount and reason.", "error");
+    try {
+      await callWalletWorker("/wallet/adjust", { userId: walletSelected.id, amount, type: mode, orderId: byId("wallet-action-order-id")?.value.trim(), reason });
+      window.showAdminToast?.(mode === "credit" ? "Wallet credit added." : mode === "debit" ? "Wallet debit recorded." : "Loyalty points added.", "success");
+      await loadWalletsSection(); await selectWalletCustomer(walletSelected);
+      byId("wallet-action-form").reset(); byId("wallet-action-type").value = "credit";
+    } catch (error) { window.showAdminToast?.(error.message || "Wallet credit failed.", "error"); }
+  });
+  document.querySelectorAll(".wallet-mode-tab").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".wallet-mode-tab").forEach(tab => tab.classList.toggle("active", tab === btn));
+    if (byId("wallet-action-type")) byId("wallet-action-type").value = btn.dataset.walletMode;
+    const submit = byId("wallet-action-submit-btn"); if (submit) submit.textContent = btn.dataset.walletMode === "credit" ? "Add Wallet Credit" : btn.dataset.walletMode === "debit" ? "Debit Wallet" : "Add Points";
+    const amountLabel = byId("wallet-action-amount-label"); if (amountLabel) amountLabel.textContent = btn.dataset.walletMode === "points" ? "Points" : "Amount (₹)";
+    const amountInput = byId("wallet-action-amount"); if (amountInput) amountInput.step = btn.dataset.walletMode === "points" ? "1" : "any";
+  }));
+  document.querySelectorAll("#wallet-amount-chips [data-chip-amount]").forEach(btn => btn.addEventListener("click", () => { const input = byId("wallet-action-amount"); if (input) input.value = btn.dataset.chipAmount; }));
+  document.querySelectorAll("#wallet-reason-chips [data-chip-reason]").forEach(btn => btn.addEventListener("click", () => { const input = byId("wallet-action-reason"); if (input) input.value = btn.dataset.chipReason; }));
+  byId("refresh-wallets-btn")?.addEventListener("click", loadWalletsSection);
+  const walletCsv = (rows, fields, fileName) => {
+    const csv = [fields, ...rows.map(row => fields.map(field => row[field] ?? ""))].map(row => row.map(value => `"${String(value).replaceAll('"','""')}"`).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url);
+  };
+  byId("wallet-global-search")?.addEventListener("input", renderWalletGlobalActivity);
+  document.querySelector("#section-wallets .admin-quick-filters")?.addEventListener("click", event => {
+    const button = event.target.closest("button[data-global-tx-filter]"); if (!button) return;
+    walletActivityFilter = button.dataset.globalTxFilter;
+    document.querySelectorAll("button[data-global-tx-filter]").forEach(item => item.classList.toggle("active", item === button));
+    renderWalletGlobalActivity();
+  });
+  const exportWalletActivity = () => walletCsv(walletActivity, ["createdAt", "name", "email", "type", "amount", "title", "orderId"], "wallet-activity.csv");
+  byId("wallet-global-export-csv")?.addEventListener("click", exportWalletActivity);
+  byId("wallet-export-all-btn")?.addEventListener("click", exportWalletActivity);
+  byId("wallet-customer-export-csv")?.addEventListener("click", () => {
+    if (!walletSelected) return window.showAdminToast?.("Load a customer wallet first.", "info");
+    walletCsv(walletHistory.map(tx => ({ ...tx, email: walletSelected.email })), ["createdAt", "type", "amount", "title", "orderId", "email"], `${walletSelected.email}-wallet.csv`);
+  });
+  byId("wallet-customer-history-search")?.addEventListener("input", event => {
+    const query = event.target.value.trim().toLowerCase();
+    renderWalletHistory(walletHistory.filter(tx => `${tx.type} ${tx.title} ${tx.orderId}`.toLowerCase().includes(query)));
+  });
+  byId("wallet-customer-search-clear")?.addEventListener("click", () => {
+    byId("wallet-customer-search").value = ""; renderWalletCustomers();
+    byId("wallet-customer-search-clear").style.display = "none";
+  });
+  byId("wallet-customer-search")?.addEventListener("input", event => { const clear = byId("wallet-customer-search-clear"); if (clear) clear.style.display = event.target.value ? "flex" : "none"; });
+  byId("wallet-copy-email-btn")?.addEventListener("click", async () => {
+    if (!walletSelected) return;
+    try { await navigator.clipboard.writeText(walletSelected.email); walletText("wallet-copy-email-text", "Copied"); setTimeout(() => walletText("wallet-copy-email-text", "Copy"), 1200); }
+    catch { window.showAdminToast?.("Could not copy the email address.", "error"); }
+  });
+  byId("wallet-customer-view-orders-btn")?.addEventListener("click", () => {
+    if (!walletSelected) return;
+    navigateTo("orders");
+    const search = byId("order-search"); if (search) { search.value = walletSelected.email; search.dispatchEvent(new Event("input", { bubbles: true })); }
+  });
+  byId("wallet-customer-orders-select")?.addEventListener("change", event => {
+    const id = event.target.value; if (!id) return;
+    const orderDoc = orderDocuments.find(doc => String(doc.data().order_id || doc.id) === id); if (!orderDoc) return;
+    const order = orderDoc.data();
+    if (byId("wallet-action-amount")) byId("wallet-action-amount").value = Number(order.total || 0);
+    if (byId("wallet-action-order-id")) byId("wallet-action-order-id").value = id;
+    if (byId("wallet-action-reason")) byId("wallet-action-reason").value = `Refund for order ${id}`;
+  });
+  byId("wallet-chip-full-balance")?.addEventListener("click", () => { if (byId("wallet-action-amount")) byId("wallet-action-amount").value = Number(walletSelected?.wallet_balance || 0); });
+  document.querySelector(".wallet-filter-pills-row")?.addEventListener("click", event => {
+    const button = event.target.closest("button[data-cust-filter]"); if (!button) return;
+    walletCustomerFilter = button.dataset.custFilter;
+    document.querySelectorAll(".wallet-filter-pills-row button[data-cust-filter]").forEach(item => item.classList.toggle("active", item === button));
+    renderWalletCustomers(byId("wallet-customer-search")?.value || "");
+  });
+
   // ── Load catalog when section is activated ──────────────────────────────
   const _origNavigateTo = window.navigateTo;
   window.navigateTo = function(id, options) {
@@ -4994,7 +5324,10 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       identity.textContent = `Signed in as ${user.email}`;
       status.textContent = "Loading dashboard…";
       loadOrders(); loadCollection(); loadTickets();
-      if (document.querySelector("#section-products.active")) loadCatalogProducts();
+      const activeSection = document.querySelector(".admin-section.active")?.id?.replace(/^section-/, "");
+      if (activeSection === "products") loadCatalogProducts();
+      if (activeSection === "wallets") loadWalletsSection();
+      if (activeSection === "feedback") loadCustomerFeedback();
     } else if (user) {
       identity.textContent = `Signed in as ${user.email}. This account is not authorized for the admin dashboard.`;
       status.textContent = "Access denied.";

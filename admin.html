@@ -701,29 +701,29 @@
           <div class="wallet-stats-grid" id="wallet-kpi-grid">
             <div class="admin-stat-card green">
               <div class="admin-stat-card-top">
-                <span class="admin-stat-label">Total Credited / Refunded</span>
-                <span class="admin-stat-tag">Store Refunds</span>
+                <span class="admin-stat-label">Recent Credited / Refunded</span>
+                <span class="admin-stat-tag">Latest 500 Records</span>
               </div>
               <strong id="wallet-kpi-credited" class="admin-stat-value" style="color: #059669;">₹0.00</strong>
-              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Lifetime store refunds &amp; goodwill</span>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Credit total in the latest 500 ledger records</span>
             </div>
 
             <div class="admin-stat-card red">
               <div class="admin-stat-card-top">
-                <span class="admin-stat-label">Total Debited / Spent</span>
+                <span class="admin-stat-label">Recent Debited / Spent</span>
                 <span class="admin-stat-tag">Redeemed</span>
               </div>
               <strong id="wallet-kpi-debited" class="admin-stat-value" style="color: #dc2626;">₹0.00</strong>
-              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Wallet balances used at checkout</span>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Debit total in the latest 500 ledger records</span>
             </div>
 
             <div class="admin-stat-card blue">
               <div class="admin-stat-card-top">
-                <span class="admin-stat-label">Storewide Ledger</span>
+                <span class="admin-stat-label">Recent Storewide Ledger</span>
                 <span class="admin-stat-tag">Audit Logs</span>
               </div>
               <strong id="wallet-kpi-count" class="admin-stat-value" style="color: #2563eb;">0 entries</strong>
-              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Total wallet audit transactions</span>
+              <span class="admin-stat-sub" style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Latest wallet audit transactions (up to 500)</span>
             </div>
 
             <div class="admin-stat-card amber">
@@ -1829,6 +1829,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <script src="cloudflare-worker-config.js"></script>
   <script src="imagekit-config.js"></script>
   <script src="navigation.js"></script>
 
@@ -1938,6 +1939,8 @@
         analytics: { title: 'Sales Analytics',   sub: 'Revenue, volume & order trends' },
         attention: { title: 'Needs Attention',   sub: 'Orders requiring immediate triage' },
         tickets:   { title: 'Support Tickets',    sub: 'Review issues and reply in Gmail' },
+        feedback:  { title: 'Customer Feedback',  sub: 'Review customer ratings and comments' },
+        wallets:   { title: 'Wallets & Refunds',   sub: 'Manage customer balances and refunds' },
         orders:    { title: 'All Orders',         sub: 'Search, filter, update & dispatch orders' },
         products:  { title: 'Products Catalog',  sub: 'Browse, manage & export your product catalog PDF' },
         explorer:  { title: 'Data Explorer',     sub: 'Browse & edit Firestore collections' },

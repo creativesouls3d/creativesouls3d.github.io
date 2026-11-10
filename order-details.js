@@ -189,7 +189,7 @@ function bindIssueForm({ user, orderId, data, items }) {
       const attachments = [];
       for (let i = 0; i < files.length; i++) {
         button.textContent = `Uploading media ${i + 1} of ${files.length}…`;
-        attachments.push(await uploadFileToImageKit(files[i], `${IMAGEKIT_FOLDER}/${String(data.order_id || orderId).replace("#", "")}`));
+        attachments.push(await uploadFileToImageKit(files[i], `${IMAGEKIT_FOLDER}/${String(data.order_id || orderId).replace("#", "")}`, orderId));
       }
 
       button.textContent = "Saving ticket…";

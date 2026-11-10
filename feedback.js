@@ -42,8 +42,17 @@ const ratingLabels = {
   5: "🤩 Excellent!"
 };
 
-const feedbackFunctions = typeof firebase !== "undefined" && typeof firebase.functions === "function" ? firebase.functions() : null;
-const getFeedbackOrder = feedbackFunctions ? feedbackFunctions.httpsCallable("getFeedbackOrder") : null;
+async function getFeedbackOrder(input) {
+  const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
+  if (!workerUrl) throw new Error("The order verification service is not configured.");
+  const user = currentUser || (typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null);
+  const headers = { "Content-Type": "application/json" };
+  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  const response = await fetch(`${workerUrl}/feedback/get-order`, { method: "POST", headers, body: JSON.stringify(input) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Could not verify this order.");
+  return { data: payload };
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 
