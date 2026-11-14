@@ -307,29 +307,906 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
 
   // ── Product variant helpers (colour & size options) ────────────────────
   function renderProductMedia() {
-    const preview = byId("product-image-preview");
+    if (typeof productImageItems === "undefined") {
+      productImageItems = [];
+    }
+    if (productImageItems.length === 0 && Array.isArray(productImageUrls) && productImageUrls.length > 0) {
+      productImageItems = productImageUrls.map((url, index) => ({
+        id: "img_" + index + "_" + Math.random().toString(36).slice(2, 8),
+        type: "url",
+        url: String(url).trim(),
+        previewUrl: String(url).trim(),
+        name: (String(url).split("/").pop() || `Image ${index + 1}`).split("?")[0],
+        size: 0
+      }));
+    }
+
+    const preview = typeof byId === "function" ? byId("product-image-preview") : null;
+    if (!preview || typeof document === "undefined") return;
     preview.replaceChildren();
-    productImageUrls.forEach((url, index) => {
-      const figure = document.createElement("figure");
-      const image = document.createElement("img"); image.src = url; image.alt = `Product image ${index + 1}`;
-      const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn-secondary"; remove.textContent = "Remove image";
-      remove.addEventListener("click", () => { productImageUrls.splice(index, 1); renderProductMedia(); });
-      figure.append(image, remove); preview.append(figure);
-    });
-    byId("product-gif-selection").textContent = productGifUrl ? "A GIF is saved for this product. Upload a file to replace it." : "No GIF selected.";
-    byId("product-remove-gif").hidden = !productGifUrl;
+
+    const countBadge = byId("product-image-count-badge");
+    if (countBadge) {
+      countBadge.textContent = `${productImageItems.length} image${productImageItems.length === 1 ? "" : "s"}`;
+    }
+
+    const selection = byId("product-image-selection");
+    if (selection) {
+      const pendingFiles = productImageItems.filter(item => item.type === "file");
+      if (pendingFiles.length > 0) {
+        selection.textContent = `${productImageItems.length} total image${productImageItems.length === 1 ? "" : "s"} (${pendingFiles.length} new upload${pendingFiles.length === 1 ? "" : "s"} pending on save). Image 1 is the cover.`;
+      } else if (productImageItems.length > 0) {
+        selection.textContent = `${productImageItems.length} image${productImageItems.length === 1 ? "" : "s"} configured. Image 1 is the cover.`;
+      } else {
+        selection.textContent = "No images added yet.";
+      }
+    }
+
+    if (productImageItems.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "product-gallery-empty";
+      empty.innerHTML = `
+        <div class="product-gallery-empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <h4>No product images yet</h4>
+        <p>Add at least one photo for this product. You can reorder, set the cover photo, and delete images anytime.</p>
+      `;
+      const btnGroup = document.createElement("div");
+      btnGroup.className = "product-gallery-empty-actions";
+      const upBtn = document.createElement("button");
+      upBtn.type = "button";
+      upBtn.className = "btn-secondary";
+      upBtn.innerHTML = `<span>+ Upload Images</span>`;
+      upBtn.addEventListener("click", () => byId("product-image-files")?.click());
+      const urlBtn = document.createElement("button");
+      urlBtn.type = "button";
+      urlBtn.className = "btn-secondary";
+      urlBtn.innerHTML = `<span>+ Add by URL</span>`;
+      urlBtn.addEventListener("click", () => {
+        const bar = byId("product-url-input-bar");
+        if (bar) {
+          bar.hidden = false;
+          byId("product-url-input")?.focus();
+        }
+      });
+      btnGroup.append(upBtn, urlBtn);
+      empty.append(btnGroup);
+      preview.append(empty);
+    } else {
+      productImageItems.forEach((item, index) => {
+        const isCover = index === 0;
+        const card = document.createElement("div");
+        card.className = `product-img-card ${isCover ? "is-cover" : ""}`;
+        card.setAttribute("draggable", "true");
+        card.dataset.index = String(index);
+        card.setAttribute("aria-label", `Product image ${index + 1}${isCover ? ", cover image" : ""}. Use the arrow buttons to change its position.`);
+
+        const header = document.createElement("div");
+        header.className = "product-img-card-header";
+
+        const badge = document.createElement("span");
+        badge.className = `product-img-badge ${isCover ? "badge-cover" : "badge-index"}`;
+        badge.innerHTML = isCover
+          ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Cover`
+          : `#${index + 1}`;
+        header.append(badge);
+
+        if (item.isEdited) {
+          const editBadge = document.createElement("span");
+          editBadge.className = "product-img-pending-badge badge-edited";
+          editBadge.textContent = "Edited";
+          header.append(editBadge);
+        } else if (item.type === "file") {
+          const newBadge = document.createElement("span");
+          newBadge.className = "product-img-pending-badge";
+          newBadge.textContent = "New";
+          header.append(newBadge);
+        }
+
+        const dragHandle = document.createElement("div");
+        dragHandle.className = "product-img-drag-handle";
+        dragHandle.title = "Drag to reorder";
+        dragHandle.setAttribute("aria-hidden", "true");
+        dragHandle.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>`;
+        header.append(dragHandle);
+
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "product-img-thumb-wrap";
+        const img = document.createElement("img");
+        img.src = item.previewUrl || item.url || "logo_creativesouls.jpg";
+        img.alt = `Product image ${index + 1}`;
+        img.loading = "lazy";
+        img.onerror = () => { img.src = "logo_creativesouls.jpg"; };
+        thumbWrap.append(img);
+
+        const editThumbBtn = document.createElement("button");
+        editThumbBtn.type = "button";
+        editThumbBtn.className = "btn-thumb-edit";
+        editThumbBtn.title = "Edit picture (crop, rotate, adjust)";
+        editThumbBtn.setAttribute("aria-label", `Edit image ${index + 1}`);
+        editThumbBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg><span>Edit</span>`;
+        editThumbBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          openProductImageEditor(index);
+        });
+        thumbWrap.append(editThumbBtn);
+
+        const info = document.createElement("div");
+        info.className = "product-img-card-info";
+        info.title = item.name || `Image ${index + 1}`;
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "product-img-name";
+        nameSpan.textContent = item.name || `Image ${index + 1}`;
+        info.append(nameSpan);
+        if (item.size) {
+          const sizeSpan = document.createElement("span");
+          sizeSpan.className = "product-img-size";
+          sizeSpan.textContent = formatMediaBytes(item.size);
+          info.append(sizeSpan);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "product-img-card-actions";
+
+        const reorderGroup = document.createElement("div");
+        reorderGroup.className = "product-img-reorder-group";
+
+        const leftBtn = document.createElement("button");
+        leftBtn.type = "button";
+        leftBtn.className = "btn-card-action btn-move-left";
+        leftBtn.title = "Move image left";
+        leftBtn.setAttribute("aria-label", `Move image ${index + 1} left`);
+        leftBtn.disabled = index === 0;
+        leftBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+        leftBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          moveProductImage(index, -1);
+        });
+        reorderGroup.append(leftBtn);
+
+        const rightBtn = document.createElement("button");
+        rightBtn.type = "button";
+        rightBtn.className = "btn-card-action btn-move-right";
+        rightBtn.title = "Move image right";
+        rightBtn.setAttribute("aria-label", `Move image ${index + 1} right`);
+        rightBtn.disabled = index === productImageItems.length - 1;
+        rightBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        rightBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          moveProductImage(index, 1);
+        });
+        reorderGroup.append(rightBtn);
+
+        const editCardBtn = document.createElement("button");
+        editCardBtn.type = "button";
+        editCardBtn.className = "btn-card-action btn-edit-img";
+        editCardBtn.title = "Edit picture (crop, rotate, adjust)";
+        editCardBtn.setAttribute("aria-label", `Edit image ${index + 1}`);
+        editCardBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+        editCardBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          openProductImageEditor(index);
+        });
+        reorderGroup.append(editCardBtn);
+
+        if (!isCover) {
+          const coverBtn = document.createElement("button");
+          coverBtn.type = "button";
+          coverBtn.className = "btn-card-action btn-make-cover";
+          coverBtn.title = "Set as primary cover image";
+          coverBtn.setAttribute("aria-label", `Set image ${index + 1} as cover image`);
+          coverBtn.innerHTML = `<span>★ Cover</span>`;
+          coverBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            setProductCoverImage(index);
+          });
+          reorderGroup.append(coverBtn);
+        }
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn-card-action btn-delete-img";
+        delBtn.title = "Delete image";
+        delBtn.setAttribute("aria-label", `Delete image ${index + 1}`);
+        delBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        delBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          deleteProductImage(index);
+        });
+
+        actions.append(reorderGroup, delBtn);
+
+        card.addEventListener("dragstart", e => {
+          card.classList.add("dragging");
+          e.dataTransfer.setData("text/plain", String(index));
+          e.dataTransfer.effectAllowed = "move";
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          preview.querySelectorAll(".product-img-card").forEach(c => c.classList.remove("drop-target-before", "drop-target-after"));
+        });
+        card.addEventListener("dragover", e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          const rect = card.getBoundingClientRect();
+          const midX = rect.left + rect.width / 2;
+          if (e.clientX < midX) {
+            card.classList.add("drop-target-before");
+            card.classList.remove("drop-target-after");
+          } else {
+            card.classList.add("drop-target-after");
+            card.classList.remove("drop-target-before");
+          }
+        });
+        card.addEventListener("dragleave", () => {
+          card.classList.remove("drop-target-before", "drop-target-after");
+        });
+        card.addEventListener("drop", e => {
+          e.preventDefault();
+          card.classList.remove("drop-target-before", "drop-target-after");
+          const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+          if (!Number.isNaN(fromIndex) && fromIndex !== index) {
+            const rect = card.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            let targetIndex = e.clientX < midX ? index : index + 1;
+            if (fromIndex < targetIndex) targetIndex--;
+            reorderProductImage(fromIndex, targetIndex);
+          }
+        });
+
+        card.append(header, thumbWrap, info, actions);
+        preview.append(card);
+      });
+    }
+
+    renderProductGifPreview();
   }
+
+  function formatMediaBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function initProductImageItems(urls) {
+    cleanupProductImageItemPreviews();
+    productImageItems = (urls || []).map((url, index) => ({
+      id: "img_" + index + "_" + Math.random().toString(36).slice(2, 8),
+      type: "url",
+      url: String(url).trim(),
+      previewUrl: String(url).trim(),
+      name: (String(url).split("/").pop() || `Image ${index + 1}`).split("?")[0],
+      size: 0
+    }));
+    syncProductImageUrls();
+  }
+
+  function cleanupProductImageItemPreviews() {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    productImageItems.forEach(item => {
+      if (item && item.type === "file" && item.previewUrl && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+        try { URL.revokeObjectURL(item.previewUrl); } catch (_) {}
+      }
+    });
+  }
+
+  function syncProductImageUrls() {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    productImageUrls = productImageItems
+      .filter(item => item && item.type === "url" && item.url)
+      .map(item => String(item.url).trim());
+  }
+
+  function moveProductImage(fromIndex, direction) {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= productImageItems.length) return;
+    const [moved] = productImageItems.splice(fromIndex, 1);
+    productImageItems.splice(toIndex, 0, moved);
+    syncProductImageUrls();
+    renderProductMedia();
+  }
+
+  function setProductCoverImage(index) {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    if (index <= 0 || index >= productImageItems.length) return;
+    const [item] = productImageItems.splice(index, 1);
+    productImageItems.unshift(item);
+    syncProductImageUrls();
+    renderProductMedia();
+    if (typeof showAdminToast === "function") showAdminToast("Cover image set.", "success");
+  }
+
+  function reorderProductImage(fromIndex, toIndex) {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    if (fromIndex === toIndex || fromIndex < 0 || fromIndex >= productImageItems.length || toIndex < 0 || toIndex >= productImageItems.length) return;
+    const [item] = productImageItems.splice(fromIndex, 1);
+    productImageItems.splice(toIndex, 0, item);
+    syncProductImageUrls();
+    renderProductMedia();
+  }
+
+  function deleteProductImage(index) {
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) return;
+    if (index < 0 || index >= productImageItems.length) return;
+    const item = productImageItems[index];
+    if (item && item.type === "file" && item.previewUrl && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+      try { URL.revokeObjectURL(item.previewUrl); } catch (_) {}
+    }
+    productImageItems.splice(index, 1);
+    syncProductImageUrls();
+    renderProductMedia();
+    if (typeof showAdminToast === "function") showAdminToast("Image removed.", "info");
+  }
+
+  function addProductImageFiles(files) {
+    const fileList = [...(files || [])];
+    if (!fileList.length) return;
+    try {
+      validateProductMedia(fileList);
+    } catch (err) {
+      if (typeof showAdminToast === "function") showAdminToast(err.message, "error");
+      else alert(err.message);
+      return;
+    }
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) {
+      productImageItems = [];
+    }
+    fileList.forEach(file => {
+      let previewUrl = "";
+      if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+        try { previewUrl = URL.createObjectURL(file); } catch (_) {}
+      }
+      productImageItems.push({
+        id: "file_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        type: "file",
+        file,
+        previewUrl,
+        name: file.name,
+        size: file.size
+      });
+    });
+    const input = typeof byId === "function" ? byId("product-image-files") : null;
+    if (input) input.value = "";
+    syncProductImageUrls();
+    renderProductMedia();
+    if (typeof showAdminToast === "function") {
+      showAdminToast(`${fileList.length} image${fileList.length === 1 ? "" : "s"} added.`, "success");
+    }
+  }
+
+  function addProductImageUrl(url) {
+    const trimmed = String(url || "").trim();
+    if (!trimmed) return;
+    if (!/^https?:\/\//i.test(trimmed) && !trimmed.startsWith("/")) {
+      if (typeof showAdminToast === "function") showAdminToast("Please enter a valid image URL (e.g. https://...)", "error");
+      else alert("Please enter a valid image URL.");
+      return;
+    }
+    if (typeof productImageItems === "undefined" || !Array.isArray(productImageItems)) {
+      productImageItems = [];
+    }
+    const normalizedUrl = trimmed.toLowerCase();
+    if (productImageItems.some(item => item?.type === "url" && String(item.url || "").trim().toLowerCase() === normalizedUrl)) {
+      if (typeof showAdminToast === "function") showAdminToast("That image is already in this product gallery.", "info");
+      return;
+    }
+    productImageItems.push({
+      id: "url_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+      type: "url",
+      url: trimmed,
+      previewUrl: trimmed,
+      name: (trimmed.split("/").pop() || "Custom URL Image").split("?")[0],
+      size: 0
+    });
+    syncProductImageUrls();
+    renderProductMedia();
+    if (typeof showAdminToast === "function") showAdminToast("Image URL added.", "success");
+  }
+
+  function renderProductGifPreview() {
+    const gifBox = typeof byId === "function" ? byId("product-gif-preview-box") : null;
+    const removeBtn = typeof byId === "function" ? byId("product-remove-gif") : null;
+    const gifSelection = typeof byId === "function" ? byId("product-gif-selection") : null;
+    const gifInput = typeof byId === "function" ? byId("product-gif-file") : null;
+    const gifFile = gifInput?.files?.[0];
+
+    const currentGifUrl = gifFile && typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+      ? URL.createObjectURL(gifFile)
+      : productGifUrl;
+
+    if (currentGifUrl) {
+      if (gifBox && typeof document !== "undefined") {
+        gifBox.hidden = false;
+        gifBox.innerHTML = `
+          <div class="product-gif-card">
+            <img src="${currentGifUrl}" alt="Product GIF animation" />
+            <span class="product-gif-tag">GIF Active</span>
+          </div>
+        `;
+      }
+      if (removeBtn) removeBtn.hidden = false;
+      if (gifSelection) {
+        gifSelection.textContent = gifFile
+          ? `New GIF selected: ${gifFile.name} (${formatMediaBytes(gifFile.size)}). Will upload on save.`
+          : "Saved animated GIF active for this product.";
+      }
+    } else {
+      if (gifBox) {
+        gifBox.hidden = true;
+        gifBox.replaceChildren();
+      }
+      if (removeBtn) removeBtn.hidden = true;
+      if (gifSelection) {
+        gifSelection.textContent = "No animated GIF selected.";
+      }
+    }
+  }
+
+  // ── Image Studio / Picture Editor State & Engine ───────────────────────
+  let activeEditingImageIndex = -1;
+  let imageEditorLoadToken = 0;
+  let imageEditorSourceImg = null;
+  let imageEditorState = {
+    rotation: 0,
+    flipH: false,
+    flipV: false,
+    brightness: 100,
+    contrast: 100,
+    saturate: 100,
+    aspectRatio: "free",
+    crop: null
+  };
+  let imageEditorScale = 1;
+  let imageEditorOffset = { x: 0, y: 0 };
+  let imageEditorOrientedDim = { width: 0, height: 0 };
+
+  function openProductImageEditor(index) {
+    if (typeof productImageItems === "undefined" || !productImageItems[index]) return;
+    const loadToken = ++imageEditorLoadToken;
+    activeEditingImageIndex = index;
+    const item = productImageItems[index];
+
+    imageEditorState = {
+      rotation: 0,
+      flipH: false,
+      flipV: false,
+      brightness: 100,
+      contrast: 100,
+      saturate: 100,
+      aspectRatio: "free",
+      crop: null
+    };
+
+    const brSlider = typeof byId === "function" ? byId("pie-brightness") : null; if (brSlider) brSlider.value = 100;
+    const ctSlider = typeof byId === "function" ? byId("pie-contrast") : null; if (ctSlider) ctSlider.value = 100;
+    const saSlider = typeof byId === "function" ? byId("pie-saturation") : null; if (saSlider) saSlider.value = 100;
+    const brVal = typeof byId === "function" ? byId("pie-val-brightness") : null; if (brVal) brVal.textContent = "100%";
+    const ctVal = typeof byId === "function" ? byId("pie-val-contrast") : null; if (ctVal) ctVal.textContent = "100%";
+    const saVal = typeof byId === "function" ? byId("pie-val-saturation") : null; if (saVal) saVal.textContent = "100%";
+
+    if (typeof document !== "undefined") {
+      document.querySelectorAll(".pie-aspect-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.aspect === "free");
+      });
+    }
+
+    const dialog = typeof byId === "function" ? byId("product-image-editor-dialog") : null;
+    if (!dialog || typeof Image === "undefined") return;
+
+    const showLoadedImage = loadedImage => {
+      if (loadToken !== imageEditorLoadToken || productImageItems[index] !== item) return;
+      imageEditorSourceImg = loadedImage;
+      initCropFromAspect("free");
+      if (!dialog.open) dialog.showModal();
+      // Measure only after the dialog has entered layout. Measuring while hidden
+      // produces a fallback-sized canvas and a crop frame that appears offset.
+      requestAnimationFrame(() => {
+        if (loadToken === imageEditorLoadToken && dialog.open) renderEditorCanvas();
+      });
+    };
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => showLoadedImage(img);
+    img.onerror = () => {
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => showLoadedImage(fallbackImg);
+      fallbackImg.onerror = () => {
+        if (typeof showAdminToast === "function") showAdminToast("Unable to load picture for editing.", "error");
+      };
+      fallbackImg.src = item.previewUrl || item.url;
+    };
+    img.src = item.previewUrl || item.url;
+  }
+
+  function getOrientedDimensions() {
+    if (!imageEditorSourceImg) return { width: 0, height: 0 };
+    const is90or270 = imageEditorState.rotation === 90 || imageEditorState.rotation === 270;
+    const width = is90or270
+      ? (imageEditorSourceImg.naturalHeight || imageEditorSourceImg.height || 600)
+      : (imageEditorSourceImg.naturalWidth || imageEditorSourceImg.width || 600);
+    const height = is90or270
+      ? (imageEditorSourceImg.naturalWidth || imageEditorSourceImg.width || 600)
+      : (imageEditorSourceImg.naturalHeight || imageEditorSourceImg.height || 600);
+    return { width, height };
+  }
+
+  function initCropFromAspect(aspect) {
+    const dim = getOrientedDimensions();
+    imageEditorOrientedDim = dim;
+    if (dim.width <= 0 || dim.height <= 0) return;
+
+    imageEditorState.aspectRatio = aspect || "free";
+
+    let targetRatio = null;
+    if (aspect === "1:1") targetRatio = 1;
+    else if (aspect === "4:3") targetRatio = 4 / 3;
+    else if (aspect === "16:9") targetRatio = 16 / 9;
+
+    if (!targetRatio || aspect === "free" || aspect === "full") {
+      imageEditorState.crop = {
+        x: 0,
+        y: 0,
+        width: dim.width,
+        height: dim.height
+      };
+    } else {
+      let cropW, cropH;
+      const imgRatio = dim.width / dim.height;
+      if (imgRatio > targetRatio) {
+        cropH = dim.height * 0.9;
+        cropW = cropH * targetRatio;
+      } else {
+        cropW = dim.width * 0.9;
+        cropH = cropW / targetRatio;
+      }
+      imageEditorState.crop = {
+        x: Math.max(0, (dim.width - cropW) / 2),
+        y: Math.max(0, (dim.height - cropH) / 2),
+        width: Math.min(dim.width, cropW),
+        height: Math.min(dim.height, cropH)
+      };
+    }
+  }
+
+  function renderEditorCanvas() {
+    const canvas = typeof byId === "function" ? byId("pie-canvas") : null;
+    const viewport = typeof byId === "function" ? byId("pie-canvas-viewport") : null;
+    const cropBox = typeof byId === "function" ? byId("pie-crop-box") : null;
+    if (!canvas || !viewport || !imageEditorSourceImg) return;
+
+    const dim = getOrientedDimensions();
+    imageEditorOrientedDim = dim;
+    if (dim.width <= 0 || dim.height <= 0) return;
+
+    const viewW = viewport.clientWidth || 540;
+    const viewH = viewport.clientHeight || 400;
+
+    const padding = 24;
+    const maxDrawW = Math.max(100, viewW - padding * 2);
+    const maxDrawH = Math.max(100, viewH - padding * 2);
+
+    const scale = Math.min(maxDrawW / dim.width, maxDrawH / dim.height);
+    imageEditorScale = scale;
+
+    const canvasW = Math.round(dim.width * scale);
+    const canvasH = Math.round(dim.height * scale);
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    ctx.save();
+    ctx.translate(canvasW / 2, canvasH / 2);
+    ctx.rotate((imageEditorState.rotation * Math.PI) / 180);
+    ctx.scale(imageEditorState.flipH ? -1 : 1, imageEditorState.flipV ? -1 : 1);
+    ctx.filter = `brightness(${imageEditorState.brightness}%) contrast(${imageEditorState.contrast}%) saturate(${imageEditorState.saturate}%)`;
+
+    const natW = imageEditorSourceImg.naturalWidth || imageEditorSourceImg.width || canvasW;
+    const natH = imageEditorSourceImg.naturalHeight || imageEditorSourceImg.height || canvasH;
+
+    const drawW = natW * scale;
+    const drawH = natH * scale;
+
+    ctx.drawImage(imageEditorSourceImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    const canvasLeft = (viewW - canvasW) / 2;
+    const canvasTop = (viewH - canvasH) / 2;
+    imageEditorOffset = { x: canvasLeft, y: canvasTop };
+
+    if (cropBox && imageEditorState.crop) {
+      const crop = imageEditorState.crop;
+      const boxLeft = Math.round(canvasLeft + crop.x * scale);
+      const boxTop = Math.round(canvasTop + crop.y * scale);
+      const boxW = Math.round(crop.width * scale);
+      const boxH = Math.round(crop.height * scale);
+
+      cropBox.style.left = `${boxLeft}px`;
+      cropBox.style.top = `${boxTop}px`;
+      cropBox.style.width = `${boxW}px`;
+      cropBox.style.height = `${boxH}px`;
+
+      const dimBadge = typeof byId === "function" ? byId("pie-crop-dim") : null;
+      if (dimBadge) {
+        dimBadge.textContent = `${Math.round(crop.width)} × ${Math.round(crop.height)}`;
+      }
+    }
+
+    const info = typeof byId === "function" ? byId("pie-dimensions-info") : null;
+    if (info && imageEditorState.crop) {
+      info.textContent = `Crop: ${Math.round(imageEditorState.crop.width)} × ${Math.round(imageEditorState.crop.height)} px`;
+    }
+  }
+
+  function applyCurrentProductImageEdit() {
+    if (activeEditingImageIndex < 0 || !imageEditorSourceImg || !imageEditorState.crop) return;
+    const item = productImageItems[activeEditingImageIndex];
+    if (!item) return;
+    const editingIndex = activeEditingImageIndex;
+    const applyToken = imageEditorLoadToken;
+    const applyButton = byId("pie-apply");
+    if (applyButton?.disabled) return;
+    if (applyButton) applyButton.disabled = true;
+
+    const crop = imageEditorState.crop;
+    const targetW = Math.max(1, Math.round(crop.width));
+    const targetH = Math.max(1, Math.round(crop.height));
+
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = targetW;
+    exportCanvas.height = targetH;
+    const expCtx = exportCanvas.getContext("2d");
+    if (!expCtx) {
+      if (applyButton) applyButton.disabled = false;
+      if (typeof showAdminToast === "function") showAdminToast("Your browser could not start the picture editor. Please try again.", "error");
+      return;
+    }
+
+    expCtx.save();
+    expCtx.translate(-crop.x, -crop.y);
+
+    const dim = imageEditorOrientedDim;
+    expCtx.translate(dim.width / 2, dim.height / 2);
+    expCtx.rotate((imageEditorState.rotation * Math.PI) / 180);
+    expCtx.scale(imageEditorState.flipH ? -1 : 1, imageEditorState.flipV ? -1 : 1);
+    expCtx.filter = `brightness(${imageEditorState.brightness}%) contrast(${imageEditorState.contrast}%) saturate(${imageEditorState.saturate}%)`;
+
+    const natW = imageEditorSourceImg.naturalWidth || imageEditorSourceImg.width;
+    const natH = imageEditorSourceImg.naturalHeight || imageEditorSourceImg.height;
+    expCtx.drawImage(imageEditorSourceImg, -natW / 2, -natH / 2);
+    expCtx.restore();
+
+    try {
+      exportCanvas.toBlob(blob => {
+        try {
+          if (!blob) throw new Error("The browser could not process this image.");
+          if (applyToken !== imageEditorLoadToken) return;
+          if (productImageItems[editingIndex] !== item) throw new Error("This gallery image changed while it was being edited. Reopen the editor and try again.");
+          const rawName = item.name || "product-image.jpg";
+          const cleanBase = rawName.replace(/\.[^/.]+$/, "").replace(/-edited(-\d+)?$/, "");
+          const newFileName = `${cleanBase}-edited.jpg`;
+          const editedFile = new File([blob], newFileName, { type: "image/jpeg" });
+          const previewUrl = typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+            ? URL.createObjectURL(blob)
+            : "";
+
+          if (item.type === "file" && item.previewUrl && typeof URL !== "undefined") {
+            try { URL.revokeObjectURL(item.previewUrl); } catch (_) {}
+          }
+
+          productImageItems[editingIndex] = {
+            id: "edited_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+            type: "file",
+            file: editedFile,
+            previewUrl,
+            name: newFileName,
+            size: blob.size,
+            isEdited: true
+          };
+
+          syncProductImageUrls();
+          renderProductMedia();
+          byId("product-image-editor-dialog")?.close();
+          if (typeof showAdminToast === "function") showAdminToast("Picture edits applied. Save the product to publish them.", "success");
+        } catch (error) {
+          if (applyToken === imageEditorLoadToken && typeof showAdminToast === "function") showAdminToast(`${error.message || "Could not process this image."} If it is hosted elsewhere, the image host may block editing.`, "error");
+        } finally {
+          if (applyButton) applyButton.disabled = false;
+        }
+      }, "image/jpeg", 0.92);
+    } catch (error) {
+      if (applyButton) applyButton.disabled = false;
+      if (typeof showAdminToast === "function") showAdminToast("This image cannot be edited because its host does not allow image processing.", "error");
+    }
+  }
+
+  function applyProductImageEdit(index, newFileOrBlob, newName) {
+    if (typeof productImageItems === "undefined" || !productImageItems[index]) return;
+    const item = productImageItems[index];
+    const fileName = newName || (newFileOrBlob.name ? newFileOrBlob.name : `${item.name || "product"}-edited.jpg`);
+    const file = (typeof File !== "undefined" && newFileOrBlob instanceof File)
+      ? newFileOrBlob
+      : (typeof File !== "undefined"
+          ? new File([newFileOrBlob], fileName, { type: newFileOrBlob.type || "image/jpeg" })
+          : Object.assign(newFileOrBlob, { name: fileName }));
+
+    const previewUrl = typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+      ? URL.createObjectURL(file)
+      : "";
+
+    if (item.type === "file" && item.previewUrl && typeof URL !== "undefined") {
+      try { URL.revokeObjectURL(item.previewUrl); } catch (_) {}
+    }
+
+    productImageItems[index] = {
+      id: "edited_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+      type: "file",
+      file,
+      previewUrl,
+      name: fileName,
+      size: file.size,
+      isEdited: true
+    };
+    syncProductImageUrls();
+    renderProductMedia();
+  }
+
+  function setupImageEditorCropInteraction() {
+    const cropBox = typeof byId === "function" ? byId("pie-crop-box") : null;
+    const viewport = typeof byId === "function" ? byId("pie-canvas-viewport") : null;
+    if (!cropBox || !viewport) return;
+
+    let isDragging = false;
+    let dragMode = "move";
+    let startX = 0, startY = 0;
+    let startCrop = null;
+
+    const onPointerDown = e => {
+      if (!imageEditorState.crop) return;
+      e.preventDefault();
+      const handle = e.target.dataset.handle;
+      dragMode = handle ? handle : "move";
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startCrop = { ...imageEditorState.crop };
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+    };
+
+    const onPointerMove = e => {
+      if (!isDragging || !startCrop || imageEditorScale <= 0) return;
+      const dx = (e.clientX - startX) / imageEditorScale;
+      const dy = (e.clientY - startY) / imageEditorScale;
+      const dim = imageEditorOrientedDim;
+      const aspect = imageEditorState.aspectRatio;
+      let targetRatio = null;
+      if (aspect === "1:1") targetRatio = 1;
+      else if (aspect === "4:3") targetRatio = 4 / 3;
+      else if (aspect === "16:9") targetRatio = 16 / 9;
+
+      const crop = { ...startCrop };
+
+      if (dragMode === "move") {
+        crop.x = Math.max(0, Math.min(dim.width - crop.width, startCrop.x + dx));
+        crop.y = Math.max(0, Math.min(dim.height - crop.height, startCrop.y + dy));
+      } else {
+        if (dragMode === "se") {
+          crop.width = Math.max(40, Math.min(dim.width - startCrop.x, startCrop.width + dx));
+          crop.height = targetRatio ? crop.width / targetRatio : Math.max(40, Math.min(dim.height - startCrop.y, startCrop.height + dy));
+        } else if (dragMode === "sw") {
+          const maxLeftShift = startCrop.x + startCrop.width - 40;
+          const shift = Math.min(maxLeftShift, Math.max(-startCrop.x, -dx));
+          crop.x = startCrop.x - shift;
+          crop.width = startCrop.width + shift;
+          crop.height = targetRatio ? crop.width / targetRatio : Math.max(40, Math.min(dim.height - startCrop.y, startCrop.height + dy));
+        } else if (dragMode === "ne") {
+          crop.width = Math.max(40, Math.min(dim.width - startCrop.x, startCrop.width + dx));
+          if (targetRatio) {
+            crop.height = crop.width / targetRatio;
+            crop.y = startCrop.y + startCrop.height - crop.height;
+          } else {
+            const shiftY = Math.min(startCrop.y + startCrop.height - 40, Math.max(-startCrop.y, -dy));
+            crop.y = startCrop.y - shiftY;
+            crop.height = startCrop.height + shiftY;
+          }
+        } else if (dragMode === "nw") {
+          const shiftX = Math.min(startCrop.x + startCrop.width - 40, Math.max(-startCrop.x, -dx));
+          crop.x = startCrop.x - shiftX;
+          crop.width = startCrop.width + shiftX;
+          if (targetRatio) {
+            crop.height = crop.width / targetRatio;
+            crop.y = startCrop.y + startCrop.height - crop.height;
+          } else {
+            const shiftY = Math.min(startCrop.y + startCrop.height - 40, Math.max(-startCrop.y, -dy));
+            crop.y = startCrop.y - shiftY;
+            crop.height = startCrop.height + shiftY;
+          }
+        }
+
+        if (crop.x < 0) { crop.width += crop.x; crop.x = 0; }
+        if (crop.y < 0) { crop.height += crop.y; crop.y = 0; }
+        if (crop.x + crop.width > dim.width) crop.width = dim.width - crop.x;
+        if (crop.y + crop.height > dim.height) crop.height = dim.height - crop.y;
+      }
+
+      imageEditorState.crop = crop;
+      renderEditorCanvas();
+    };
+
+    const onPointerUp = () => {
+      isDragging = false;
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+
+    cropBox.addEventListener("pointerdown", onPointerDown);
+  }
+
   function validateProductMedia(files, gif = false) {
     for (const file of files) {
       if (gif ? file.type !== "image/gif" : !file.type.startsWith("image/")) throw new Error(`${file.name}: choose ${gif ? "a GIF" : "an image"} file.`);
       if (file.size > IMAGEKIT_MAX_FILE_BYTES) throw new Error(`${file.name} is larger than 25 MB.`);
     }
   }
+
   async function saveProductMedia(data, button) {
-    const images = [...byId("product-image-files").files];
-    const gifs = [...byId("product-gif-file").files];
-    validateProductMedia(images);
+    const directFiles = [...(typeof byId === "function" ? byId("product-image-files")?.files || [] : [])];
+    const gifs = [...(typeof byId === "function" ? byId("product-gif-file")?.files || [] : [])];
+
+    if (typeof productImageItems === "undefined") {
+      productImageItems = [];
+    }
+
+    // Ensure any existing URLs from productImageUrls are represented
+    if (productImageUrls && productImageUrls.length > 0) {
+      const knownUrls = new Set(productImageItems.filter(item => item && item.type === "url").map(item => item.url));
+      productImageUrls.forEach((url, i) => {
+        const u = String(url).trim();
+        if (u && !knownUrls.has(u)) {
+          productImageItems.push({
+            id: "url_" + i,
+            type: "url",
+            url: u,
+            previewUrl: u,
+            name: (u.split("/").pop() || `Image ${i + 1}`).split("?")[0],
+            size: 0
+          });
+        }
+      });
+    }
+
+    // Sync any direct files from file input not yet represented in productImageItems
+    if (directFiles.length > 0) {
+      const knownFiles = new Set(productImageItems.filter(item => item && item.type === "file").map(item => item.file));
+      directFiles.forEach(file => {
+        if (!knownFiles.has(file)) {
+          productImageItems.push({
+            id: "direct_" + Math.random().toString(36).slice(2, 8),
+            type: "file",
+            file,
+            previewUrl: "",
+            name: file.name,
+            size: file.size
+          });
+        }
+      });
+    }
+
+    const filesToValidate = productImageItems.filter(item => item && item.type === "file").map(item => item.file);
+    validateProductMedia(filesToValidate);
     validateProductMedia(gifs, true);
+
     const upload = async file => {
       if (!productMediaUploads.has(file)) {
         const result = await uploadFileToImageKit(file, "/Product");
@@ -338,15 +1215,33 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       }
       return productMediaUploads.get(file);
     };
-    const urls = [...productImageUrls];
-    for (let i = 0; i < images.length; i++) {
-      button.textContent = `Uploading image ${i + 1} of ${images.length}…`;
-      urls.push(await upload(images[i]));
+
+    const finalUrls = [];
+    const filesToUpload = productImageItems.filter(item => item && item.type === "file");
+    let uploadCount = 0;
+
+    for (let i = 0; i < productImageItems.length; i++) {
+      const item = productImageItems[i];
+      if (!item) continue;
+      if (item.type === "url") {
+        if (item.url && String(item.url).trim()) finalUrls.push(String(item.url).trim());
+      } else if (item.type === "file") {
+        uploadCount++;
+        if (button) button.textContent = `Uploading image ${uploadCount} of ${filesToUpload.length}…`;
+        const uploadedUrl = await upload(item.file);
+        item.type = "url";
+        item.url = uploadedUrl;
+        finalUrls.push(uploadedUrl);
+      }
     }
-    data.imageUrl = urls.join(", ");
-    button.textContent = gifs.length ? "Uploading GIF…" : "Saving product…";
+
+    data.imageUrl = finalUrls.join(", ");
+    if (button) button.textContent = gifs.length ? "Uploading GIF…" : "Saving product…";
     data.gifUrl = gifs.length ? await upload(gifs[0]) : productGifUrl;
-    delete data.image_url; delete data.image;
+    delete data.image_url;
+    delete data.image;
+
+    productImageUrls = [...finalUrls];
   }
   function readColourVariantSource(data) {
     const map = data.colourPrices || data.colorPrices || data.colour_prices || data.color_prices || data.pricesByColour || data.pricesByColor;
@@ -452,21 +1347,24 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     delete data.sizes; delete data.sizeOptions; delete data.size_options; delete data.availableSizes; delete data.available_sizes;
     delete data.sizePrices; delete data.size_prices; delete data.pricesBySize; delete data.prices_by_size;
 
-    data.colourOptions = {};
-    data.colourPrices = {};
-    data.sizes = {};
-    data.sizePrices = {};
+    const objProto = (data && typeof data === "object" ? Object.getPrototypeOf(data) : null) || Object.prototype;
+    const createMap = () => Object.create(objProto);
+
+    data.colourOptions = createMap();
+    data.colourPrices = createMap();
+    data.sizes = createMap();
+    data.sizePrices = createMap();
     data.color = String(data.color ?? data.colour ?? "").trim() || colours.map(entry => entry.label).join(", ");
     delete data.colour;
     if (colours.length) {
-      const colourOptions = {}; const colourPrices = {};
-      colours.forEach(({ label, price }) => { colourOptions[label] = { order: Object.keys(colourOptions).length }; colourPrices[label] = price; });
+      const colourOptions = createMap(); const colourPrices = createMap();
+      colours.forEach(({ label, price }) => { colourOptions[label] = Object.assign(createMap(), { order: Object.keys(colourOptions).length }); colourPrices[label] = price; });
       data.colourOptions = colourOptions;
       data.colourPrices = colourPrices;
     }
     if (sizes.length) {
-      const sizeOptions = {}; const sizePrices = {};
-      sizes.forEach(({ label, price }) => { sizeOptions[label] = { order: Object.keys(sizeOptions).length }; sizePrices[label] = price; });
+      const sizeOptions = createMap(); const sizePrices = createMap();
+      sizes.forEach(({ label, price }) => { sizeOptions[label] = Object.assign(createMap(), { order: Object.keys(sizeOptions).length }); sizePrices[label] = price; });
       data.sizes = sizeOptions;
       data.sizePrices = sizePrices;
     }
@@ -636,7 +1534,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       const price = document.createElement("input"); price.type = "number"; price.min = "0"; price.step = "1"; price.value = Math.max(0, Number(item.price) || 0); price.dataset.itemPrice = "true"; priceLabel.append(price);
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "order-item-remove"; remove.textContent = "Remove"; remove.setAttribute("aria-label", `Remove ${row.dataset.productName}`);
       remove.addEventListener("click", () => { orderItemsDraft = readOrderItemRows(); orderItemsDraft.splice(index, 1); renderOrderItemRows(); });
-      fields.append(quantityLabel, priceLabel, remove); row.append(name, fields); container.append(row);
+      fields.append(quantityLabel, priceLabel, remove); row.append(fields); container.append(row);
     });
     updateOrderItemPreview();
   }
@@ -869,7 +1767,163 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         wrapper.append(productSelect(key, PRODUCT_AVAILABILITY, value, "Select availability"));
       } else if (activeDocument.collection === "products" && (key === "bestFor" || key === "best_for")) {
         wrapper.append(productSelect(key, PRODUCT_BEST_FOR, value, "Select an audience"));
-      } else if (activeDocument.collection === "products" && (key === "description" || key === "tags")) {
+      } else if (activeDocument.collection === "products" && key === "description") {
+        wrapper.classList.add("admin-field-full", "admin-description-field");
+        const toolbar = document.createElement("div");
+        toolbar.className = "description-toolbar";
+        toolbar.setAttribute("role", "toolbar");
+        toolbar.setAttribute("aria-label", "Description formatting");
+        const editor = document.createElement("div");
+        editor.className = "description-editor";
+        editor.contentEditable = "true";
+        editor.dataset.field = key;
+        editor.setAttribute("role", "textbox");
+        editor.setAttribute("aria-label", "Product description");
+        editor.setAttribute("aria-multiline", "true");
+        editor.spellcheck = true;
+        editor.innerHTML = window.sanitizeProductDescription(String(value ?? ""));
+        let savedRange = null;
+        let requestedLineSpacing = null;
+        const rememberSelection = () => {
+          const selection = window.getSelection();
+          if (selection?.rangeCount && editor.contains(selection.anchorNode)) savedRange = selection.getRangeAt(0).cloneRange();
+        };
+        ["keyup", "mouseup", "input", "focus"].forEach(type => editor.addEventListener(type, rememberSelection));
+        const restoreSelection = () => {
+          editor.focus();
+          if (!savedRange) return;
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(savedRange);
+        };
+        const applyInlineStyle = (property, value) => {
+          restoreSelection();
+          if (!savedRange || savedRange.collapsed) return;
+          const span = document.createElement("span");
+          span.style[property] = value;
+          const fragment = savedRange.extractContents();
+          span.append(fragment);
+          savedRange.insertNode(span);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          const nextRange = document.createRange();
+          nextRange.selectNodeContents(span);
+          selection.addRange(nextRange);
+          savedRange = nextRange.cloneRange();
+        };
+        const button = (label, command, title) => {
+          const control = document.createElement("button");
+          control.type = "button";
+          control.className = "description-tool-btn";
+          control.textContent = label;
+          control.title = title;
+          control.setAttribute("aria-label", title);
+          control.addEventListener("mousedown", event => event.preventDefault());
+          control.addEventListener("click", () => {
+            restoreSelection();
+            document.execCommand(command, false);
+            rememberSelection();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+          });
+          toolbar.append(control);
+        };
+        button("B", "bold", "Bold");
+        button("I", "italic", "Italic");
+        button("U", "underline", "Underline");
+        button("S", "strikeThrough", "Strikethrough");
+        button("• List", "insertUnorderedList", "Bulleted list");
+        button("1. List", "insertOrderedList", "Numbered list");
+        const block = document.createElement("select");
+        block.className = "description-tool-select";
+        block.setAttribute("aria-label", "Paragraph style");
+        [["P", "Paragraph"], ["H2", "Heading"], ["H3", "Subheading"], ["BLOCKQUOTE", "Quote"]].forEach(([v, label]) => {
+          const option = document.createElement("option"); option.value = v; option.textContent = label; block.append(option);
+        });
+        block.addEventListener("change", () => {
+          restoreSelection(); document.execCommand("formatBlock", false, block.value);
+          editor.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        toolbar.append(block);
+        const fontSize = document.createElement("select");
+        fontSize.className = "description-tool-select description-font-size";
+        fontSize.setAttribute("aria-label", "Font size");
+        [["12", "12 px"], ["14", "14 px"], ["16", "16 px"], ["18", "18 px"], ["24", "24 px"], ["32", "32 px"]].forEach(([v, label]) => {
+          const option = document.createElement("option"); option.value = v; option.textContent = label; fontSize.append(option);
+        });
+        fontSize.value = "16";
+        fontSize.addEventListener("change", () => {
+          applyInlineStyle("fontSize", `${fontSize.value}px`);
+          editor.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        toolbar.append(fontSize);
+        const spacing = document.createElement("select");
+        spacing.className = "description-tool-select description-line-spacing";
+        spacing.setAttribute("aria-label", "Line spacing");
+        spacing.title = "Line spacing";
+        [["1", "Line: 1.0"], ["1.15", "Line: 1.15"], ["1.5", "Line: 1.5"], ["2", "Line: 2.0"], ["2.5", "Line: 2.5"]].forEach(([v, label]) => {
+          const option = document.createElement("option"); option.value = v; option.textContent = label; spacing.append(option);
+        });
+        spacing.value = "1.5";
+        spacing.addEventListener("change", () => {
+          requestedLineSpacing = spacing.value;
+          restoreSelection();
+          const selection = window.getSelection();
+          const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+          const blocks = [...editor.querySelectorAll("p, div, h2, h3, li, blockquote")];
+          const targets = range && !range.collapsed
+            ? blocks.filter(node => { try { return range.intersectsNode(node); } catch (_) { return false; } })
+            : [selection?.anchorNode?.parentElement?.closest("p, div, h2, h3, li, blockquote")].filter(node => node && editor.contains(node));
+          (targets.length ? targets : [editor]).forEach(node => { node.style.lineHeight = spacing.value; });
+          editor.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        toolbar.append(spacing);
+        const colorLabel = document.createElement("label");
+        colorLabel.className = "description-color-tool";
+        colorLabel.textContent = "Text colour";
+        const color = document.createElement("input"); color.type = "color"; color.value = "#263244";
+        color.setAttribute("aria-label", "Text colour");
+        color.addEventListener("change", () => {
+          applyInlineStyle("color", color.value);
+          editor.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        colorLabel.append(color); toolbar.append(colorLabel);
+        button("Clear", "removeFormat", "Clear formatting");
+        const generateDescriptionButton = document.createElement("button");
+        generateDescriptionButton.type = "button";
+        generateDescriptionButton.className = "description-tool-btn description-ai-btn";
+        generateDescriptionButton.textContent = "✦ Generate description";
+        generateDescriptionButton.title = "Generate a formatted product description with AI";
+        generateDescriptionButton.addEventListener("mousedown", event => event.preventDefault());
+        generateDescriptionButton.addEventListener("click", () => generateProductMarketing("description", generateDescriptionButton));
+        toolbar.append(generateDescriptionButton);
+        editor.addEventListener("paste", event => {
+          event.preventDefault();
+          const html = event.clipboardData?.getData("text/html");
+          const plain = event.clipboardData?.getData("text/plain") || "";
+          const plainHtml = plain.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r\n?/g, "\n").replace(/\n/g, "<br>");
+          const safeHtml = html ? window.sanitizeProductDescription(html) : plainHtml;
+          if (requestedLineSpacing) {
+            const pasted = document.createElement("template");
+            pasted.innerHTML = safeHtml;
+            let blocks = [...pasted.content.querySelectorAll("p, div, h2, h3, li, blockquote")];
+            if (!blocks.length) {
+              const paragraph = document.createElement("p");
+              paragraph.append(pasted.content);
+              pasted.content.append(paragraph);
+              blocks = [paragraph];
+            }
+            blocks.forEach(block => { block.style.lineHeight = requestedLineSpacing; });
+            document.execCommand("insertHTML", false, pasted.innerHTML);
+          } else {
+            document.execCommand("insertHTML", false, safeHtml);
+          }
+          rememberSelection();
+        });
+        const hint = document.createElement("small");
+        hint.className = "description-editor-hint";
+        hint.textContent = "AI copy uses storefront-safe headings, bold text, lists, spacing, and restrained styling. You can also paste formatted text from Word or Google Docs.";
+        wrapper.append(toolbar, editor, hint);
+      } else if (activeDocument.collection === "products" && key === "tags") {
         wrapper.classList.add("admin-field-full");
         const textarea = document.createElement("textarea");
         textarea.dataset.field = key;
@@ -899,7 +1953,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     } else {
       const note = document.createElement("span"); note.className = "admin-field-help"; note.textContent = "Complex value. Edit it in the Advanced section below."; wrapper.append(note);
     }
-    const control = wrapper.querySelector("input, select, textarea");
+    const control = wrapper.querySelector("input, select, textarea, [contenteditable='true']");
     if (control) { control.id = `field-${key}`; control.name = key; }
     if (activeDocument?.collection === "products" && key === "productId" && control) control.readOnly = true;
     if (activeDocument?.collection === "products" && ["price", "stock"].includes(key) && control) {
@@ -2292,9 +3346,18 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   async function createAdminOrder() {
     status.textContent = "Loading products for the new order…";
     try {
-      const snapshot = await db.collection("products").get();
+      const [snapshot, ordersSnapshot] = await Promise.all([
+        db.collection("products").get(),
+        db.collection("orders").get()
+      ]);
       adminProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(product => product.productName && Number.isFinite(Number(product.price)));
+      const orderTime = doc => {
+        const value = doc.data().timestamp;
+        return value && typeof value.toMillis === "function" ? value.toMillis() : parseOrderDate(value)?.getTime() || 0;
+      };
+      orderDocuments = ordersSnapshot.docs.sort((a, b) => orderTime(b) - orderTime(a));
+      customerRecords = buildCustomerRecordsFromOrders(orderDocuments);
       const orderId = nextAdminOrderId();
       const now = firebase.firestore.Timestamp.now();
       openEditor({
@@ -2319,7 +3382,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
           status: "Order Placed",
           timestamp: now,
           approved: false,
-          payment_status: "cash on delivery",
+          payment_status: "Pending",
           mop: "cash",
           payment_ref: "cash-on-delivery",
           upi_id: "",
@@ -2390,7 +3453,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       clone.timestamp = now;
       clone.status = "Order Placed";
       clone.approved = false;
-      clone.payment_status = clone.payment_status === "paid" ? "pending" : (clone.payment_status || "cash on delivery");
+      clone.payment_status = canonicalPaymentStatus(clone.payment_status) === "Paid" ? "Pending" : canonicalPaymentStatus(clone.payment_status);
       if (Array.isArray(clone.items)) {
         clone.items = clone.items.map(item => ({ ...item }));
       } else {
@@ -2525,32 +3588,138 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   byId("export-orders").addEventListener("click", exportVisibleOrders);
   byId("browse-collection").addEventListener("click", loadCollection);
   byId("create-order").addEventListener("click", createAdminOrder);
+  byId("toggle-customer-records").addEventListener("click", () => {
+    const selector = byId("customer-record-selector");
+    selector.hidden = !selector.hidden;
+    if (!selector.hidden) byId("customer-record-search").focus();
+  });
+  byId("customer-record-search").addEventListener("input", event => {
+    populateCustomerRecordSelect(event.target.value);
+  });
+  byId("customer-record-select").addEventListener("change", event => {
+    if (event.target.value !== "") applyCustomerRecord(event.target.value);
+  });
+  byId("order-product-select").addEventListener("change", updateOrderProductVariantPicker);
+  const updateOrderProductPricePreview = () => {
+    const product = selectedOrderProduct();
+    if (!product) return;
+    byId("order-product-price-preview").textContent = `Unit price: ${formatMoney(getOrderProductPrice(
+      product,
+      byId("order-product-colour-select").value,
+      byId("order-product-size-select").value
+    ))}`;
+  };
+  byId("order-product-colour-select").addEventListener("change", updateOrderProductPricePreview);
+  byId("order-product-size-select").addEventListener("change", updateOrderProductPricePreview);
   byId("add-order-product").addEventListener("click", () => {
     orderItemsDraft = readOrderItemRows();
-    const product = adminProducts.find(item => item.id === byId("order-product-select").value);
+    const product = selectedOrderProduct();
     if (!product) { byId("editor-error").textContent = "Choose a product to add."; return; }
-    const existing = orderItemsDraft.find(item => item.id === product.id && !item.colour && !item.size);
+    const colour = byId("order-product-colour-select").value;
+    const size = byId("order-product-size-select").value;
+    const unitPrice = getOrderProductPrice(product, colour, size);
+    const existing = orderItemsDraft.find(item => item.id === product.id && String(item.colour || item.color || "") === colour && String(item.size || "") === size);
     if (existing) existing.quantity = Math.max(1, Number(existing.quantity) || 1) + 1;
     else orderItemsDraft.push({
       id: product.id,
       productName: product.productName || "Untitled product",
       imageUrl: firstProductImage(product.imageUrl || product.image_url || product.image),
-      price: Math.max(0, Number(product.price) || 0),
+      price: unitPrice,
       quantity: 1,
-      colour: "",
-      size: "",
+      colour,
+      size,
       customizable: product.customizable === true,
       customization: ""
     });
-    byId("order-product-select").value = "";
     byId("editor-error").textContent = "";
     renderOrderItemRows();
   });
   byId("order-item-rows").addEventListener("input", updateOrderItemPreview);
   byId("create-product").addEventListener("click", createAdminProduct);
-  byId("product-image-files").addEventListener("change", () => renderTicketMediaSelection(byId("product-image-files"), byId("product-image-selection")));
-  byId("product-gif-file").addEventListener("change", () => renderTicketMediaSelection(byId("product-gif-file"), byId("product-gif-selection")));
-  byId("product-remove-gif").addEventListener("click", () => { productGifUrl = ""; byId("product-gif-file").value = ""; renderProductMedia(); });
+  byId("product-image-files")?.addEventListener("change", () => {
+    const f = byId("product-image-files")?.files;
+    if (f && f.length) addProductImageFiles(f);
+  });
+  byId("product-gif-file")?.addEventListener("change", () => renderProductGifPreview());
+  byId("product-remove-gif")?.addEventListener("click", () => {
+    productGifUrl = "";
+    const gf = byId("product-gif-file");
+    if (gf) gf.value = "";
+    renderProductMedia();
+  });
+  byId("btn-browse-product-images")?.addEventListener("click", () => byId("product-image-files")?.click());
+  byId("btn-toggle-url-input")?.addEventListener("click", () => {
+    const bar = byId("product-url-input-bar");
+    if (bar) {
+      bar.hidden = !bar.hidden;
+      if (!bar.hidden) byId("product-url-input")?.focus();
+    }
+  });
+  byId("btn-add-product-url")?.addEventListener("click", () => {
+    const input = byId("product-url-input");
+    if (input && input.value.trim()) {
+      addProductImageUrl(input.value.trim());
+      input.value = "";
+      const bar = byId("product-url-input-bar");
+      if (bar) bar.hidden = true;
+    }
+  });
+  byId("btn-cancel-product-url")?.addEventListener("click", () => {
+    const input = byId("product-url-input");
+    if (input) input.value = "";
+    const bar = byId("product-url-input-bar");
+    if (bar) bar.hidden = true;
+  });
+  byId("product-url-input")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      byId("btn-add-product-url")?.click();
+    } else if (event.key === "Escape") {
+      byId("btn-cancel-product-url")?.click();
+    }
+  });
+  const dropzone = byId("product-image-dropzone");
+  if (dropzone) {
+    dropzone.addEventListener("click", e => {
+      if (e.target !== byId("product-image-files")) {
+        byId("product-image-files")?.click();
+      }
+    });
+    dropzone.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        byId("product-image-files")?.click();
+      }
+    });
+    ["dragenter", "dragover"].forEach(eventName => {
+      dropzone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("drag-active");
+      });
+    });
+    ["dragleave", "dragend"].forEach(eventName => {
+      dropzone.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("drag-active");
+      });
+    });
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove("drag-active");
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) {
+        const imageFiles = [...dt.files].filter(f => f.type.startsWith("image/"));
+        if (imageFiles.length) {
+          addProductImageFiles(imageFiles);
+        } else {
+          if (typeof showAdminToast === "function") showAdminToast("Only image files can be dropped here.", "error");
+        }
+      }
+    });
+  }
   byId("add-product-colour").addEventListener("click", () => {
     productColourDraft = readProductVariantRows("product-colour-rows", false);
     productColourDraft.push({ label: "", price: 0 });
@@ -2581,8 +3750,102 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     }
     jsonInput.value = plainData(model);
   });
-  byId("editor-close").addEventListener("click", () => dialog.close());
-  byId("editor-cancel").addEventListener("click", () => dialog.close());
+  byId("editor-close").addEventListener("click", () => { cleanupProductImageItemPreviews(); dialog.close(); });
+  byId("editor-cancel").addEventListener("click", () => { cleanupProductImageItemPreviews(); dialog.close(); });
+  dialog?.addEventListener("close", () => cleanupProductImageItemPreviews());
+
+  // ── Image Studio Dialog Event Listeners ─────────────────────────────────
+  const pieDialog = byId("product-image-editor-dialog");
+  window.addEventListener("resize", () => {
+    if (pieDialog?.open && imageEditorSourceImg) requestAnimationFrame(renderEditorCanvas);
+  });
+  pieDialog?.addEventListener("close", () => {
+    imageEditorLoadToken++;
+    imageEditorSourceImg = null;
+    activeEditingImageIndex = -1;
+    const applyButton = byId("pie-apply");
+    if (applyButton) applyButton.disabled = false;
+  });
+  byId("pie-close")?.addEventListener("click", () => pieDialog?.close());
+  byId("pie-cancel")?.addEventListener("click", () => pieDialog?.close());
+  byId("pie-rotate-left")?.addEventListener("click", () => {
+    imageEditorState.rotation = (imageEditorState.rotation + 270) % 360;
+    initCropFromAspect(imageEditorState.aspectRatio);
+    renderEditorCanvas();
+  });
+  (byId("pie-rotate-cw") || byId("pie-rotate-right"))?.addEventListener("click", () => {
+    imageEditorState.rotation = (imageEditorState.rotation + 90) % 360;
+    initCropFromAspect(imageEditorState.aspectRatio);
+    renderEditorCanvas();
+  });
+  byId("pie-flip-h")?.addEventListener("click", () => {
+    imageEditorState.flipH = !imageEditorState.flipH;
+    renderEditorCanvas();
+  });
+  byId("pie-flip-v")?.addEventListener("click", () => {
+    imageEditorState.flipV = !imageEditorState.flipV;
+    renderEditorCanvas();
+  });
+
+  const wirePieSlider = (id, key, valId) => {
+    byId(id)?.addEventListener("input", e => {
+      const val = parseInt(e.target.value, 10) || 100;
+      imageEditorState[key] = val;
+      const display = byId(valId);
+      if (display) display.textContent = `${val}%`;
+      renderEditorCanvas();
+    });
+  };
+  wirePieSlider("pie-brightness", "brightness", "pie-val-brightness");
+  wirePieSlider("pie-contrast", "contrast", "pie-val-contrast");
+  wirePieSlider("pie-saturation", "saturate", "pie-val-saturation");
+
+  byId("pie-reset-sliders")?.addEventListener("click", () => {
+    imageEditorState.brightness = 100;
+    imageEditorState.contrast = 100;
+    imageEditorState.saturate = 100;
+    const brSlider = byId("pie-brightness"); if (brSlider) brSlider.value = 100;
+    const ctSlider = byId("pie-contrast"); if (ctSlider) ctSlider.value = 100;
+    const saSlider = byId("pie-saturation"); if (saSlider) saSlider.value = 100;
+    const brVal = byId("pie-val-brightness"); if (brVal) brVal.textContent = "100%";
+    const ctVal = byId("pie-val-contrast"); if (ctVal) ctVal.textContent = "100%";
+    const saVal = byId("pie-val-saturation"); if (saVal) saVal.textContent = "100%";
+    renderEditorCanvas();
+  });
+
+  byId("pie-reset-all")?.addEventListener("click", () => {
+    imageEditorState.rotation = 0;
+    imageEditorState.flipH = false;
+    imageEditorState.flipV = false;
+    imageEditorState.brightness = 100;
+    imageEditorState.contrast = 100;
+    imageEditorState.saturate = 100;
+    const brSlider = byId("pie-brightness"); if (brSlider) brSlider.value = 100;
+    const ctSlider = byId("pie-contrast"); if (ctSlider) ctSlider.value = 100;
+    const saSlider = byId("pie-saturation"); if (saSlider) saSlider.value = 100;
+    const brVal = byId("pie-val-brightness"); if (brVal) brVal.textContent = "100%";
+    const ctVal = byId("pie-val-contrast"); if (ctVal) ctVal.textContent = "100%";
+    const saVal = byId("pie-val-saturation"); if (saVal) saVal.textContent = "100%";
+    initCropFromAspect("free");
+    document.querySelectorAll(".pie-aspect-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.aspect === "free");
+    });
+    renderEditorCanvas();
+  });
+
+  document.querySelectorAll(".pie-aspect-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".pie-aspect-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const aspect = btn.dataset.aspect;
+      initCropFromAspect(aspect);
+      renderEditorCanvas();
+    });
+  });
+
+  byId("pie-apply")?.addEventListener("click", applyCurrentProductImageEdit);
+  setupImageEditorCropInteraction();
+
   login.addEventListener("click", () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(reportError));
 
   // ── Catalog state ──────────────────────────────────────────────────────
@@ -2606,10 +3869,15 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const query = byId("catalog-search").value.trim().toLowerCase();
     const category = byId("catalog-category-filter").value;
     const availability = byId("catalog-availability-filter").value;
-    return catalogDocuments.filter(doc => {
+    const customizable = byId("catalog-customizable-filter") ? byId("catalog-customizable-filter").value : "";
+    const sortVal = byId("catalog-sort") ? byId("catalog-sort").value : "name-asc";
+
+    let filtered = catalogDocuments.filter(doc => {
       const p = doc.data();
       if (category && String(p.category || "").toLowerCase() !== category.toLowerCase()) return false;
       if (availability && String(p.availability || "In Stock").toLowerCase() !== availability.toLowerCase()) return false;
+      if (customizable === "yes" && !(p.customizable === true || p.isCustomizable === true)) return false;
+      if (customizable === "no" && (p.customizable === true || p.isCustomizable === true)) return false;
       if (query) {
         const searchable = [p.productName, p.description, p.category, p.tags, p.colour, p.color, p.bestFor].map(v => String(v || "")).join(" ").toLowerCase();
         if (!searchable.includes(query)) return false;
@@ -2699,7 +3967,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       const name = document.createElement("div"); name.className = "catalog-product-name"; name.textContent = p.productName || "Untitled"; body.append(name);
 
       if (p.description) {
-        const desc = document.createElement("div"); desc.className = "catalog-product-desc"; desc.textContent = p.description; body.append(desc);
+        const desc = document.createElement("div"); desc.className = "catalog-product-desc"; desc.innerHTML = window.sanitizeProductDescription(p.description); body.append(desc);
       }
 
       const priceRow = document.createElement("div"); priceRow.className = "catalog-product-price-row";
@@ -2869,7 +4137,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
               <div class="product-name">${esc(p.productName || "Untitled")}</div>
               ${opts.showCustomizable && customizable ? `<span class="badge badge-custom">✦ Personalizable</span>` : ""}
               ${opts.showAvailability ? `<span class="badge badge-avail avail-${String(p.availability || "In Stock").toLowerCase().replace(/\s+/g, "-")}">${esc(p.availability || "In Stock")}</span>` : ""}
-              ${opts.showDescription && p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ""}
+              ${opts.showDescription && p.description ? `<div class="product-desc">${window.sanitizeProductDescription(p.description)}</div>` : ""}
               ${opts.showVariants && colours ? `<div class="product-meta"><strong>Colours:</strong> ${esc(colours)}</div>` : ""}
               ${opts.showVariants && sizes ? `<div class="product-meta"><strong>Sizes:</strong> ${esc(sizes)}</div>` : ""}
               ${opts.showTags && p.tags ? `<div class="product-meta product-tags">${String(p.tags).split(",").map(t => `<span class="tag">${esc(t.trim())}</span>`).join("")}</div>` : ""}
@@ -2890,7 +4158,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
             <div class="product-name">${esc(p.productName || "Untitled")}</div>
             ${opts.showCustomizable && customizable ? `<span class="badge badge-custom">✦ Personalizable</span>` : ""}
             ${opts.showAvailability ? `<span class="badge badge-avail avail-${String(p.availability || "In Stock").toLowerCase().replace(/\s+/g, "-")}">${esc(p.availability || "In Stock")}</span>` : ""}
-            ${opts.showDescription && p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ""}
+            ${opts.showDescription && p.description ? `<div class="product-desc">${window.sanitizeProductDescription(p.description)}</div>` : ""}
             ${opts.showVariants && colours ? `<div class="product-meta"><strong>Colours:</strong> ${esc(colours)}</div>` : ""}
             ${opts.showVariants && sizes ? `<div class="product-meta"><strong>Sizes:</strong> ${esc(sizes)}</div>` : ""}
             ${opts.showTags && p.tags ? `<div class="product-meta product-tags">${String(p.tags).split(",").map(t => `<span class="tag">${esc(t.trim())}</span>`).join("")}</div>` : ""}
@@ -3185,8 +4453,6 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const idStr = rawId ? `#${rawId}` : "";
     const status = String(order.status || "Order Placed").trim();
     const canonical = canonicalOrderStatus(status);
-    if (ORDER_WORKFLOW_STATUSES.includes(canonical)) return `${canonical} ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
-
     switch (canonical) {
       case "Order Placed":
         return `Order Received ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
@@ -3200,8 +4466,6 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         return `Order In Production ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
       case "Order Dispatched":
         return `Order Ready for Dispatch ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
-      case "Out For Delivery":
-        return `Order Dispatched & Shipped ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
       case "Out For Delivery":
         return `Order Out for Delivery ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
       case "Product Delivered":
@@ -3293,7 +4557,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         break;
       case "Product Delivered":
         statusHeadline = "Your order has been delivered!";
-        statusDescription = "We hope your 3D printed creations arrived safely and bring joy to you! We loved making them for you. If you have a moment, we would love to see your items — feel free to tag us on Instagram <strong>@creative.souls3d</strong> or reply to this email with your feedback.";
+        statusDescription = "Your order has been delivered! We hope you loved your purchase. Help us improve by sharing your experience.";
         break;
       case "Cancelled":
         statusHeadline = "Your order has been cancelled";
@@ -3306,7 +4570,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     }
 
     if (canonicalSt === "Order Dispatched") {
-      statusHeadline = "Your order has been dispatched!";
+      statusHeadline = status.toLowerCase() === "shipped" ? "Your order has been shipped!" : "Your order has been dispatched!";
       statusDescription = "Your package has been handed over to our delivery partner and is on its way to you.";
     } else if (canonicalSt === "Out For Delivery") {
       statusHeadline = "Your order is out for delivery!";
@@ -3418,8 +4682,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <meta name="color-scheme" content="light"/>
-  <meta name="supported-color-schemes" content="light"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="supported-color-schemes" content="dark light"/>
   <title>Order ${esc(displayId)} — Creative Souls 3D</title>
   <!--[if mso]>
   <noscript>
@@ -3431,18 +4695,23 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   </noscript>
   <![endif]-->
   <style>
-    :root { color-scheme: light only; }
+    :root { color-scheme: dark light; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg-wrapper { background-color: #0b0f19 !important; }
+      .email-main-card { background-color: #0f172a !important; }
+    }
+    [data-ogsb] .email-main-card { background-color: #0f172a !important; }
   </style>
 </head>
-<body style="margin:0; padding:0; color-scheme:light; background-color:#f1f5f9; font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; color:#334155;">
+<body style="margin:0; padding:0; color-scheme:light; background-color:#0b0f19; font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; color:#334155;">
 
-  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9" class="email-bg-wrapper" style="background-color:#f1f5f9; padding:32px 12px; width:100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0b0f19" class="email-bg-wrapper" style="background-color:#0b0f19; background-image:linear-gradient(#0b0f19,#0b0f19); padding:32px 12px; width:100%;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" class="email-main-card" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,0.12); border:1px solid #cbd5e1;">
+      <table width="600" cellpadding="0" cellspacing="0" bgcolor="#0f172a" class="email-main-card" style="max-width:600px; width:100%; background-color:#0f172a; background-image:linear-gradient(#0f172a,#0f172a); border-radius:16px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,0.12); border:1px solid #cbd5e1;">
 
         <!-- Brand Header -->
         <tr>
-          <td bgcolor="#ffffff" class="email-header-cell" style="background-color:#ffffff; padding:36px 36px 30px; text-align:center; color:#0f172a;">
+          <td bgcolor="#0f172a" class="email-header-cell" style="background-color:#0f172a; background-image:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); padding:36px 36px 30px; text-align:center; color:#0f172a;">
             <div style="font-size:11px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#f59e0b; margin-bottom:8px;">CREATIVE SOULS 3D</div>
             <div style="font-size:23px; font-weight:900; color:#ffffff; letter-spacing:-0.02em; margin:0 0 14px;">Order Status Update</div>
             <div style="display:inline-block; background-color:${sc.bg}; background-image:linear-gradient(${sc.bg},${sc.bg}); color:${sc.color} !important; border:1.5px solid ${sc.border}; padding:6px 20px; border-radius:999px; font-size:13px; font-weight:800;">
@@ -3453,7 +4722,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
 
         <!-- Main Body -->
         <tr>
-          <td bgcolor="#ffffff" class="email-body-cell" style="padding:32px 36px; background-color:#ffffff;">
+          <td bgcolor="#0f172a" class="email-body-cell" style="padding:32px 36px; background-color:#0f172a; background-image:linear-gradient(#0f172a,#0f172a);">
 
             <p class="email-title-text" style="margin:0 0 12px; font-size:16px; color:#ffffff; font-weight:700;">Dear ${esc(firstName)},</p>
 
@@ -3488,7 +4757,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
             </table>
 
             ${trackingCardHtml}
-            ${canonicalSt === "Product Delivered" && order._feedbackToken ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been delivered! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
+            ${canonicalSt === "Product Delivered" ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been delivered! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
             ${paymentPendingCardHtml}
             ${itemsSectionHtml}
             ${addressCardHtml}
@@ -3531,22 +4800,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
 
 </body>
 </html>`;
-    // Use explicit light colors and plain fills. Gradient backgrounds are
-    // frequently treated differently by mobile email clients in dark mode.
-    const lightColors = {
-      "#0b0f19": "#f1f5f9", "#0f172a": "#ffffff", "#1e293b": "#f8fafc",
-      "#090d16": "#e2e8f0", "#2a1b08": "#fffbeb", "#064e3b": "#ecfdf5",
-      "#451a03": "#fffbeb"
-    };
-    const darkTextColors = {
-      "#ffffff": "#0f172a", "#f8fafc": "#0f172a", "#cbd5e1": "#334155",
-      "#e2e8f0": "#1e293b", "#94a3b8": "#475569", "#d1fae5": "#065f46",
-      "#fef3c7": "#78350f", "#fde68a": "#78350f", "#fbbf24": "#92400e"
-    };
-    return html
-      .replace(/background-image:\s*linear-gradient\([^;]*\);?/gi, "")
-      .replace(/background-color:\s*(#[\da-f]{3,8})/gi, (match, color) => `background-color:${lightColors[color.toLowerCase()] || color}`)
-      .replace(/(?<!background-)color:\s*(#[\da-f]{3,8})/gi, (match, color) => `color:${darkTextColors[color.toLowerCase()] || color}`);
+    return html;
   }
 
   function toBold(str) {
@@ -3814,19 +5068,11 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     return false;
   }
 
-  async function openOrderNotificationPreview(order) {
+  function openOrderNotificationPreview(order) {
     const to = String(order.email || "").trim();
     if (!to || !to.includes("@")) {
       window.showAdminToast?.("This order has no valid customer email address.", "danger");
       return;
-    }
-    if (canonicalOrderStatus(order.status) === "Product Delivered" && !order._feedbackToken) {
-      try {
-        const link = await callWalletWorker("/feedback/issue-token", { orderId: order.order_id || order.id });
-        order = { ...order, _feedbackToken: link.token };
-      } catch (error) {
-        window.showAdminToast?.(`Email preview will omit the feedback link: ${error.message}`, "warning");
-      }
     }
     const dialog = byId("email-preview-dialog");
     if (!dialog) {
@@ -3904,8 +5150,558 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   }
 
   async function sendOrderNotificationEmail(order) {
-    await openOrderNotificationPreview(order);
+    const prepared = { ...order };
+    if (canonicalOrderStatus(prepared.status) === "Product Delivered") {
+      try {
+        const docId = prepared._docId || orderDocuments.find(doc => doc.data().order_id === prepared.order_id)?.id || prepared.order_id;
+        const result = await firebase.functions().httpsCallable("issueFeedbackToken")({ orderDocId: docId });
+        prepared._feedbackToken = result.data.token;
+        prepared._feedbackLink = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "")}feedback.html?id=${encodeURIComponent(String(result.data.orderId).replace(/^#/, ""))}&token=${encodeURIComponent(result.data.token)}`;
+      } catch (error) {
+        console.error("Could not create a secure feedback link:", error);
+        window.showAdminToast?.("Could not create a secure feedback link. Confirm the feedback Cloud Functions are deployed.", "danger");
+        return;
+      }
+    }
+    openOrderNotificationPreview(prepared);
   }
+
+  let customerFeedbackRecords = [];
+  let feedbackFilterValue = "all";
+  const normalizeFeedbackTimestamp = ts => {
+    if (!ts) return null;
+    if (typeof ts.toDate === "function") return ts.toDate().toISOString();
+    if (typeof ts === "string") return ts;
+    if (typeof ts === "number") return new Date(ts).toISOString();
+    if (ts.seconds !== undefined) return new Date(ts.seconds * 1000).toISOString();
+    if (ts._seconds !== undefined) return new Date(ts._seconds * 1000).toISOString();
+    return null;
+  };
+  const feedbackRating = (record, key) => {
+    if (key === "overall_satisfaction") {
+      return Number(record.overall_satisfaction ?? record.ratings?.overall_satisfaction ?? record.rating ?? 0);
+    }
+    return Number(record[key] ?? record.ratings?.[key] ?? 0);
+  };
+  const isNegativeFeedback = record => {
+    const score = feedbackRating(record, "overall_satisfaction");
+    if (score > 0 && score <= 2) return true;
+    return ["printing_quality", "colour_quality", "delivery_rating", "timing_rating", "support_rating"].some(key => {
+      const s = feedbackRating(record, key);
+      return s > 0 && s <= 2;
+    });
+  };
+  const averageFeedback = (records, keys) => {
+    const values = records.flatMap(record => keys.map(key => feedbackRating(record, key))).filter(value => value > 0);
+    return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1) : "—";
+  };
+  function updateFeedbackBadge() {
+    const badge = byId("nav-feedback-badge");
+    if (!badge) return;
+    const count = customerFeedbackRecords.length;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline-flex" : "none";
+  }
+  async function loadCustomerFeedback() {
+    const label = byId("feedback-count-label");
+    label?.classList.remove("is-error");
+    if (label) label.textContent = "Loading feedback…";
+    try {
+      // Primary: direct Firestore read (fast, reliable, matches loadOrders/loadTickets)
+      const snap = await db.collection("feedback").limit(1000).get();
+      customerFeedbackRecords = snap.docs.map(doc => {
+        const data = doc.data();
+        const ts = data.created_at ?? data.submitted_at;
+        return {
+          id: doc.id,
+          ...data,
+          created_at: normalizeFeedbackTimestamp(ts),
+          acknowledged_at: normalizeFeedbackTimestamp(data.acknowledged_at),
+        };
+      }).sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
+      renderCustomerFeedback();
+    } catch (firestoreError) {
+      console.warn("Direct Firestore read failed, falling back to listOrderFeedback Cloud Function:", firestoreError);
+      try {
+        const response = await firebase.functions().httpsCallable("listOrderFeedback")({});
+        customerFeedbackRecords = (response.data.feedback || []).map(data => {
+          const ts = data.created_at ?? data.submitted_at;
+          return {
+            ...data,
+            created_at: normalizeFeedbackTimestamp(ts),
+            acknowledged_at: normalizeFeedbackTimestamp(data.acknowledged_at),
+          };
+        }).sort((a, b) => {
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateB - dateA;
+        });
+        renderCustomerFeedback();
+      } catch (cloudFnError) {
+        console.error("Could not load customer feedback:", firestoreError, cloudFnError);
+        if (label) {
+          const code = firestoreError?.code || cloudFnError?.code || "unknown";
+          const reason = code.includes("permission-denied") || code.includes("unauthenticated")
+            ? "Your admin session cannot access feedback. Sign in with an authorized admin account."
+            : code.includes("not-found")
+              ? "The feedback collection is empty or not found."
+              : `Feedback could not be loaded (${code}). Check the browser console for details, then refresh.`;
+          label.textContent = reason;
+          label.classList.add("is-error");
+        }
+      }
+    }
+  }
+  function renderCustomerFeedback() {
+    const records = customerFeedbackRecords;
+    const negative = records.filter(isNegativeFeedback);
+
+    // ── Metric cards ─────────────────────────────────────────────────────
+    const metrics = byId("feedback-metrics");
+    if (metrics) {
+      const avg = key => averageFeedback(records, [key]);
+      const metricItems = [
+        { label: "Total Responses", value: records.length, icon: "💬", color: "blue" },
+        { label: "Overall Rating", value: averageFeedback(records, ["overall_satisfaction"]) + " / 5", icon: "⭐", color: "amber" },
+        { label: "Print Quality", value: averageFeedback(records, ["printing_quality", "colour_quality"]) + " / 5", icon: "🎨", color: "purple" },
+        { label: "Delivery Rating", value: avg("delivery_rating") + " / 5", icon: "🚚", color: "green" },
+        { label: "Support Rating", value: avg("support_rating") + " / 5", icon: "🤝", color: "blue" },
+        { label: "Flagged Low Ratings", value: negative.length, icon: "⚠️", color: negative.length ? "red" : "green" },
+      ];
+      metricItems.splice(1, 0, { label: "Timing Rating", value: avg("timing_rating") + " / 5", icon: "Timing", color: "amber" });
+      metrics.innerHTML = metricItems.map(({ label, value, icon, color }) => `
+        <article class="admin-stat-card ${color}">
+          <div class="admin-stat-card-top">
+            <div class="admin-stat-icon" style="font-size:1.2rem">${icon}</div>
+          </div>
+          <div>
+            <div class="admin-stat-label">${label}</div>
+            <div class="admin-stat-value">${value}</div>
+          </div>
+        </article>`).join("");
+    }
+
+    // ── Rating distribution bar ──────────────────────────────────────────
+    const distEl = byId("feedback-rating-dist");
+    if (distEl && records.length) {
+      const dist = [5, 4, 3, 2, 1].map(star => ({
+        star,
+        count: records.filter(r => feedbackRating(r, "overall_satisfaction") === star).length,
+      }));
+      const maxCount = Math.max(...dist.map(d => d.count), 1);
+      distEl.hidden = false;
+      distEl.innerHTML = `
+        <div style="font-family:var(--font-display);font-size:0.95rem;font-weight:700;color:var(--text-1);margin-bottom:14px;">Rating Distribution</div>
+        <div class="fb-dist-rows">
+          ${dist.map(({ star, count }) => `
+            <div class="fb-dist-row">
+              <span class="fb-dist-label">${star} ★</span>
+              <div class="fb-dist-track">
+                <div class="fb-dist-bar fb-dist-bar-${star}" style="width:${Math.round((count / maxCount) * 100)}%"></div>
+              </div>
+              <span class="fb-dist-count">${count}</span>
+            </div>`).join("")}
+        </div>`;
+    } else if (distEl) {
+      distEl.hidden = true;
+    }
+
+    // ── Filter & search ──────────────────────────────────────────────────
+    const query = String(byId("feedback-search")?.value || "").trim().toLowerCase();
+    const filter = feedbackFilterValue || "all";
+    const visible = records.filter(record => {
+      if (filter === "negative" && !isNegativeFeedback(record)) return false;
+      if (["5", "4", "3", "2", "1"].includes(filter) && feedbackRating(record, "overall_satisfaction") !== Number(filter)) return false;
+      const searchable = Object.values(record).map(value => value && typeof value === "object" ? JSON.stringify(value) : String(value ?? "")).join(" ").toLowerCase();
+      return !query || searchable.includes(query);
+    });
+
+    // ── Count label ──────────────────────────────────────────────────────
+    const countEl = byId("feedback-count-label");
+    if (countEl) countEl.textContent = `${visible.length} response${visible.length === 1 ? "" : "s"}${negative.length ? ` · ${negative.length} flagged` : ""}`;
+
+    // ── Card list ────────────────────────────────────────────────────────
+    const list = byId("feedback-list");
+    if (countEl) countEl.textContent = `Showing ${visible.length} of ${records.length} responses${negative.length ? ` · ${negative.length} flagged for follow-up` : ""}`;
+    if (!list) return;
+    list.replaceChildren();
+
+    if (!visible.length) {
+      const empty = document.createElement("div");
+      empty.className = "admin-empty-state";
+      empty.innerHTML = `<div><div style="font-size:2.5rem;margin-bottom:12px">${records.length ? "🔍" : "💬"}</div><strong>${records.length ? "No feedback matches your search or filter." : "No customer feedback yet."}</strong><span>${records.length ? "Try clearing the search or switching filters." : "Feedback will appear here once customers submit their post-purchase reviews."}</span></div>`;
+      list.append(empty);
+      return;
+    }
+
+    // Rating field pairs to display
+    const ratingPairs = [
+      ["Overall satisfaction", "overall_satisfaction"],
+      ["Printing quality", "printing_quality"],
+      ["Colour / painting", "colour_quality"],
+      ["Packaging", "packaging_quality"],
+      ["Delivery rating", "delivery_rating"],
+      ["Timing", "timing_rating"],
+      ["Support", "support_rating"],
+    ];
+    const textPairs = [
+      ["Customer Review", "review"],
+      ["Comments", "comments"],
+      ["Ordered easily", "ordering_ease"],
+      ["Matched images", "matched_images"],
+      ["Arrived without defects", "arrived_without_defects"],
+      ["Arrived safely", "arrived_safely"],
+      ["Within estimate", "within_estimate"],
+      ["Questions answered", "questions_answered"],
+      ["Notifications helpful", "notifications_helpful"],
+      ["Website navigation", "website_navigation"],
+      ["Product information", "product_information"],
+      ["Checkout experience", "checkout_experience"],
+      ["Would purchase again", "purchase_again"],
+      ["Recommend score (NPS)", "recommendation_nps"],
+      ["Product liked", "product_liked"],
+      ["Improvements", "improvements"],
+      ["Product ideas", "product_ideas"],
+    ];
+    const boolPairs = [
+      ["Damage reported", "damage_reported", "Damage details", "damage_details"],
+      ["Poor quality reported", "poor_quality_reported", "Quality details", "quality_details"],
+      ["Delivery delayed", "delivery_delayed", "Delay details", "delay_details"],
+    ];
+
+    function starBar(score, max = 5) {
+      if (!score) return "<span style='color:var(--text-4);font-size:0.78rem'>—</span>";
+      const pct = Math.round((score / max) * 100);
+      const color = score >= 4 ? "#10b981" : score === 3 ? "#f59e0b" : "#ef4444";
+      return `<div class="fb-star-bar"><div class="fb-star-fill" style="width:${pct}%;background:${color}"></div></div><span class="fb-star-label" style="color:${color}">${score}/${max}</span>`;
+    }
+
+    visible.forEach(record => {
+      const isNeg = isNegativeFeedback(record);
+      const overallScore = feedbackRating(record, "overall_satisfaction");
+      const dateStr = record.created_at ? new Date(record.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Date unavailable";
+      const refId = record.reference_id || record.id || "—";
+
+      const card = document.createElement("details");
+      card.className = `fb-card${isNeg ? " fb-card--flagged" : ""}`;
+
+      // ── Summary (collapsed header) ───────────────────────────────────
+      const summary = document.createElement("summary");
+      summary.className = "fb-card-summary";
+      summary.innerHTML = `
+        <div class="fb-card-summary-left">
+          ${isNeg ? `<span class="fb-flag-badge">⚠️ Flagged</span>` : ""}
+          ${record.acknowledged_at ? `<span class="fb-ack-badge">✓ Acknowledged</span>` : ""}
+          <div class="fb-card-meta">
+            <span class="fb-order-pill">${escapeHtml(record.order_id || record.id || "—")}</span>
+            <strong class="fb-customer-name">${escapeHtml(record.name || "Customer")}</strong>
+            <span class="fb-customer-email">${escapeHtml(record.email || "")}</span>
+          </div>
+        </div>
+        <div class="fb-card-summary-right">
+          <div class="fb-overall-score">
+            <span class="fb-score-num" style="color:${overallScore >= 4 ? "#059669" : overallScore === 3 ? "#d97706" : "#dc2626"}">${overallScore || "—"}</span>
+            <span class="fb-score-denom">/5</span>
+            <div class="fb-stars">${[1,2,3,4,5].map(s => `<span style="color:${s <= overallScore ? "#f59e0b" : "#e2e8f0"}">★</span>`).join("")}</div>
+          </div>
+          <span class="fb-date">${dateStr}</span>
+          <svg class="fb-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>`;
+      card.append(summary);
+
+      // ── Body (expanded) ──────────────────────────────────────────────
+      const body = document.createElement("div");
+      body.className = "fb-card-body";
+
+      // Reference + contact row
+      const meta = document.createElement("div");
+      meta.className = "fb-body-meta";
+      meta.innerHTML = `
+        <div class="fb-meta-chip"><span>Ref</span><strong>${escapeHtml(refId)}</strong></div>
+        <div class="fb-meta-chip"><span>Email</span><strong>${escapeHtml(record.email || "—")}</strong></div>
+        ${record.phone ? `<div class="fb-meta-chip"><span>Phone</span><strong>${escapeHtml(record.phone)}</strong></div>` : ""}
+        ${record.order_total ? `<div class="fb-meta-chip"><span>Total</span><strong>₹${Number(record.order_total).toLocaleString("en-IN")}</strong></div>` : ""}
+        <div class="fb-meta-chip"><span>Submitted</span><strong>${escapeHtml(dateStr)}</strong></div>
+        ${record.acknowledged_at ? `<div class="fb-meta-chip"><span>Acknowledged</span><strong style="color:#059669;">${escapeHtml(new Date(record.acknowledged_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }))}</strong></div>` : ""}
+        ${record.contact_permission !== undefined ? `<div class="fb-meta-chip"><span>Contact OK</span><strong>${escapeHtml(record.contact_permission)}</strong></div>` : ""}`;
+      body.append(meta);
+
+      // Categories (from feedback form)
+      if (Array.isArray(record.categories) && record.categories.length) {
+        const catSection = document.createElement("div");
+        catSection.className = "fb-section";
+        catSection.innerHTML = `<div class="fb-section-title">Categories</div><div class="fb-category-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">${record.categories.map(cat => `<span style="display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(245,158,11,0.12);color:var(--brand-dark,#b45309);border:1px solid rgba(245,158,11,0.3);font-size:0.78rem;font-weight:700;">${escapeHtml(cat)}</span>`).join("")}</div>`;
+        body.append(catSection);
+      }
+
+      // Ratings grid
+      const hasRatings = ratingPairs.some(([, key]) => feedbackRating(record, key) > 0);
+      if (hasRatings) {
+        const ratingsSection = document.createElement("div");
+        ratingsSection.className = "fb-section";
+        ratingsSection.innerHTML = `<div class="fb-section-title">Ratings</div>`;
+        const grid = document.createElement("div");
+        grid.className = "fb-ratings-grid";
+        ratingPairs.forEach(([label, key]) => {
+          const score = feedbackRating(record, key);
+          if (!score) return;
+          const cell = document.createElement("div");
+          cell.className = "fb-rating-cell";
+          cell.innerHTML = `<div class="fb-rating-label">${label}</div><div class="fb-rating-bar-wrap">${starBar(score)}</div>`;
+          grid.append(cell);
+        });
+        ratingsSection.append(grid);
+        body.append(ratingsSection);
+      }
+
+      // Boolean flags (damage, quality, delay)
+      const hasBoolFlags = boolPairs.some(([, key]) => record[key]);
+      if (hasBoolFlags) {
+        const flagSection = document.createElement("div");
+        flagSection.className = "fb-section";
+        flagSection.innerHTML = `<div class="fb-section-title">Reported Issues</div>`;
+        const flagGrid = document.createElement("div");
+        flagGrid.className = "fb-flag-grid";
+        boolPairs.forEach(([boolLabel, boolKey, detailLabel, detailKey]) => {
+          if (!record[boolKey]) return;
+          const chip = document.createElement("div");
+          chip.className = "fb-issue-chip";
+          chip.innerHTML = `<span class="fb-issue-icon">⚠️</span><div><strong>${boolLabel}</strong>${record[detailKey] ? `<p>${record[detailKey]}</p>` : ""}</div>`;
+          const issueIcon = document.createElement("span");
+          issueIcon.className = "fb-issue-icon";
+          issueIcon.textContent = "⚠️";
+          const issueText = document.createElement("div");
+          const issueTitle = document.createElement("strong");
+          issueTitle.textContent = boolLabel;
+          issueText.append(issueTitle);
+          if (record[detailKey]) {
+            const issueDetail = document.createElement("p");
+            issueDetail.textContent = record[detailKey];
+            issueText.append(issueDetail);
+          }
+          chip.replaceChildren(issueIcon, issueText);
+          flagGrid.append(chip);
+        });
+        flagSection.append(flagGrid);
+        body.append(flagSection);
+      }
+
+      // Text answers
+      const hasText = textPairs.some(([, key]) => record[key] !== undefined && record[key] !== "");
+      if (hasText) {
+        const textSection = document.createElement("div");
+        textSection.className = "fb-section";
+        textSection.innerHTML = `<div class="fb-section-title">Written Answers</div>`;
+        const textGrid = document.createElement("div");
+        textGrid.className = "fb-text-grid";
+        textPairs.forEach(([label, key]) => {
+          const value = record[key];
+          if (value === undefined || value === "") return;
+          const cell = document.createElement("div");
+          cell.className = "fb-text-cell";
+          cell.innerHTML = `<div class="fb-text-label">${escapeHtml(label)}</div><div class="fb-text-value">${escapeHtml(value)}</div>`;
+          textGrid.append(cell);
+        });
+        textSection.append(textGrid);
+        body.append(textSection);
+      }
+
+      // Attachments
+      const attachments = Array.isArray(record.attachments) ? record.attachments : [];
+      if (attachments.length) {
+        const attSection = document.createElement("div");
+        attSection.className = "fb-section";
+        attSection.innerHTML = `<div class="fb-section-title">Photos</div>`;
+        const attGrid = document.createElement("div");
+        attGrid.className = "fb-attachments";
+        attachments.forEach(item => {
+          const figure = document.createElement("figure");
+          figure.className = "fb-attachment";
+          let mediaUrl = "";
+          try { const parsed = new URL(String(item.url || "")); if (parsed.protocol === "https:") mediaUrl = parsed.href; } catch {}
+          if (!mediaUrl) return;
+          const mediaName = escapeHtml(item.name || "Photo");
+          figure.innerHTML = `<a href="${escapeHtml(mediaUrl)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(mediaUrl)}" alt="${mediaName}" loading="lazy" /></a><figcaption>${escapeHtml(item.name || "View photo")}</figcaption>`;
+          attGrid.append(figure);
+        });
+        attSection.append(attGrid);
+        body.append(attSection);
+      }
+
+      // Actions: Notify Customer (Acknowledge) & Delete
+      const actions = document.createElement("div");
+      actions.className = "fb-card-actions";
+
+      const notifyBtn = document.createElement("button");
+      notifyBtn.type = "button";
+      notifyBtn.className = "fb-btn-notify";
+      notifyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> <span>${record.acknowledged_at ? "Re-notify Customer" : "Notify Customer"}</span>`;
+      notifyBtn.title = "Send an acknowledgment email to this customer";
+      notifyBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        notifyCustomerFeedbackAcknowledged(record, notifyBtn);
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "fb-btn-delete";
+      deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg> <span>Delete Feedback</span>`;
+      deleteBtn.title = "Permanently delete this customer feedback";
+      deleteBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        deleteCustomerFeedback(record, deleteBtn);
+      });
+
+      actions.append(notifyBtn, deleteBtn);
+      body.append(actions);
+
+      card.append(body);
+      list.append(card);
+    });
+    updateFeedbackBadge();
+  }
+
+  async function deleteCustomerFeedback(record, buttonEl) {
+    const orderDisplay = record.order_id || record.id || "this order";
+    const confirmed = window.confirm(`Are you sure you want to permanently delete feedback for order ${orderDisplay}? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    if (buttonEl) {
+      buttonEl.disabled = true;
+      buttonEl.textContent = "Deleting…";
+    }
+
+    try {
+      await db.collection("feedback").doc(record.id).delete();
+      customerFeedbackRecords = customerFeedbackRecords.filter(r => r.id !== record.id);
+      renderCustomerFeedback();
+      updateFeedbackBadge();
+      window.showAdminToast?.(`Feedback for order ${orderDisplay} deleted successfully.`, "success");
+    } catch (error) {
+      console.error("Could not delete feedback:", error);
+      window.showAdminToast?.(`Failed to delete feedback: ${error.message || error}`, "danger");
+      if (buttonEl) {
+        buttonEl.disabled = false;
+        buttonEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg> <span>Delete Feedback</span>`;
+      }
+    }
+  }
+
+  async function notifyCustomerFeedbackAcknowledged(record, buttonEl) {
+    const recipientEmail = String(record.email || "").trim();
+    if (!recipientEmail) {
+      window.showAdminToast?.("This feedback record has no customer email address to notify.", "danger");
+      return;
+    }
+
+    const customerName = String(record.name || "Customer").trim();
+    const rawId = String(record.order_id || "").trim().replace(/^#+/, "");
+    const orderDisplay = rawId ? `#${rawId}` : "your order";
+    const ratingScore = feedbackRating(record, "overall_satisfaction");
+    const reviewText = String(record.review || record.comments || "").trim();
+    const ratingStars = ratingScore ? "★".repeat(ratingScore) + "☆".repeat(Math.max(0, 5 - ratingScore)) : "";
+
+    const subject = `Feedback Acknowledged for Order ${orderDisplay} — Creative Souls 3D`;
+
+    const plainText = [
+      `Dear ${customerName},`,
+      "",
+      `Thank you so much for taking the time to share your feedback with Creative Souls 3D regarding order ${orderDisplay}!`,
+      "",
+      `We have successfully received and reviewed your feedback${ratingScore ? ` (${ratingScore}/5 ⭐)` : ""}.`,
+      reviewText ? `\nYour review:\n"${reviewText}"\n` : "",
+      "Your ratings and suggestions directly guide our ongoing 3D printing craftsmanship, packaging standards, and customer care.",
+      "",
+      "If you ever need any assistance or have ideas for future custom 3D prints, feel free to reply directly to this email or reach out to us on Instagram @creative.souls3d.",
+      "",
+      "Warm regards,",
+      "Creative Souls 3D Team",
+      NOTIFY_EMAIL,
+      "https://creativesouls3d.github.io"
+    ].filter(line => line !== undefined).join("\n").replace(/\n{3,}/g, "\n\n");
+
+    const styledHtml = `
+<div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#111111;color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #333333;">
+  <div style="background:#18181b;padding:24px;text-align:center;border-bottom:1px solid #27272a;">
+    <h2 style="margin:0;color:#f59e0b;font-size:20px;letter-spacing:1px;font-weight:800;">CREATIVE SOULS 3D</h2>
+    <p style="margin:6px 0 0;font-size:12px;color:#a1a1aa;letter-spacing:0.5px;">CUSTOMER FEEDBACK ACKNOWLEDGMENT</p>
+  </div>
+  <div style="padding:28px 24px;">
+    <p style="font-size:15px;line-height:1.6;margin:0 0 16px;color:#e4e4e7;">Dear <strong>${escapeHtml(customerName)}</strong>,</p>
+    <p style="font-size:15px;line-height:1.6;margin:0 0 16px;color:#e4e4e7;">Thank you so much for taking the time to share your feedback for order <strong>${escapeHtml(orderDisplay)}</strong>!</p>
+    <div style="background:#27272a;border-left:4px solid #f59e0b;padding:16px 20px;border-radius:8px;margin:20px 0;">
+      <div style="font-size:13px;color:#f59e0b;font-weight:700;margin-bottom:6px;">FEEDBACK ACKNOWLEDGED ${ratingStars ? `· ${ratingStars}` : ""}</div>
+      ${reviewText ? `<p style="font-size:14px;color:#d4d4d8;font-style:italic;margin:0;line-height:1.5;">"${escapeHtml(reviewText)}"</p>` : `<p style="font-size:14px;color:#a1a1aa;margin:0;">Your feedback has been received and reviewed with appreciation.</p>`}
+    </div>
+    <p style="font-size:14px;line-height:1.6;margin:0 0 16px;color:#a1a1aa;">Your experience and suggestions directly help us refine our 3D printing precision, finishing, and customer care.</p>
+    <p style="font-size:14px;line-height:1.6;margin:0 0 24px;color:#a1a1aa;">If there is anything more we can do for you or if you have custom printing projects in mind, simply reply to this email or connect with us on Instagram <strong>@creative.souls3d</strong>.</p>
+    <div style="border-top:1px solid #27272a;padding-top:16px;font-size:13px;color:#71717a;">
+      <p style="margin:0 0 4px;color:#e4e4e7;font-weight:600;">Creative Souls 3D</p>
+      <p style="margin:0;color:#a1a1aa;">Precision 3D Printing &amp; Custom Gifts · <a href="mailto:${NOTIFY_EMAIL}" style="color:#f59e0b;text-decoration:none;">${NOTIFY_EMAIL}</a></p>
+    </div>
+  </div>
+</div>`.trim();
+
+    if (buttonEl) {
+      buttonEl.disabled = true;
+      buttonEl.textContent = "Opening Gmail…";
+    }
+
+    try {
+      await copyStyledHtmlToClipboard(styledHtml, plainText);
+      await openGmailCompose({
+        to: recipientEmail,
+        subject,
+        body: plainText
+      });
+
+      const nowIso = new Date().toISOString();
+      try {
+        await db.collection("feedback").doc(record.id).update({
+          acknowledged_at: firebase.firestore.FieldValue.serverTimestamp(),
+          acknowledged_by: auth.currentUser?.email || "admin"
+        });
+        record.acknowledged_at = nowIso;
+        record.acknowledged_by = auth.currentUser?.email || "admin";
+      } catch (dbErr) {
+        console.warn("Could not mark feedback as acknowledged in Firestore:", dbErr);
+      }
+
+      window.showAdminToast?.("Gmail opened! Styled brand template copied to clipboard (press Ctrl+V).", "success");
+      renderCustomerFeedback();
+    } catch (err) {
+      console.error("Error sending feedback notification:", err);
+      window.showAdminToast?.("Failed to open Gmail: " + (err.message || err), "danger");
+      if (buttonEl) {
+        buttonEl.disabled = false;
+        buttonEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> <span>Notify Customer</span>`;
+      }
+    }
+  }
+
+  function exportCustomerFeedback() {
+    const columns = ["reference_id", "order_id", "name", "email", "phone", "rating", "review", "categories", "acknowledged_at", "acknowledged_by", "created_at", "overall_satisfaction", "ordering_ease", "recommendation_nps", "printing_quality", "colour_quality", "matched_images", "arrived_without_defects", "damage_reported", "damage_details", "poor_quality_reported", "quality_details", "product_liked", "packaging_quality", "arrived_safely", "delivery_rating", "timing_rating", "within_estimate", "delivery_delayed", "delay_details", "support_rating", "questions_answered", "notifications_helpful", "website_navigation", "product_information", "checkout_experience", "improvements", "product_ideas", "purchase_again", "comments", "contact_permission", "attachments"];
+    const csvCell = value => `"${String(value && typeof value === "object" ? JSON.stringify(value) : value ?? "").replaceAll('"', '""')}"`;
+    const csv = [columns.map(csvCell).join(","), ...customerFeedbackRecords.map(record => columns.map(key => csvCell(record[key])).join(","))].join("\r\n");
+    const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); link.download = "creative-souls-customer-feedback.csv"; link.click(); URL.revokeObjectURL(link.href);
+  }
+  // ── Feedback filter pills ────────────────────────────────────────────
+  feedbackFilterValue = "all";
+  byId("feedback-filter-pills")?.querySelectorAll("[data-fb-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      byId("feedback-filter-pills").querySelectorAll(".admin-filter-pill").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      feedbackFilterValue = btn.dataset.fbFilter;
+      renderCustomerFeedback();
+    });
+  });
+  byId("feedback-search")?.addEventListener("input", renderCustomerFeedback);
+  byId("feedback-refresh")?.addEventListener("click", loadCustomerFeedback);
+  byId("feedback-export")?.addEventListener("click", exportCustomerFeedback);
 
   function visibleTickets() {
     const query = String(byId("ticket-search")?.value || "").trim().toLowerCase();
@@ -4003,9 +5799,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const preview = byId("ticket-email-preview");
     if (!preview || !activeTicket) return;
     const typed = byId("ticket-reply-input")?.value || "";
-    preview.textContent = typed.trim()
-      ? formatTicketReplyEmail(activeTicket.data, typed)
-      : "Type a reply to preview the Gmail message.";
+    if (typed.trim()) preview.textContent = ticketReplyEmailBody(activeTicket.data, typed, selectedTicketReplyImages());
+    else preview.textContent = "Type a reply to preview the Gmail message.";
   }
   const ticketMediaUploads = new WeakMap();
   function validateTicketMedia(files) {
@@ -4019,11 +5814,64 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     }
   }
   function renderTicketMediaSelection(input, preview) {
+    preview.querySelectorAll("[data-preview-url]").forEach(item => URL.revokeObjectURL(item.dataset.previewUrl));
     preview.replaceChildren();
-    [...input.files].forEach(file => {
-      const name = document.createElement("div");
-      name.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-      preview.append(name);
+    const files = [...(input.files || [])];
+    if (!files.length) {
+      const empty = document.createElement("p");
+      empty.className = "ticket-media-empty";
+      empty.textContent = "Your selected photos and videos will appear here.";
+      preview.append(empty);
+      return;
+    }
+    files.forEach((file, index) => {
+      const card = document.createElement("figure");
+      card.className = "ticket-media-card";
+      const visual = document.createElement(file.type.startsWith("video/") ? "video" : "img");
+      visual.className = "ticket-media-thumb";
+      visual.src = URL.createObjectURL(file);
+      visual.dataset.previewUrl = visual.src;
+      if (visual.tagName === "VIDEO") { visual.muted = true; visual.preload = "metadata"; }
+      else visual.alt = file.name;
+      const caption = document.createElement("figcaption");
+      const name = document.createElement("span");
+      name.className = "ticket-media-name";
+      name.textContent = file.name;
+      const size = document.createElement("small");
+      size.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "ticket-media-remove";
+      remove.setAttribute("aria-label", `Remove ${file.name}`);
+      remove.textContent = "×";
+      remove.addEventListener("click", () => {
+        const transfer = new DataTransfer();
+        files.filter((_, fileIndex) => fileIndex !== index).forEach(selected => transfer.items.add(selected));
+        input.files = transfer.files;
+        renderTicketMediaSelection(input, preview);
+      });
+      caption.append(name, size);
+      card.append(visual, caption, remove);
+      preview.append(card);
+    });
+  }
+  function setupTicketMediaPicker(input, preview, dropzone) {
+    const update = () => renderTicketMediaSelection(input, preview);
+    input.addEventListener("change", update);
+    if (!dropzone) return;
+    ["dragenter", "dragover"].forEach(type => dropzone.addEventListener(type, event => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragging");
+    }));
+    ["dragleave", "drop"].forEach(type => dropzone.addEventListener(type, event => {
+      event.preventDefault();
+      dropzone.classList.remove("is-dragging");
+    }));
+    dropzone.addEventListener("drop", event => {
+      const transfer = new DataTransfer();
+      [...(input.files || []), ...event.dataTransfer.files].forEach(file => transfer.items.add(file));
+      input.files = transfer.files;
+      update();
     });
   }
   async function uploadAdminTicketMedia(files, folderId, button) {
@@ -4252,7 +6100,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const rect = canvas.getBoundingClientRect();
     return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
   }
-  byId("ticket-image-close")?.addEventListener("click", () => byId("ticket-image-viewer").close());
+  function initTicketImageViewerListeners() {
+    byId("ticket-image-close")?.addEventListener("click", () => byId("ticket-image-viewer").close());
   byId("ticket-image-prev")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index - 1));
   byId("ticket-image-next")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index + 1));
   byId("ticket-image-zoom-in")?.addEventListener("click", () => setTicketImageZoom(ticketImageViewerState.zoom + .25));
@@ -4429,6 +6278,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       button.textContent = "Save annotated copy";
     }
   });
+  }
   async function showTicketDetails(id, ticket) {
     if (id) {
       try {
@@ -4535,15 +6385,18 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         section.append(empty);
         return;
       }
-      const grid = document.createElement("div");
-      grid.className = "ticket-attachments";
-      files.forEach(file => {
-        const link = document.createElement("a");
-        link.href = file.url || "#";
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+      const imageFiles = ticketImageAttachments(ticket);
+      const renderAttachmentGroup = (title, group) => {
+        if (!group.length) return;
+        const heading = document.createElement("h4");
+        heading.className = "ticket-attachment-subheading";
+        heading.textContent = title;
+        const grid = document.createElement("div");
+        grid.className = "ticket-attachments";
+        group.forEach(file => {
         const isVideo = String(file.fileType || "").toLowerCase().includes("video") || /\.(mp4|webm|mov|m4v|avi|mkv|ogv)(?:[?#]|$)/i.test(file.url || "");
         const figure = document.createElement("figure");
+        const caption = document.createElement("figcaption");
         if (isVideo) {
           const video = document.createElement("video");
           video.src = file.url;
@@ -4560,15 +6413,42 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
           const img = document.createElement("img");
           img.src = file.thumbnailUrl || file.url;
           img.alt = file.name || "Attachment";
-          figure.append(img);
+          const imageButton = document.createElement("button");
+          imageButton.type = "button";
+          imageButton.className = "ticket-image-open";
+          imageButton.setAttribute("aria-label", `Examine ${file.name || "ticket image"}`);
+          imageButton.append(img);
+          imageButton.addEventListener("click", () => openTicketImageViewer(imageFiles, imageFiles.indexOf(file)));
+          figure.append(imageButton);
+          const nameButton = document.createElement("button");
+          nameButton.type = "button";
+          nameButton.className = "ticket-image-name";
+          nameButton.textContent = file.name || "Examine image";
+          nameButton.addEventListener("click", () => openTicketImageViewer(imageFiles, imageFiles.indexOf(file)));
+          caption.append(nameButton);
+          if (file.reviewedAt) {
+            const reviewed = document.createElement("small");
+            reviewed.className = "ticket-image-reviewed";
+            reviewed.textContent = `Reviewed ${new Date(file.reviewedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}${file.reviewedBy ? ` · ${file.reviewedBy}` : ""}`;
+            caption.append(reviewed);
+          }
         }
-        const caption = document.createElement("figcaption");
-        link.textContent = file.name || "Open attachment";
-        caption.append(link);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "ticket-attachment-delete";
+        remove.textContent = "Delete";
+        remove.setAttribute("aria-label", `Remove ${file.name || "attachment"} from this ticket`);
+        remove.addEventListener("click", () => removeTicketAttachment(file, remove));
+        caption.append(remove);
         figure.append(caption);
         grid.append(figure);
-      });
-      section.append(grid);
+        });
+        section.append(heading, grid);
+      };
+      const originalFiles = files.filter(file => !file.reviewedAt);
+      const reviewedFiles = files.filter(file => !!file.reviewedAt);
+      renderAttachmentGroup("Original photos & videos", originalFiles);
+      renderAttachmentGroup("Annotated review images", reviewedFiles);
     });
 
     addSection("Add photos & videos", section => {
@@ -4582,10 +6462,22 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       input.type = "file";
       input.accept = "image/*,video/*";
       input.multiple = true;
+      input.className = "ticket-media-input";
+      const dropzone = document.createElement("div");
+      dropzone.className = "ticket-media-dropzone";
+      const prompt = document.createElement("strong");
+      prompt.textContent = "Drop photos or videos here";
+      const or = document.createElement("span");
+      or.textContent = "or";
+      const browse = document.createElement("label");
+      browse.className = "btn-secondary ticket-media-browse";
+      browse.htmlFor = input.id;
+      browse.textContent = "Choose files";
+      dropzone.append(prompt, or, browse, input);
       const preview = document.createElement("div");
       preview.className = "ticket-media-selection";
       preview.setAttribute("aria-live", "polite");
-      input.addEventListener("change", () => renderTicketMediaSelection(input, preview));
+      setupTicketMediaPicker(input, preview, dropzone);
       const button = document.createElement("button");
       button.id = "ticket-media-save";
       button.type = "button";
@@ -4596,7 +6488,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       message.id = "ticket-media-status";
       message.className = "admin-status";
       message.setAttribute("role", "alert");
-      box.append(label, input, preview, button, message);
+      label.className = "admin-helper";
+      box.append(label, dropzone, preview, button, message);
       section.append(box);
     });
 
@@ -4638,10 +6531,77 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       box.className = "ticket-reply-box";
       const label = document.createElement("p");
       label.className = "admin-helper";
-      label.textContent = "Type the reply in your own words. We will format it into a professional Gmail draft.";
+      label.textContent = "Type your reply. Improve with AI rewrites only the text in this box and keeps it in clear paragraphs; review it before opening Gmail.";
+      const imagePicker = document.createElement("div");
+      imagePicker.id = "ticket-reply-image-picker";
+      imagePicker.className = "ticket-reply-image-picker";
+      renderTicketReplyImagePicker(ticket, imagePicker);
       const textarea = document.createElement("textarea");
       textarea.id = "ticket-reply-input";
       textarea.placeholder = "Example: We checked the photos and will reprint the keychain. A replacement will be dispatched in 2 days.";
+      const aiActions = document.createElement("div");
+      aiActions.className = "ticket-reply-ai-actions";
+      const improveButton = document.createElement("button");
+      improveButton.type = "button";
+      improveButton.className = "btn-secondary";
+      improveButton.textContent = "✦ Improve with AI";
+      const undoAiButton = document.createElement("button");
+      undoAiButton.type = "button";
+      undoAiButton.className = "btn-secondary";
+      undoAiButton.textContent = "Undo AI change";
+      undoAiButton.hidden = true;
+      const aiStatus = document.createElement("p");
+      aiStatus.className = "admin-helper ticket-reply-ai-status";
+      aiStatus.setAttribute("role", "status");
+      improveButton.addEventListener("click", async () => {
+        const draft = textarea.value.trim();
+        if (!draft) {
+          aiStatus.textContent = "Write a reply first, then ask AI to improve it.";
+          textarea.focus();
+          return;
+        }
+        const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
+        const user = auth.currentUser;
+        if (!workerUrl || !user) {
+          aiStatus.textContent = !workerUrl ? "The AI service is not configured." : "Sign in again before using AI.";
+          return;
+        }
+        improveButton.disabled = true;
+        improveButton.textContent = "Improving…";
+        aiStatus.textContent = "Improving your reply…";
+        try {
+          const token = await user.getIdToken();
+          const response = await fetch(`${workerUrl.replace(/\/+$/, "")}/improve-ticket-reply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ draft })
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || `AI improvement failed (HTTP ${response.status}).`);
+          const improved = String(result.improvedReply || "").trim();
+          if (!improved) throw new Error("AI returned an empty suggestion. Please try again.");
+          textarea.dataset.beforeAiImprovement = textarea.value;
+          textarea.value = improved;
+          undoAiButton.hidden = false;
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          aiStatus.textContent = "Suggestion added. Review and edit it before opening the Gmail draft.";
+        } catch (error) {
+          aiStatus.textContent = errorText(error);
+          reportError(error);
+        } finally {
+          improveButton.disabled = false;
+          improveButton.textContent = "✦ Improve with AI";
+        }
+      });
+      undoAiButton.addEventListener("click", () => {
+        if (textarea.dataset.beforeAiImprovement === undefined) return;
+        textarea.value = textarea.dataset.beforeAiImprovement;
+        delete textarea.dataset.beforeAiImprovement;
+        undoAiButton.hidden = true;
+        aiStatus.textContent = "Restored your previous draft.";
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      aiActions.append(improveButton, undoAiButton);
       const preview = document.createElement("div");
       preview.className = "ticket-email-preview";
       preview.innerHTML = "<strong>Gmail message preview</strong>";
@@ -4649,7 +6609,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       pre.id = "ticket-email-preview";
       preview.append(pre);
       textarea.addEventListener("input", updateTicketEmailPreview);
-      box.append(label, textarea, preview);
+      box.append(label, imagePicker, textarea, preview, aiActions, aiStatus);
       section.append(box);
       updateTicketEmailPreview();
     });
@@ -4674,7 +6634,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       window.showAdminToast?.("This ticket has no valid customer email.", "danger");
       return;
     }
-    const formatted = formatTicketReplyEmail(ticket, typed);
+    const selectedImages = selectedTicketReplyImages();
+    const formatted = ticketReplyEmailBody(ticket, typed, selectedImages);
     const button = byId("ticket-open-gmail");
     button.disabled = true;
     button.textContent = "Opening Gmail…";
@@ -4856,7 +6817,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   }
   function openTicketCreateDialog(prefillOrder) {
     ["tc-order", "tc-name", "tc-email", "tc-phone", "tc-address", "tc-product-extra", "tc-issue", "tc-media"].forEach(id => { byId(id).value = ""; });
-    byId("tc-media-preview").replaceChildren();
+    renderTicketMediaSelection(byId("tc-media"), byId("tc-media-preview"));
     byId("tc-send-email").checked = true;
     byId("tc-order-hint").textContent = "";
     byId("tc-products").replaceChildren();
@@ -4978,331 +6939,1253 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   byId("tc-order")?.addEventListener("change", applyTicketCreateOrder);
   byId("tc-order")?.addEventListener("input", () => { if (findOrderByInput(byId("tc-order").value)) applyTicketCreateOrder(); });
   byId("ticket-create-save")?.addEventListener("click", saveAdminTicket);
-  byId("tc-media")?.addEventListener("change", () => renderTicketMediaSelection(byId("tc-media"), byId("tc-media-preview")));
+  setupTicketMediaPicker(byId("tc-media"), byId("tc-media-preview"), byId("tc-media-dropzone"));
   byId("ticket-create-cancel")?.addEventListener("click", () => ticketCreateDialog.close());
   byId("ticket-create-close")?.addEventListener("click", () => ticketCreateDialog.close());
+  initTicketImageViewerListeners();
 
-  // ── Customer feedback ──────────────────────────────────────────────────
-  let customerFeedback = [];
-  let feedbackFilter = "all";
-  function feedbackDate(item) { return parseOrderDate(item.created_at || item.createdAt || item.timestamp); }
-  function feedbackRows() {
-    const query = (byId("feedback-search")?.value || "").trim().toLowerCase();
-    return customerFeedback.filter(item => {
-      const rating = Number(item.rating ?? item.overall_satisfaction ?? 0);
-      const flagged = item.damage_reported || item.poor_quality_reported || item.delivery_delayed || rating <= 3;
-      const matchesFilter = feedbackFilter === "all" || feedbackFilter === "negative" ? feedbackFilter === "all" || flagged : rating === Number(feedbackFilter);
-      const haystack = [item.order_id, item.order_doc_id, item.name, item.email, item.comments, item.review, item.product_liked, ...(item.categories || [])].join(" ").toLowerCase();
-      return matchesFilter && (!query || haystack.includes(query));
+  // ══════════════════════════════════════════════════════════════════════════
+  // WALLET & REFUNDS MANAGEMENT MODULE
+  // ══════════════════════════════════════════════════════════════════════════
+  let activeRefundOrder = null;
+  let activeWalletCustomer = null;
+  let customerWalletHistoryData = [];
+  let globalWalletLogsData = [];
+  let allKnownWalletCustomers = new Map();
+  let walletCustFilterState = "all";
+  let walletCustTxFilterState = "all";
+  let walletGlobalTxFilterState = "all";
+  let walletCurrentBalanceVal = 0;
+  let walletCurrentPointsVal = 0;
+
+  function openWalletRefundModal(orderDocId, order) {
+    activeRefundOrder = { id: orderDocId, order, email: (order.email || order.user_email || "").trim() };
+    const dlg = byId("wallet-refund-dialog");
+    if (!dlg) return;
+
+    const emailEl = byId("wallet-refund-customer-email");
+    const orderTagEl = byId("wallet-refund-order-tag");
+    const amountInput = byId("wallet-refund-amount");
+    const reasonInput = byId("wallet-refund-reason");
+    const submitBtn = byId("wallet-refund-submit");
+
+    const orderNum = (order.order_id || orderDocId || "").replace(/^#/, "");
+    const orderTotal = Number(order.total || 0);
+
+    if (emailEl) emailEl.textContent = activeRefundOrder.email || `Customer: ${order.name || "Unknown"} (No email provided)`;
+    if (orderTagEl) orderTagEl.textContent = `Order: #${orderNum} · Total: ${formatOrderMoney(orderTotal)}`;
+    if (amountInput) amountInput.value = orderTotal;
+    if (reasonInput) reasonInput.value = `Refund for Order #${orderNum}`;
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = `✓ Credit ₹${orderTotal} to Wallet`;
+    }
+
+    // Modal quick percentage chips
+    const btn100 = byId("modal-refund-100");
+    if (btn100) {
+      btn100.onclick = () => {
+        if (amountInput) {
+          amountInput.value = orderTotal;
+          updateRefundModalButton(orderTotal);
+        }
+      };
+    }
+    const btn50 = byId("modal-refund-50");
+    if (btn50) {
+      btn50.onclick = () => {
+        if (amountInput) {
+          const half = Math.round(orderTotal / 2);
+          amountInput.value = half;
+          updateRefundModalButton(half);
+        }
+      };
+    }
+    const btn25 = byId("modal-refund-25");
+    if (btn25) {
+      btn25.onclick = () => {
+        if (amountInput) {
+          const qtr = Math.round(orderTotal / 4);
+          amountInput.value = qtr;
+          updateRefundModalButton(qtr);
+        }
+      };
+    }
+
+    // Modal reason preset tags
+    dlg.querySelectorAll("[data-modal-reason]").forEach(btn => {
+      btn.onclick = () => {
+        const tag = btn.getAttribute("data-modal-reason");
+        if (reasonInput) reasonInput.value = `${tag} (Order #${orderNum})`;
+      };
     });
+
+    dlg.showModal();
   }
-  function renderCustomerFeedback() {
-    const rows = feedbackRows();
-    const list = byId("feedback-list"); if (!list) return;
-    list.replaceChildren();
-    const count = byId("feedback-count-label"); if (count) count.textContent = `${rows.length} of ${customerFeedback.length} feedback response${customerFeedback.length === 1 ? "" : "s"}`;
-    if (!rows.length) { list.innerHTML = '<p class="admin-helper" style="padding:24px;text-align:center;color:var(--text-3)">No feedback matches this search or filter.</p>'; return; }
-    rows.forEach(item => {
-      const card = document.createElement("article"); card.className = "admin-panel"; card.style.marginTop = "12px";
-      const head = document.createElement("div"); head.className = "admin-panel-hdr";
-      const identity = document.createElement("div");
-      const title = document.createElement("strong"); title.textContent = `${item.name || "Customer"} · ${item.order_id || item.order_doc_id || "Order"}`;
-      const sub = document.createElement("div"); sub.className = "admin-panel-sub"; sub.textContent = [item.email, feedbackDate(item)?.toLocaleString("en-IN")].filter(Boolean).join(" · ");
-      identity.append(title, sub);
-      const rating = document.createElement("strong"); rating.textContent = `${Number(item.rating ?? item.overall_satisfaction ?? 0) || "—"} / 5 ★`;
-      head.append(identity, rating); card.append(head);
-      const comment = document.createElement("p"); comment.style.whiteSpace = "pre-wrap"; comment.textContent = item.comments || item.review || "No written comment."; card.append(comment);
-      const details = [item.product_liked || (item.categories || []).join(", "), item.damage_details, item.quality_details, item.delay_details].filter(Boolean);
-      if (details.length) { const note = document.createElement("p"); note.className = "admin-helper"; note.textContent = details.join(" · "); card.append(note); }
-      list.append(card);
-    });
-  }
-  function renderFeedbackMetrics() {
-    const root = byId("feedback-metrics"); if (!root) return;
-    const count = customerFeedback.length;
-    const average = count ? customerFeedback.reduce((sum,item) => sum + (Number(item.rating ?? item.overall_satisfaction) || 0), 0) / count : 0;
-    const flagged = customerFeedback.filter(item => item.damage_reported || item.poor_quality_reported || item.delivery_delayed || Number(item.rating ?? item.overall_satisfaction) <= 3).length;
-    root.replaceChildren();
-    [["Responses", count], ["Average rating", count ? `${average.toFixed(1)} / 5` : "—"], ["Flagged for review", flagged]].forEach(([label,value]) => {
-      const card = document.createElement("article"); card.className = "admin-stat-card blue";
-      const name = document.createElement("span"); name.className = "admin-stat-label"; name.textContent = label;
-      const val = document.createElement("strong"); val.className = "admin-stat-value"; val.textContent = String(value);
-      card.append(name,val); root.append(card);
-    });
-  }
-  async function loadCustomerFeedback() {
-    const label = byId("feedback-count-label"); if (label) label.textContent = "Loading customer feedback…";
-    try {
-      const response = await callWalletWorker("/feedback/list");
-      customerFeedback = (response.feedback || []).flatMap(data => {
-        const entries = Array.isArray(data.feedbacks) ? data.feedbacks : Array.isArray(data.submissions) ? data.submissions : null;
-        const source = entries?.length ? entries : (data.rating || data.overall_satisfaction ? [data] : []);
-        return source.map((entry,index) => ({ ...data, ...entry, order_id: entry.order_id || data.order_id || data.id, order_doc_id: entry.order_doc_id || data.order_doc_id || data.id, id: entry.reference_id || `${data.id}-${index}` }));
-      }).sort((a,b) => (feedbackDate(b)?.getTime() || 0) - (feedbackDate(a)?.getTime() || 0));
-      renderFeedbackMetrics(); renderCustomerFeedback();
-    } catch (error) {
-      if (label) label.textContent = `Could not load customer feedback: ${errorText(error)}`;
-      reportError(error);
+
+  function updateRefundModalButton(amt) {
+    const submitBtn = byId("wallet-refund-submit");
+    if (submitBtn) {
+      const val = parseFloat(amt) || 0;
+      submitBtn.textContent = `✓ Credit ₹${val.toFixed(0)} to Wallet`;
     }
   }
-  byId("feedback-refresh")?.addEventListener("click", loadCustomerFeedback);
-  byId("feedback-search")?.addEventListener("input", renderCustomerFeedback);
-  byId("feedback-filter-pills")?.addEventListener("click", event => {
-    const button = event.target.closest("button[data-fb-filter]"); if (!button) return;
-    feedbackFilter = button.dataset.fbFilter;
-    byId("feedback-filter-pills").querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
-    renderCustomerFeedback();
-  });
-  byId("feedback-export")?.addEventListener("click", () => {
-    if (!customerFeedback.length) return window.showAdminToast?.("There is no feedback to export yet.", "info");
-    const headers = ["order_id", "name", "email", "rating", "recommendation_nps", "comments", "product_liked", "damage_reported", "poor_quality_reported", "delivery_delayed", "created_at"];
-    const csv = [headers, ...customerFeedback.map(item => headers.map(key => key === "created_at" ? feedbackDate(item)?.toISOString() || "" : item[key] ?? ""))].map(row => row.map(value => `"${String(value).replaceAll('"','""')}"`).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = "customer-feedback.csv"; link.click(); URL.revokeObjectURL(url);
+
+  // Update refund button text on amount input change
+  byId("wallet-refund-amount")?.addEventListener("input", e => {
+    updateRefundModalButton(e.target.value);
   });
 
-  // ── Customer wallets ───────────────────────────────────────────────────
-  // Keep the admin wallet UI backed by the same users/{email}/wallet_history
-  // records used by account.js and the adminRefundToWallet callable.
-  let walletCustomers = [];
-  let walletSelected = null;
-  let walletHistory = [];
-  let walletActivity = [];
-  let walletCustomerFilter = "all";
-  let walletActivityFilter = "all";
-  let walletRefundOrder = null;
-  async function callWalletWorker(path, data = {}) {
-    const user = auth.currentUser;
-    const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
-    if (!user || !workerUrl) throw new Error("The wallet service is not configured or you are signed out.");
-    const token = await user.getIdToken();
-    const response = await fetch(`${workerUrl}${path}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || `Wallet service returned HTTP ${response.status}.`);
-    return payload;
-  }
-  const walletMoney = value => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(Number(value) || 0);
-  const walletText = (id, value) => { const el = byId(id); if (el) el.textContent = value; };
-  const walletDate = value => { const date = value?.toDate ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null; return date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-IN") : "—"; };
-  function renderWalletHistory(rows = walletHistory) {
-    const tbody = byId("wallet-customer-history-tbody"); if (!tbody) return;
-    tbody.replaceChildren();
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-3)">No wallet activity found.</td></tr>'; return; }
-    rows.forEach(tx => {
-      const tr = document.createElement("tr");
-      [walletDate(tx.createdAt), tx.type || "credit", walletMoney(tx.amount), tx.orderId || "—", tx.title || "—", tx.processedBy || "—"].forEach(value => { const td = document.createElement("td"); td.textContent = value; tr.append(td); });
-      tbody.append(tr);
-    });
-    walletText("wallet-customer-tx-count", `${rows.length} entries`);
-  }
-  function renderWalletCustomers(query = "") {
-    const list = byId("wallet-suggestions-list"), select = byId("wallet-quick-customer-select");
-    if (select) { select.replaceChildren(new Option("— Select a customer —", "")); walletCustomers.forEach((c, i) => select.append(new Option(`${c.name || "Customer"} · ${c.email}`, String(i)))); }
-    if (!list) return;
-    list.replaceChildren();
-    const q = query.trim().toLowerCase();
-    const matches = walletCustomers.filter(c => {
-      const hasOrders = orderDocuments.some(doc => String(doc.data().email || "").toLowerCase() === c.email.toLowerCase());
-      const filterMatch = walletCustomerFilter === "all" || (walletCustomerFilter === "balance" ? Number(c.wallet_balance) > 0 : hasOrders);
-      return filterMatch && (!q || `${c.name} ${c.email} ${c.phone}`.toLowerCase().includes(q));
-    }).slice(0, 12);
-    matches.forEach(c => { const li = document.createElement("li"); li.setAttribute("role", "option"); li.textContent = `${c.name || "Customer"} · ${c.email}`; li.addEventListener("click", () => selectWalletCustomer(c)); list.append(li); });
-    list.style.display = q && matches.length ? "block" : "none";
-  }
-  async function selectWalletCustomer(customer) {
-    walletSelected = customer;
-    const wrap = byId("wallet-workspace-wrap"); if (wrap) wrap.style.display = "block";
-    walletText("wallet-customer-name", customer.name || "Customer"); walletText("wallet-customer-email", customer.email);
-    walletText("wallet-customer-avatar", (customer.name || customer.email || "?").slice(0, 1).toUpperCase());
-    walletText("wallet-customer-phone-badge", customer.phone || "Phone not available");
-    walletText("wallet-customer-balance", walletMoney(customer.wallet_balance)); walletText("wallet-customer-points", `${Number(customer.walletPoints) || 0} pts`);
-    const orders = orderDocuments.filter(doc => String(doc.data().email || "").toLowerCase() === customer.email.toLowerCase());
-    walletText("wallet-customer-orders-count", String(orders.length));
-    walletText("wallet-customer-spend", walletMoney(orders.reduce((sum, doc) => sum + Number(doc.data().total || 0), 0)));
-    const ordersSelect = byId("wallet-customer-orders-select");
-    if (ordersSelect) {
-      ordersSelect.replaceChildren(new Option("— Select an order to autofill amount & reason —", ""));
-      orders.forEach(doc => { const data = doc.data(); const id = data.order_id || doc.id; ordersSelect.append(new Option(`${id} · ${walletMoney(data.total)}`, id)); });
-    }
-    const input = byId("wallet-customer-search"); if (input) input.value = customer.email;
-    const suggestions = byId("wallet-suggestions-list"); if (suggestions) suggestions.style.display = "none";
-    const clear = byId("wallet-clear-customer-btn"); if (clear) clear.style.display = "inline-flex";
-    try {
-      const response = await callWalletWorker("/wallet/history", { userId: customer.id });
-      walletHistory = response.history || []; renderWalletHistory();
-    } catch (error) { renderWalletHistory([]); window.showAdminToast?.(`Could not load wallet history: ${error.message}`, "error"); }
-  }
-  function renderWalletGlobalActivity() {
-    const tbody = byId("wallet-global-logs-tbody"); if (!tbody) return;
-    const query = (byId("wallet-global-search")?.value || "").trim().toLowerCase();
-    const rows = walletActivity.filter(tx => {
-      const type = String(tx.type || "credit").toLowerCase();
-      const filterMatch = walletActivityFilter === "all" || type === walletActivityFilter;
-      const haystack = `${tx.name} ${tx.email} ${tx.orderId || ""} ${tx.title || ""} ${type}`.toLowerCase();
-      return filterMatch && (!query || haystack.includes(query));
-    });
-    tbody.replaceChildren();
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-3)">No wallet activity matches this filter.</td></tr>'; }
-    rows.forEach(tx => {
-      const tr = document.createElement("tr");
-      const customer = document.createElement("td");
-      customer.innerHTML = `<strong>${escapeHtml(tx.name || "Customer")}</strong><br><small>${escapeHtml(tx.email || "")}</small>`;
-      [walletDate(tx.createdAt), null, tx.type || "credit", walletMoney(tx.amount), tx.title || "—", tx.orderId || "—"].forEach((value, index) => {
-        if (index === 1) { tr.append(customer); return; }
-        const td = document.createElement("td"); td.textContent = value; tr.append(td);
-      });
-      const actionCell = document.createElement("td");
-      const open = document.createElement("button"); open.type = "button"; open.className = "btn-table-action btn-secondary"; open.textContent = "Open";
-      open.disabled = !walletCustomers.some(customerRecord => customerRecord.id === tx.userId);
-      open.addEventListener("click", () => { const found = walletCustomers.find(customerRecord => customerRecord.id === tx.userId); if (found) selectWalletCustomer(found); });
-      actionCell.append(open); tr.append(actionCell); tbody.append(tr);
-    });
-    walletText("wallet-global-log-count", `${rows.length} entries`);
-    const note = byId("wallet-global-pagination-note"); if (note) note.textContent = walletActivity.length >= 500 ? `Showing ${rows.length} matching recent records (latest 500 loaded).` : `Showing ${rows.length} matching records.`;
-  }
-  function openWalletRefundModal(orderId, order) {
-    walletRefundOrder = { id: orderId, ...order };
-    const dialog = byId("wallet-refund-dialog"); if (!dialog) return;
-    walletText("wallet-refund-customer-email", order.email || "Customer email unavailable");
-    walletText("wallet-refund-order-tag", `Order: ${order.order_id || orderId}`);
-    const amount = byId("wallet-refund-amount"); if (amount) amount.value = Number(order.total || 0) || "";
-    if (!dialog.open) dialog.showModal();
-  }
   byId("wallet-refund-close")?.addEventListener("click", () => byId("wallet-refund-dialog")?.close());
   byId("wallet-refund-cancel")?.addEventListener("click", () => byId("wallet-refund-dialog")?.close());
-  document.querySelectorAll("[id^='modal-refund-']").forEach(btn => btn.addEventListener("click", () => {
-    const portion = btn.id.endsWith("100") ? 1 : btn.id.endsWith("50") ? .5 : .25;
-    const amount = byId("wallet-refund-amount"); if (amount && walletRefundOrder) amount.value = (Number(walletRefundOrder.total || 0) * portion).toFixed(2);
-  }));
-  document.querySelectorAll("[data-modal-reason]").forEach(btn => btn.addEventListener("click", () => { byId("wallet-refund-reason").value = btn.dataset.modalReason; }));
-  byId("wallet-refund-modal-form")?.addEventListener("submit", async event => {
-    event.preventDefault();
-    if (!walletRefundOrder?.email) return window.showAdminToast?.("This order has no customer email to credit.", "error");
-    const amount = Number(byId("wallet-refund-amount").value), reason = byId("wallet-refund-reason").value.trim();
-    if (!(amount > 0) || !reason) return window.showAdminToast?.("Enter a positive refund amount and reason.", "error");
-    const submit = byId("wallet-refund-submit"); if (submit) submit.disabled = true;
+
+  byId("wallet-refund-modal-form")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!activeRefundOrder) return;
+
+    const amountInput = byId("wallet-refund-amount");
+    const reasonInput = byId("wallet-refund-reason");
+    const submitBtn = byId("wallet-refund-submit");
+    const amount = parseFloat(amountInput?.value);
+    const reason = reasonInput?.value?.trim() || "Refund";
+    const userEmail = activeRefundOrder.email;
+
+    if (!userEmail) {
+      alert("Cannot issue wallet refund: Customer has no email address associated with this order.");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid refund amount greater than 0.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Processing Refund…";
+
     try {
-      await callWalletWorker("/wallet/adjust", { userId: String(walletRefundOrder.email).trim().toLowerCase(), amount, type: "credit", orderId: walletRefundOrder.order_id || walletRefundOrder.id, reason });
-      byId("wallet-refund-dialog").close(); window.showAdminToast?.("Refund credited to the customer wallet.", "success");
-      if (walletSelected?.email?.toLowerCase() === String(walletRefundOrder.email).toLowerCase()) { await loadWalletsSection(); await selectWalletCustomer(walletSelected); }
-    } catch (error) { window.showAdminToast?.(error.message || "Wallet refund failed.", "error"); }
-    finally { if (submit) submit.disabled = false; }
-  });
-  async function loadWalletsSection() {
-    const status = byId("wallet-global-logs-tbody"); if (status && !walletCustomers.length) status.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px">Loading wallet records…</td></tr>';
-    try {
-      const response = await callWalletWorker("/wallet/list");
-      walletCustomers = response.customers || [];
-      walletActivity = response.activity || [];
-      walletCustomers.sort((a,b) => (a.name || a.email).localeCompare(b.name || b.email));
-      renderWalletCustomers();
-      walletText("wallet-kpi-users", walletCustomers.length);
-      const credits = walletActivity.filter(tx => String(tx.type).toLowerCase() === "credit").reduce((sum,tx) => sum + (Number(tx.amount) || 0), 0);
-      const debits = walletActivity.filter(tx => String(tx.type).toLowerCase() === "debit").reduce((sum,tx) => sum + (Number(tx.amount) || 0), 0);
-      walletText("wallet-kpi-credited", walletMoney(credits));
-      walletText("wallet-kpi-debited", walletMoney(debits));
-      walletText("wallet-kpi-count", `${walletActivity.length} entries`);
-      walletText("wallet-filter-all-count", String(walletCustomers.length));
-      walletText("wallet-filter-orders-count", String(walletCustomers.filter(c => orderDocuments.some(doc => String(doc.data().email || "").toLowerCase() === c.email.toLowerCase())).length));
-      renderWalletGlobalActivity();
-    } catch (error) {
-      if (status) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 7;
-        cell.style.cssText = "text-align:center;padding:24px";
-        cell.textContent = error.message || "Unable to load wallet data";
-        row.append(cell);
-        status.replaceChildren(row);
+      await executeWalletTransaction({
+        userEmail,
+        customerName: activeRefundOrder.order?.name || "",
+        amount,
+        type: "credit",
+        reason,
+        orderId: activeRefundOrder.order?.order_id || activeRefundOrder.id
+      });
+
+      // Update order status/refund note in order document
+      try {
+        await db.collection("orders").doc(activeRefundOrder.id).update({
+          refund_status: `Refunded ₹${amount} to wallet (${reason}) on ${new Date().toLocaleDateString("en-IN")}`
+        });
+        if (activeRefundOrder.order) {
+          activeRefundOrder.order.refund_status = `Refunded ₹${amount}`;
+        }
+      } catch (orderUpdateErr) {
+        console.warn("Could not attach refund note to order:", orderUpdateErr);
       }
-      window.showAdminToast?.(`Wallet data could not be loaded: ${error.message}`, "error");
+
+      window.showAdminToast?.(`✓ Successfully refunded ₹${amount} to ${userEmail}'s wallet!`, "success");
+      byId("wallet-refund-dialog")?.close();
+      await loadOrders();
+      if (document.querySelector("#section-wallets.active")) {
+        loadWalletsSection();
+      }
+    } catch (err) {
+      reportError(err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Try Again";
+    }
+  });
+
+  async function executeWalletTransaction({ userEmail, customerName, amount, type, reason, orderId, isPoints = false }) {
+    const cleanUserEmail = String(userEmail || "").trim().toLowerCase();
+    if (!cleanUserEmail) throw new Error("A valid customer email is required.");
+    const numericAmount = Math.abs(parseFloat(amount));
+    if (!numericAmount || numericAmount <= 0) throw new Error("A positive amount is required.");
+
+    const userRef = db.collection("users").doc(cleanUserEmail);
+    const historyRef = userRef.collection("wallet_history").doc();
+    const globalLogRef = db.collection("wallet_logs").doc();
+    const adminEmail = String(auth.currentUser?.email || "admin");
+
+    const batch = db.batch();
+
+    if (isPoints || type === "points") {
+      const delta = type === "debit" ? -Math.round(numericAmount) : Math.round(numericAmount);
+      batch.set(userRef, {
+        walletPoints: firebase.firestore.FieldValue.increment(delta),
+        email: cleanUserEmail,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      batch.set(historyRef, {
+        amount: Math.round(numericAmount),
+        type: delta >= 0 ? "credit" : "debit",
+        isPoints: true,
+        title: reason || (delta >= 0 ? "Loyalty Reward Points Credited" : "Loyalty Points Deducted"),
+        orderId: orderId || null,
+        processedBy: adminEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      batch.set(globalLogRef, {
+        userEmail: cleanUserEmail,
+        customerName: customerName || "",
+        amount: Math.round(numericAmount),
+        type: delta >= 0 ? "credit" : "debit",
+        isPoints: true,
+        reason: reason || (delta >= 0 ? "Points Credit" : "Points Debit"),
+        orderId: orderId || null,
+        processedBy: adminEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      const delta = type === "debit" ? -numericAmount : numericAmount;
+      batch.set(userRef, {
+        wallet_balance: firebase.firestore.FieldValue.increment(delta),
+        email: cleanUserEmail,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      batch.set(historyRef, {
+        amount: numericAmount,
+        type: type, // 'credit' | 'debit'
+        title: reason,
+        orderId: orderId || null,
+        processedBy: adminEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      batch.set(globalLogRef, {
+        userEmail: cleanUserEmail,
+        customerName: customerName || "",
+        amount: numericAmount,
+        type: type,
+        reason: reason,
+        orderId: orderId || null,
+        processedBy: adminEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    await batch.commit();
+  }
+
+  // ── Load Wallets Section ───────────────────────────────────────────────
+  async function loadWalletsSection() {
+    // If orders haven't been loaded yet (e.g. navigated directly to wallets
+    // before the concurrent loadOrders() resolved), fetch them now so the
+    // customer directory has real data instead of an empty array.
+    if (orderDocuments.length === 0) {
+      await loadOrders();
+    }
+    buildAllKnownCustomersDirectory();
+    populateWalletCustomerDropdown();
+    await loadGlobalWalletLogs();
+    if (activeWalletCustomer) {
+      await loadCustomerWallet(activeWalletCustomer);
     }
   }
-  byId("wallet-customer-search")?.addEventListener("input", e => renderWalletCustomers(e.target.value));
-  byId("wallet-load-customer-btn")?.addEventListener("click", () => {
-    const value = byId("wallet-customer-search")?.value.trim().toLowerCase();
-      const dropdown = byId("wallet-quick-customer-select");
-      const customer = walletCustomers.find(c => c.email.toLowerCase() === value) || (dropdown?.value ? walletCustomers[Number(dropdown.value)] : null);
-    if (customer) selectWalletCustomer(customer); else window.showAdminToast?.("Select a customer from the suggestions first.", "info");
-  });
-  byId("wallet-quick-customer-select")?.addEventListener("change", e => { const c = walletCustomers[Number(e.target.value)]; if (c) selectWalletCustomer(c); });
-  byId("wallet-clear-customer-btn")?.addEventListener("click", () => { walletSelected = null; byId("wallet-workspace-wrap").style.display = "none"; byId("wallet-customer-search").value = ""; byId("wallet-clear-customer-btn").style.display = "none"; });
-  byId("wallet-action-form")?.addEventListener("submit", async event => {
-    event.preventDefault();
-    if (!walletSelected) return window.showAdminToast?.("Load a customer wallet first.", "error");
-    const mode = byId("wallet-action-type")?.value || "credit";
-    const amount = Number(byId("wallet-action-amount")?.value), reason = byId("wallet-action-reason")?.value.trim();
-    if (!Number.isFinite(amount) || amount <= 0 || !reason) return window.showAdminToast?.("Enter a positive amount and reason.", "error");
-    try {
-      await callWalletWorker("/wallet/adjust", { userId: walletSelected.id, amount, type: mode, orderId: byId("wallet-action-order-id")?.value.trim(), reason });
-      window.showAdminToast?.(mode === "credit" ? "Wallet credit added." : mode === "debit" ? "Wallet debit recorded." : "Loyalty points added.", "success");
-      await loadWalletsSection(); await selectWalletCustomer(walletSelected);
-      byId("wallet-action-form").reset(); byId("wallet-action-type").value = "credit";
-    } catch (error) { window.showAdminToast?.(error.message || "Wallet credit failed.", "error"); }
-  });
-  document.querySelectorAll(".wallet-mode-tab").forEach(btn => btn.addEventListener("click", () => {
-    document.querySelectorAll(".wallet-mode-tab").forEach(tab => tab.classList.toggle("active", tab === btn));
-    if (byId("wallet-action-type")) byId("wallet-action-type").value = btn.dataset.walletMode;
-    const submit = byId("wallet-action-submit-btn"); if (submit) submit.textContent = btn.dataset.walletMode === "credit" ? "Add Wallet Credit" : btn.dataset.walletMode === "debit" ? "Debit Wallet" : "Add Points";
-    const amountLabel = byId("wallet-action-amount-label"); if (amountLabel) amountLabel.textContent = btn.dataset.walletMode === "points" ? "Points" : "Amount (₹)";
-    const amountInput = byId("wallet-action-amount"); if (amountInput) amountInput.step = btn.dataset.walletMode === "points" ? "1" : "any";
-  }));
-  document.querySelectorAll("#wallet-amount-chips [data-chip-amount]").forEach(btn => btn.addEventListener("click", () => { const input = byId("wallet-action-amount"); if (input) input.value = btn.dataset.chipAmount; }));
-  document.querySelectorAll("#wallet-reason-chips [data-chip-reason]").forEach(btn => btn.addEventListener("click", () => { const input = byId("wallet-action-reason"); if (input) input.value = btn.dataset.chipReason; }));
-  byId("refresh-wallets-btn")?.addEventListener("click", loadWalletsSection);
-  const walletCsv = (rows, fields, fileName) => {
-    const csv = [fields, ...rows.map(row => fields.map(field => row[field] ?? ""))].map(row => row.map(value => `"${String(value).replaceAll('"','""')}"`).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url);
-  };
-  byId("wallet-global-search")?.addEventListener("input", renderWalletGlobalActivity);
-  document.querySelector("#section-wallets .admin-quick-filters")?.addEventListener("click", event => {
-    const button = event.target.closest("button[data-global-tx-filter]"); if (!button) return;
-    walletActivityFilter = button.dataset.globalTxFilter;
-    document.querySelectorAll("button[data-global-tx-filter]").forEach(item => item.classList.toggle("active", item === button));
-    renderWalletGlobalActivity();
-  });
-  const exportWalletActivity = () => walletCsv(walletActivity, ["createdAt", "name", "email", "type", "amount", "title", "orderId"], "wallet-activity.csv");
-  byId("wallet-global-export-csv")?.addEventListener("click", exportWalletActivity);
-  byId("wallet-export-all-btn")?.addEventListener("click", exportWalletActivity);
-  byId("wallet-customer-export-csv")?.addEventListener("click", () => {
-    if (!walletSelected) return window.showAdminToast?.("Load a customer wallet first.", "info");
-    walletCsv(walletHistory.map(tx => ({ ...tx, email: walletSelected.email })), ["createdAt", "type", "amount", "title", "orderId", "email"], `${walletSelected.email}-wallet.csv`);
-  });
-  byId("wallet-customer-history-search")?.addEventListener("input", event => {
-    const query = event.target.value.trim().toLowerCase();
-    renderWalletHistory(walletHistory.filter(tx => `${tx.type} ${tx.title} ${tx.orderId}`.toLowerCase().includes(query)));
-  });
+
+  function buildAllKnownCustomersDirectory() {
+    allKnownWalletCustomers.clear();
+
+    // 1. From order documents
+    (orderDocuments || []).forEach(doc => {
+      const o = doc.data();
+      const email = String(o.email || o.user_email || "").trim().toLowerCase();
+      if (!email) return;
+
+      if (!allKnownWalletCustomers.has(email)) {
+        allKnownWalletCustomers.set(email, {
+          email,
+          name: o.name || "Customer",
+          phone: o.phone || "",
+          orderCount: 0,
+          totalSpent: 0,
+          hasOrders: true,
+          recentOrder: o
+        });
+      }
+
+      const rec = allKnownWalletCustomers.get(email);
+      rec.orderCount += 1;
+      rec.totalSpent += Number(o.total || 0);
+      if (o.name && (!rec.name || rec.name === "Customer")) rec.name = o.name;
+      if (o.phone && !rec.phone) rec.phone = o.phone;
+    });
+
+    // 2. From customerRecords if any
+    (customerRecords || []).forEach(cr => {
+      const email = String(cr.email || "").trim().toLowerCase();
+      if (email && !allKnownWalletCustomers.has(email)) {
+        allKnownWalletCustomers.set(email, {
+          email,
+          name: cr.name || "Customer",
+          phone: cr.phone || "",
+          orderCount: 0,
+          totalSpent: 0,
+          hasOrders: false
+        });
+      }
+    });
+
+    const totalUsers = allKnownWalletCustomers.size;
+    const withOrders = [...allKnownWalletCustomers.values()].filter(c => c.hasOrders).length;
+
+    const countAllEl = byId("wallet-filter-all-count");
+    if (countAllEl) countAllEl.textContent = totalUsers;
+    const countOrdersEl = byId("wallet-filter-orders-count");
+    if (countOrdersEl) countOrdersEl.textContent = withOrders;
+
+    const kpiUsersEl = byId("wallet-kpi-users");
+    if (kpiUsersEl) kpiUsersEl.textContent = totalUsers;
+  }
+
+  // ── Wallet Customer Autocomplete Search ───────────────────────────────
+  // Keeps the hidden <select> in sync for JS compat but drives UX via
+  // a live suggestion panel rendered under the search input.
+
+  let walletSuggestActiveIdx = -1; // keyboard-highlighted suggestion index
+
+  /** Escape text for safe innerHTML insertion */
+  function escWalletHtml(str) {
+    return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /**
+   * Wrap every occurrence of `query` in `text` with <mark>.
+   * Returns safe HTML string.
+   */
+  function highlightMatch(text, query) {
+    if (!query) return escWalletHtml(text);
+    const safe = escWalletHtml(text);
+    const safeQ = escWalletHtml(query);
+    // Case-insensitive replace, preserving original casing
+    return safe.replace(new RegExp(safeQ.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "gi"),
+      m => `<mark>${m}</mark>`);
+  }
+
+  /** Score a customer record against the query for ranking. */
+  function walletSearchScore(c, query) {
+    if (!query) return c.orderCount;
+    const q = query.toLowerCase();
+    const name  = (c.name  || "").toLowerCase();
+    const email = (c.email || "").toLowerCase();
+    const phone = (c.phone || "").toLowerCase();
+    let score = 0;
+    if (email === q)                   score += 100;
+    if (email.startsWith(q))           score += 50;
+    if (name === q)                    score += 90;
+    if (name.startsWith(q))            score += 40;
+    if (phone.startsWith(q))           score += 35;
+    if (email.includes(q))             score += 20;
+    if (name.includes(q))              score += 15;
+    if (phone.includes(q))             score += 10;
+    score += c.orderCount;             // tiebreak by order count
+    return score;
+  }
+
+  /** Return the filtered + sorted customer list for current state/query. */
+  function getWalletSuggestionList(query = "") {
+    const q = query.trim().toLowerCase();
+    let list = [...allKnownWalletCustomers.values()];
+
+    if (walletCustFilterState === "orders") {
+      list = list.filter(c => c.hasOrders);
+    }
+
+    if (q) {
+      list = list.filter(c =>
+        (c.name  || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.phone || "").toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => walletSearchScore(b, q) - walletSearchScore(a, q));
+    return list;
+  }
+
+  /** Sync the hidden <select> (keeps existing compat code working). */
+  function populateWalletCustomerDropdown(filter = walletCustFilterState, searchQuery = "") {
+    // Update state so getWalletSuggestionList picks it up
+    walletCustFilterState = filter;
+    const select = byId("wallet-quick-customer-select");
+    if (!select) return;
+    const list = getWalletSuggestionList(searchQuery);
+    select.innerHTML = `<option value="">— (${list.length} customers) —</option>`;
+    list.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.email;
+      const orderTag = c.orderCount > 0 ? ` (${c.orderCount} order${c.orderCount === 1 ? "" : "s"})` : "";
+      opt.textContent = `${c.name} · ${c.email}${orderTag}`;
+      if (activeWalletCustomer && c.email === activeWalletCustomer) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+
+  /** Close the autocomplete suggestion panel. */
+  function closeWalletSuggestions() {
+    const list = byId("wallet-suggestions-list");
+    if (list) {
+      list.style.display = "none";
+      list.innerHTML = "";
+    }
+    walletSuggestActiveIdx = -1;
+  }
+
+  /** Render suggestion panel under the search input. */
+  function renderWalletSuggestions(query) {
+    const list = byId("wallet-suggestions-list");
+    if (!list) return;
+
+    const q = query.trim();
+
+    // Show full list on focus even with no query, up to 50
+    const matches = getWalletSuggestionList(q).slice(0, 50);
+    walletSuggestActiveIdx = -1;
+
+    if (!matches.length) {
+      list.innerHTML = `<li class="wallet-suggestion-empty">${q ? `No customers match "<strong>${escWalletHtml(q)}</strong>"` : "No customers loaded yet."}</li>`;
+      list.style.display = "block";
+      return;
+    }
+
+    list.innerHTML = matches.map((c, i) => {
+      const initials = (c.name || c.email || "?").charAt(0).toUpperCase();
+      const orderTag = c.orderCount > 0
+        ? `<span class="wallet-suggestion-orders">${c.orderCount} order${c.orderCount === 1 ? "" : "s"}</span>`
+        : `<span class="wallet-suggestion-orders" style="opacity:.5">No orders</span>`;
+      const spendTag = c.totalSpent > 0
+        ? `₹${c.totalSpent.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+        : "";
+      return `<li class="wallet-suggestion-item" role="option" aria-selected="false"
+                  data-email="${escWalletHtml(c.email)}" data-idx="${i}" tabindex="-1">
+        <div class="wallet-suggestion-avatar">${initials}</div>
+        <div class="wallet-suggestion-info">
+          <div class="wallet-suggestion-name">${highlightMatch(c.name || "Unknown", q)}</div>
+          <div class="wallet-suggestion-sub">${highlightMatch(c.email, q)}${c.phone ? ` · ${highlightMatch(c.phone, q)}` : ""}</div>
+        </div>
+        <div class="wallet-suggestion-meta">
+          ${orderTag}
+          ${spendTag ? `<div style="font-size:0.72rem;margin-top:2px;color:var(--text-2);">${spendTag}</div>` : ""}
+        </div>
+      </li>`;
+    }).join("");
+
+    list.style.display = "block";
+
+    // Click to load
+    list.querySelectorAll(".wallet-suggestion-item").forEach(item => {
+      item.addEventListener("mousedown", e => {
+        e.preventDefault(); // prevent blur before click
+        const email = item.dataset.email;
+        if (email) selectWalletCustomerFromSuggest(email);
+      });
+    });
+  }
+
+  /** Move keyboard highlight up/down in suggestion panel. */
+  function moveWalletSuggestHighlight(dir) {
+    const list = byId("wallet-suggestions-list");
+    if (!list || list.style.display === "none") return;
+    const items = list.querySelectorAll(".wallet-suggestion-item");
+    if (!items.length) return;
+    items.forEach(el => el.setAttribute("aria-selected", "false"));
+    walletSuggestActiveIdx = Math.max(0, Math.min(items.length - 1, walletSuggestActiveIdx + dir));
+    const active = items[walletSuggestActiveIdx];
+    if (active) {
+      active.setAttribute("aria-selected", "true");
+      active.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  /** Pick a customer from the suggestion list and load their wallet. */
+  function selectWalletCustomerFromSuggest(email) {
+    const input = byId("wallet-customer-search");
+    // Fill input with the email so it shows what was selected
+    if (input) input.value = email;
+    const clearBtn = byId("wallet-customer-search-clear");
+    if (clearBtn) clearBtn.style.display = "flex";
+    closeWalletSuggestions();
+    loadCustomerWallet(email);
+  }
+
+  // ── Search input wiring ────────────────────────────────────────────
+  const _walletSearchInput = byId("wallet-customer-search");
+  if (_walletSearchInput) {
+    _walletSearchInput.addEventListener("input", e => {
+      const val = e.target.value;
+      const clearBtn = byId("wallet-customer-search-clear");
+      if (clearBtn) clearBtn.style.display = val.trim() ? "flex" : "none";
+      renderWalletSuggestions(val);
+      populateWalletCustomerDropdown(walletCustFilterState, val);
+    });
+
+    _walletSearchInput.addEventListener("focus", e => {
+      renderWalletSuggestions(e.target.value);
+    });
+
+    _walletSearchInput.addEventListener("keydown", e => {
+      const list = byId("wallet-suggestions-list");
+      const isOpen = list && list.style.display !== "none";
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!isOpen) renderWalletSuggestions(_walletSearchInput.value);
+        moveWalletSuggestHighlight(1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        moveWalletSuggestHighlight(-1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        // If a suggestion is highlighted, pick it
+        if (isOpen && walletSuggestActiveIdx >= 0) {
+          const active = list.querySelector(".wallet-suggestion-item[aria-selected='true']");
+          if (active) { selectWalletCustomerFromSuggest(active.dataset.email); return; }
+        }
+        // Otherwise load whatever is typed (direct email entry)
+        const val = _walletSearchInput.value.trim();
+        if (val) { closeWalletSuggestions(); loadCustomerWallet(val); }
+        else window.showAdminToast?.("Type a customer name, email or phone to search.", "warning");
+      } else if (e.key === "Escape") {
+        closeWalletSuggestions();
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener("click", e => {
+      if (!byId("wallet-search-container")?.contains(e.target)) {
+        closeWalletSuggestions();
+      }
+    });
+  }
+
   byId("wallet-customer-search-clear")?.addEventListener("click", () => {
-    byId("wallet-customer-search").value = ""; renderWalletCustomers();
-    byId("wallet-customer-search-clear").style.display = "none";
+    const input = byId("wallet-customer-search");
+    if (input) { input.value = ""; input.focus(); }
+    const clearBtn = byId("wallet-customer-search-clear");
+    if (clearBtn) clearBtn.style.display = "none";
+    closeWalletSuggestions();
+    populateWalletCustomerDropdown(walletCustFilterState, "");
   });
-  byId("wallet-customer-search")?.addEventListener("input", event => { const clear = byId("wallet-customer-search-clear"); if (clear) clear.style.display = event.target.value ? "flex" : "none"; });
-  byId("wallet-copy-email-btn")?.addEventListener("click", async () => {
-    if (!walletSelected) return;
-    try { await navigator.clipboard.writeText(walletSelected.email); walletText("wallet-copy-email-text", "Copied"); setTimeout(() => walletText("wallet-copy-email-text", "Copy"), 1200); }
-    catch { window.showAdminToast?.("Could not copy the email address.", "error"); }
+
+  byId("wallet-load-customer-btn")?.addEventListener("click", () => {
+    const val = byId("wallet-customer-search")?.value.trim();
+    const selectVal = byId("wallet-quick-customer-select")?.value.trim();
+    const target = val || selectVal;
+    if (!target) {
+      window.showAdminToast?.("Type a customer name, email or phone to search.", "warning");
+      return;
+    }
+    // If typed value matches a known customer name, resolve to their email
+    const q = target.toLowerCase();
+    const match = [...allKnownWalletCustomers.values()].find(c =>
+      c.email.toLowerCase() === q ||
+      (c.name || "").toLowerCase() === q ||
+      (c.phone || "") === q
+    );
+    closeWalletSuggestions();
+    loadCustomerWallet(match ? match.email : target);
   });
-  byId("wallet-customer-view-orders-btn")?.addEventListener("click", () => {
-    if (!walletSelected) return;
-    navigateTo("orders");
-    const search = byId("order-search"); if (search) { search.value = walletSelected.email; search.dispatchEvent(new Event("input", { bubbles: true })); }
+
+  byId("wallet-quick-customer-select")?.addEventListener("change", e => {
+    const email = e.target.value.trim();
+    if (email) loadCustomerWallet(email);
   });
-  byId("wallet-customer-orders-select")?.addEventListener("change", event => {
-    const id = event.target.value; if (!id) return;
-    const orderDoc = orderDocuments.find(doc => String(doc.data().order_id || doc.id) === id); if (!orderDoc) return;
-    const order = orderDoc.data();
-    if (byId("wallet-action-amount")) byId("wallet-action-amount").value = Number(order.total || 0);
-    if (byId("wallet-action-order-id")) byId("wallet-action-order-id").value = id;
-    if (byId("wallet-action-reason")) byId("wallet-action-reason").value = `Refund for order ${id}`;
+
+  // Filter pills
+  byId("wallet-cust-filter-all")?.addEventListener("click", () => {
+    walletCustFilterState = "all";
+    updateCustFilterPillStyles("wallet-cust-filter-all");
+    const q = byId("wallet-customer-search")?.value || "";
+    populateWalletCustomerDropdown("all", q);
+    renderWalletSuggestions(q);
   });
-  byId("wallet-chip-full-balance")?.addEventListener("click", () => { if (byId("wallet-action-amount")) byId("wallet-action-amount").value = Number(walletSelected?.wallet_balance || 0); });
-  document.querySelector(".wallet-filter-pills-row")?.addEventListener("click", event => {
-    const button = event.target.closest("button[data-cust-filter]"); if (!button) return;
-    walletCustomerFilter = button.dataset.custFilter;
-    document.querySelectorAll(".wallet-filter-pills-row button[data-cust-filter]").forEach(item => item.classList.toggle("active", item === button));
-    renderWalletCustomers(byId("wallet-customer-search")?.value || "");
+  byId("wallet-cust-filter-orders")?.addEventListener("click", () => {
+    walletCustFilterState = "orders";
+    updateCustFilterPillStyles("wallet-cust-filter-orders");
+    const q = byId("wallet-customer-search")?.value || "";
+    populateWalletCustomerDropdown("orders", q);
+    renderWalletSuggestions(q);
   });
+  byId("wallet-cust-filter-balance")?.addEventListener("click", () => {
+    walletCustFilterState = "balance";
+    updateCustFilterPillStyles("wallet-cust-filter-balance");
+    window.showAdminToast?.("Search or select customer to inspect balance", "info");
+    const q = byId("wallet-customer-search")?.value || "";
+    populateWalletCustomerDropdown("all", q);
+    renderWalletSuggestions(q);
+  });
+
+  function updateCustFilterPillStyles(activeId) {
+    ["wallet-cust-filter-all", "wallet-cust-filter-orders", "wallet-cust-filter-balance"].forEach(id => {
+      const el = byId(id);
+      if (el) el.classList.toggle("active", id === activeId);
+    });
+  }
+
+  byId("wallet-clear-customer-btn")?.addEventListener("click", () => {
+    activeWalletCustomer = null;
+    const wrap = byId("wallet-workspace-wrap");
+    if (wrap) wrap.style.display = "none";
+    byId("wallet-clear-customer-btn").style.display = "none";
+    const input = byId("wallet-customer-search");
+    if (input) { input.value = ""; }
+    const clearBtn = byId("wallet-customer-search-clear");
+    if (clearBtn) clearBtn.style.display = "none";
+    closeWalletSuggestions();
+    const select = byId("wallet-quick-customer-select");
+    if (select) select.value = "";
+  });
+
+  byId("refresh-wallets-btn")?.addEventListener("click", async () => {
+    const btn = byId("refresh-wallets-btn");
+    btn.disabled = true;
+    try {
+      await loadWalletsSection();
+      window.showAdminToast?.("Wallets ledger and balances refreshed", "success");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── Load Customer Wallet Profile ───────────────────────────────────────
+  async function loadCustomerWallet(email) {
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    if (!cleanEmail) return;
+
+    activeWalletCustomer = cleanEmail;
+    const wrap = byId("wallet-workspace-wrap");
+    if (wrap) wrap.style.display = "block";
+    const closeBtn = byId("wallet-clear-customer-btn");
+    if (closeBtn) closeBtn.style.display = "inline-flex";
+
+    // Header info
+    byId("wallet-customer-email").textContent = cleanEmail;
+    byId("wallet-customer-name").textContent = "Loading customer…";
+    byId("wallet-customer-avatar").textContent = cleanEmail.charAt(0).toUpperCase();
+
+    // Copy email handler
+    const copyBtn = byId("wallet-copy-email-btn");
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        navigator.clipboard?.writeText(cleanEmail).then(() => {
+          const txt = byId("wallet-copy-email-text");
+          if (txt) {
+            txt.textContent = "Copied!";
+            setTimeout(() => { txt.textContent = "Copy"; }, 1500);
+          }
+        }).catch(() => {
+          window.showAdminToast?.("Email copied: " + cleanEmail, "info");
+        });
+      };
+    }
+
+    // Match known info from orders
+    const matchedOrders = (orderDocuments || []).filter(d => {
+      const data = d.data();
+      const oEmail = String(data.email || data.user_email || "").trim().toLowerCase();
+      return oEmail === cleanEmail;
+    });
+
+    let customerDisplayName = cleanEmail;
+    let customerPhone = "No phone";
+    let lifetimeSpend = 0;
+
+    if (matchedOrders.length > 0) {
+      matchedOrders.forEach(doc => {
+        const od = doc.data();
+        if (od.name && customerDisplayName === cleanEmail) customerDisplayName = od.name;
+        if (od.phone && customerPhone === "No phone") customerPhone = od.phone;
+        lifetimeSpend += Number(od.total || 0);
+      });
+    }
+
+    byId("wallet-customer-name").textContent = customerDisplayName;
+    byId("wallet-customer-phone-badge").textContent = customerPhone;
+    byId("wallet-customer-spend").textContent = `₹${lifetimeSpend.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+    byId("wallet-customer-orders-count").textContent = `${matchedOrders.length} order${matchedOrders.length === 1 ? "" : "s"}`;
+
+    // "View Orders" button handler: switch to Orders tab and pre-fill search with this customer email
+    const viewOrdersBtn = byId("wallet-customer-view-orders-btn");
+    if (viewOrdersBtn) {
+      viewOrdersBtn.onclick = () => {
+        if (typeof window.navigateTo === "function") {
+          window.navigateTo("orders");
+          setTimeout(() => {
+            const ordSearch = byId("order-search");
+            if (ordSearch) {
+              ordSearch.value = cleanEmail;
+              ordSearch.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          }, 150);
+        }
+      };
+    }
+
+    // Populate Customer's Recent Orders dropdown for instant refund autofill
+    populateCustomerOrdersAutofill(matchedOrders);
+
+    // Fetch user doc for wallet balance and points
+    try {
+      const userDoc = await db.collection("users").doc(cleanEmail).get();
+      let balance = 0;
+      let points = 0;
+
+      if (userDoc.exists) {
+        const udata = userDoc.data();
+        balance = Number(udata.wallet_balance || 0);
+        points = Number(udata.walletPoints || 0);
+        if (udata.name) byId("wallet-customer-name").textContent = udata.name;
+        if (udata.phone) byId("wallet-customer-phone-badge").textContent = udata.phone;
+      } else if (matchedOrders.length === 0) {
+        byId("wallet-customer-name").textContent = "Unregistered Customer";
+        byId("wallet-customer-phone-badge").textContent = "New wallet";
+      }
+
+      walletCurrentBalanceVal = balance;
+      walletCurrentPointsVal = points;
+
+      byId("wallet-customer-balance").textContent = `₹${balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      byId("wallet-customer-points").textContent = `${points} pts`;
+      const ptsSub = byId("wallet-customer-points-sub");
+      if (ptsSub) ptsSub.textContent = `Worth ₹${points} at store checkout`;
+
+      // Update full balance chip visibility
+      const fullChip = byId("wallet-chip-full-balance");
+      if (fullChip) {
+        fullChip.style.display = balance > 0 ? "inline-flex" : "none";
+        fullChip.textContent = `Full Balance (₹${balance.toFixed(0)})`;
+      }
+
+      // Update submit button text preview
+      updateWalletSubmitButtonText();
+
+      // Load customer history records
+      const historySnap = await db.collection("users").doc(cleanEmail).collection("wallet_history")
+        .orderBy("createdAt", "desc").limit(50).get();
+
+      customerWalletHistoryData = historySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderCustomerWalletHistory();
+    } catch (err) {
+      console.error("Error loading customer wallet:", err);
+      window.showAdminToast?.("Error loading customer wallet details.", "danger");
+    }
+  }
+
+  function populateCustomerOrdersAutofill(orders) {
+    const sel = byId("wallet-customer-orders-select");
+    if (!sel) return;
+
+    if (!orders || orders.length === 0) {
+      sel.innerHTML = '<option value="">— No previous orders found for this customer —</option>';
+      sel.disabled = true;
+      return;
+    }
+
+    sel.disabled = false;
+    sel.innerHTML = '<option value="">— Select an order to autofill amount &amp; reason (' + orders.length + ') —</option>';
+    orders.forEach(doc => {
+      const od = doc.data();
+      const orderNum = (od.order_id || doc.id || "").replace(/^#/, "");
+      const total = Number(od.total || 0);
+      const opt = document.createElement("option");
+      opt.value = doc.id;
+      opt.dataset.orderId = orderNum;
+      opt.dataset.total = total;
+      opt.textContent = `#${orderNum} · ₹${total} · ${od.status || "Order"} (${od.items?.length || 1} item${(od.items?.length || 1) === 1 ? "" : "s"})`;
+      sel.appendChild(opt);
+    });
+  }
+
+  byId("wallet-customer-orders-select")?.addEventListener("change", e => {
+    const sel = e.target;
+    const selectedOpt = sel.options[sel.selectedIndex];
+    if (!selectedOpt || !selectedOpt.value) return;
+
+    const total = parseFloat(selectedOpt.dataset.total) || 0;
+    const orderId = selectedOpt.dataset.orderId || "";
+
+    const amtInput = byId("wallet-action-amount");
+    if (amtInput) amtInput.value = total;
+
+    const ordInput = byId("wallet-action-order-id");
+    if (ordInput) ordInput.value = `#${orderId}`;
+
+    const reasonInput = byId("wallet-action-reason");
+    if (reasonInput) reasonInput.value = `Refund for Order #${orderId}`;
+
+    // Switch to credit mode if not already
+    setWalletActionMode("credit");
+    updateWalletSubmitButtonText();
+    window.showAdminToast?.(`Autofilled Order #${orderId} details (₹${total})`, "info");
+  });
+
+  // Mode switcher tabs (Credit / Debit / Points)
+  function setWalletActionMode(mode) {
+    const typeInput = byId("wallet-action-type");
+    if (typeInput) typeInput.value = mode;
+
+    ["credit", "debit", "points"].forEach(m => {
+      const btn = byId(`tab-mode-${m}`);
+      if (btn) btn.classList.toggle("active", m === mode);
+    });
+
+    const amtLabel = byId("wallet-action-amount-label");
+    const amtInput = byId("wallet-action-amount");
+    const submitBtn = byId("wallet-action-submit-btn");
+
+    if (mode === "points") {
+      if (amtLabel) amtLabel.textContent = "Points to Adjust (★)";
+      if (amtInput) {
+        amtInput.placeholder = "e.g. 50";
+        amtInput.step = "1";
+      }
+    } else {
+      if (amtLabel) amtLabel.textContent = "Amount (₹)";
+      if (amtInput) {
+        amtInput.placeholder = "e.g. 150";
+        amtInput.step = "any";
+      }
+    }
+
+    if (submitBtn) {
+      submitBtn.className = `wallet-submit-btn btn-${mode}`;
+    }
+
+    updateWalletSubmitButtonText();
+  }
+
+  byId("tab-mode-credit")?.addEventListener("click", () => setWalletActionMode("credit"));
+  byId("tab-mode-debit")?.addEventListener("click", () => setWalletActionMode("debit"));
+  byId("tab-mode-points")?.addEventListener("click", () => setWalletActionMode("points"));
+
+  // Quick Amount preset chips
+  document.querySelectorAll("#wallet-amount-chips [data-chip-amount]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const addVal = parseFloat(btn.getAttribute("data-chip-amount")) || 0;
+      const amtInput = byId("wallet-action-amount");
+      if (amtInput) {
+        const cur = parseFloat(amtInput.value) || 0;
+        amtInput.value = cur + addVal;
+        updateWalletSubmitButtonText();
+      }
+    });
+  });
+
+  byId("wallet-chip-full-balance")?.addEventListener("click", () => {
+    const amtInput = byId("wallet-action-amount");
+    if (amtInput && walletCurrentBalanceVal > 0) {
+      amtInput.value = walletCurrentBalanceVal;
+      setWalletActionMode("debit");
+      updateWalletSubmitButtonText();
+    }
+  });
+
+  // Quick Reason preset chips
+  document.querySelectorAll("#wallet-reason-chips [data-chip-reason]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const reason = btn.getAttribute("data-chip-reason");
+      const rInput = byId("wallet-action-reason");
+      if (rInput) rInput.value = reason;
+    });
+  });
+
+  // Update submit button text dynamically
+  function updateWalletSubmitButtonText() {
+    const submitBtn = byId("wallet-action-submit-btn");
+    if (!submitBtn) return;
+
+    const mode = byId("wallet-action-type")?.value || "credit";
+    const amt = parseFloat(byId("wallet-action-amount")?.value) || 0;
+    const custEmail = activeWalletCustomer ? activeWalletCustomer.split("@")[0] : "Customer";
+
+    if (mode === "credit") {
+      submitBtn.textContent = amt > 0
+        ? `✓ Credit ₹${amt.toFixed(2)} to ${custEmail}`
+        : `✓ Process Credit / Refund`;
+    } else if (mode === "debit") {
+      submitBtn.textContent = amt > 0
+        ? `⚠ Debit ₹${amt.toFixed(2)} from ${custEmail}`
+        : `⚠ Process Debit Deduction`;
+    } else if (mode === "points") {
+      submitBtn.textContent = amt > 0
+        ? `★ Credit ${Math.round(amt)} Reward Points to ${custEmail}`
+        : `★ Adjust Loyalty Points`;
+    }
+  }
+
+  byId("wallet-action-amount")?.addEventListener("input", updateWalletSubmitButtonText);
+
+  // Render customer ledger table with search & filter
+  function renderCustomerWalletHistory() {
+    const tbody = byId("wallet-customer-history-tbody");
+    if (!tbody) return;
+
+    const searchQuery = String(byId("wallet-customer-history-search")?.value || "").trim().toLowerCase();
+    let records = customerWalletHistoryData || [];
+
+    if (walletCustTxFilterState === "credit") {
+      records = records.filter(tx => (tx.type || "credit").toLowerCase() === "credit");
+    } else if (walletCustTxFilterState === "debit") {
+      records = records.filter(tx => (tx.type || "").toLowerCase() === "debit");
+    }
+
+    if (searchQuery) {
+      records = records.filter(tx =>
+        String(tx.title || "").toLowerCase().includes(searchQuery) ||
+        String(tx.orderId || "").toLowerCase().includes(searchQuery) ||
+        String(tx.processedBy || "").toLowerCase().includes(searchQuery)
+      );
+    }
+
+    byId("wallet-customer-tx-count").textContent = `${records.length} entries`;
+
+    if (records.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="wallet-empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              <strong>No transaction records found</strong>
+              <p>${searchQuery ? "Try refining your search filter." : "Use the adjustment form on the left to issue a refund or credit."}</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    records.forEach(tx => {
+      const isCredit = (tx.type || "credit").toLowerCase() === "credit";
+      const isPoints = !!tx.isPoints;
+      const amount = Number(tx.amount || 0);
+      const tr = document.createElement("tr");
+
+      let dateStr = "—";
+      if (tx.createdAt) {
+        const d = tx.createdAt.toDate ? tx.createdAt.toDate() : new Date(tx.createdAt);
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+        }
+      }
+
+      const badgeHtml = isPoints
+        ? `<span class="wallet-status-badge wallet-badge-points">★ Points (${isCredit ? "+" : "−"})</span>`
+        : isCredit
+          ? `<span class="wallet-status-badge wallet-badge-credit">↑ Credit (+)</span>`
+          : `<span class="wallet-status-badge wallet-badge-debit">↓ Debit (−)</span>`;
+
+      const amountFormatted = isPoints
+        ? `<strong style="color: #b45309;">${isCredit ? "+" : "−"}${Math.round(amount)} pts</strong>`
+        : `<strong style="color: ${isCredit ? '#047857;' : '#b91c1c;'}">${isCredit ? "+" : "−"}₹${amount.toFixed(2)}</strong>`;
+
+      tr.innerHTML = `
+        <td><span style="font-size: 0.8rem; color: var(--text-2); white-space: nowrap;">${dateStr}</span></td>
+        <td>${badgeHtml}</td>
+        <td>${amountFormatted}</td>
+        <td><span style="font-weight: 600; color: var(--text-1);">${escapeHtml(tx.title || "Adjustment")}</span></td>
+        <td>${tx.orderId ? `<button type="button" class="wallet-order-tag-btn" onclick="lookupAndShowOrder('${escapeHtml(tx.orderId)}')">#${escapeHtml(String(tx.orderId).replace(/^#/, ''))}</button>` : '<span style="color:var(--text-4);">—</span>'}</td>
+        <td><span style="font-size: 0.76rem; color: var(--text-3); font-family: monospace;">${escapeHtml(tx.processedBy || "admin")}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Customer Ledger filter listeners
+  document.querySelectorAll("[data-cust-tx-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      walletCustTxFilterState = btn.getAttribute("data-cust-tx-filter");
+      document.querySelectorAll("[data-cust-tx-filter]").forEach(b => b.classList.toggle("active", b === btn));
+      renderCustomerWalletHistory();
+    });
+  });
+
+  byId("wallet-customer-history-search")?.addEventListener("input", renderCustomerWalletHistory);
+
+  // Customer CSV export
+  byId("wallet-customer-export-csv")?.addEventListener("click", () => {
+    if (!activeWalletCustomer || !customerWalletHistoryData.length) {
+      window.showAdminToast?.("No customer transactions to export.", "info");
+      return;
+    }
+    const headers = ["Date", "Type", "Amount", "IsPoints", "Reason", "OrderID", "ProcessedBy"];
+    const rows = customerWalletHistoryData.map(tx => {
+      const d = tx.createdAt?.toDate ? tx.createdAt.toDate() : new Date(tx.createdAt || Date.now());
+      const dateStr = !isNaN(d.getTime()) ? d.toISOString() : "";
+      return [
+        `"${dateStr}"`,
+        `"${tx.type || 'credit'}"`,
+        tx.amount || 0,
+        tx.isPoints ? "TRUE" : "FALSE",
+        `"${(tx.title || '').replace(/"/g, '""')}"`,
+        `"${tx.orderId || ''}"`,
+        `"${tx.processedBy || ''}"`
+      ].join(",");
+    });
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    downloadCsvBlob(csvContent, `wallet-statement-${activeWalletCustomer}.csv`);
+    window.showAdminToast?.("Customer wallet statement exported to CSV", "success");
+  });
+
+  // Helper to trigger CSV download
+  function downloadCsvBlob(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // Quick helper to jump from wallet history to order details
+  window.lookupAndShowOrder = function(orderId) {
+    const cleanId = String(orderId || "").trim();
+    const doc = (orderDocuments || []).find(d => {
+      const data = d.data();
+      return (data.order_id && data.order_id === cleanId) || d.id === cleanId || ('#' + cleanId.replace(/^#/, '')) === data.order_id;
+    });
+    if (doc) {
+      showOrderDetails(doc.id, doc.data());
+    } else {
+      window.showAdminToast?.("Order " + cleanId + " not found in current list.", "info");
+    }
+  };
+
+  // Handle action form (Credit, Debit, or Points for selected customer)
+  byId("wallet-action-form")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!activeWalletCustomer) {
+      window.showAdminToast?.("Please select or load a customer first.", "warning");
+      return;
+    }
+
+    const type = byId("wallet-action-type")?.value || "credit";
+    const amount = parseFloat(byId("wallet-action-amount")?.value);
+    const orderId = byId("wallet-action-order-id")?.value?.trim() || "";
+    const isPointsMode = type === "points";
+    const reason = byId("wallet-action-reason")?.value?.trim() || (isPointsMode ? "Loyalty Reward Points" : type === "credit" ? "Store Credit" : "Adjustment");
+    const submitBtn = byId("wallet-action-submit-btn");
+
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid amount greater than 0.");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Processing…";
+
+    try {
+      await executeWalletTransaction({
+        userEmail: activeWalletCustomer,
+        customerName: byId("wallet-customer-name")?.textContent || "",
+        amount,
+        type: isPointsMode ? "credit" : type,
+        isPoints: isPointsMode,
+        reason,
+        orderId
+      });
+
+      const successMsg = isPointsMode
+        ? `✓ Added ${Math.round(amount)} reward points to ${activeWalletCustomer}!`
+        : `✓ Successfully ${type === "credit" ? "credited" : "debited"} ₹${amount} for ${activeWalletCustomer}!`;
+
+      window.showAdminToast?.(successMsg, "success");
+      byId("wallet-action-amount").value = "";
+      byId("wallet-action-order-id").value = "";
+      byId("wallet-action-reason").value = "";
+
+      await loadCustomerWallet(activeWalletCustomer);
+      await loadGlobalWalletLogs();
+    } catch (err) {
+      reportError(err);
+    } finally {
+      submitBtn.disabled = false;
+      updateWalletSubmitButtonText();
+    }
+  });
+
+  // ── Load Global Storewide Wallet Audit Logs ────────────────────────────
+  async function loadGlobalWalletLogs() {
+    const tbody = byId("wallet-global-logs-tbody");
+    if (!tbody) return;
+
+    try {
+      const logsSnap = await db.collection("wallet_logs").orderBy("createdAt", "desc").limit(100).get();
+      globalWalletLogsData = logsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Compute storewide KPIs
+      let totalCredited = 0;
+      let totalDebited = 0;
+
+      globalWalletLogsData.forEach(log => {
+        if (!log.isPoints) {
+          const amt = Number(log.amount || 0);
+          if ((log.type || "credit").toLowerCase() === "credit") {
+            totalCredited += amt;
+          } else {
+            totalDebited += amt;
+          }
+        }
+      });
+
+      const creditedKpi = byId("wallet-kpi-credited");
+      if (creditedKpi) creditedKpi.textContent = `₹${totalCredited.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+
+      const debitedKpi = byId("wallet-kpi-debited");
+      if (debitedKpi) debitedKpi.textContent = `₹${totalDebited.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+
+      const countKpi = byId("wallet-kpi-count");
+      if (countKpi) countKpi.textContent = `${globalWalletLogsData.length} entries`;
+
+      renderGlobalWalletLogs();
+    } catch (err) {
+      console.error("Error loading global wallet logs:", err);
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 18px;">Failed to load wallet activity ledger.</td></tr>';
+    }
+  }
+
+  function renderGlobalWalletLogs() {
+    const tbody = byId("wallet-global-logs-tbody");
+    if (!tbody) return;
+
+    const searchQuery = String(byId("wallet-global-search")?.value || "").trim().toLowerCase();
+    let records = globalWalletLogsData || [];
+
+    if (walletGlobalTxFilterState === "credit") {
+      records = records.filter(log => (log.type || "credit").toLowerCase() === "credit");
+    } else if (walletGlobalTxFilterState === "debit") {
+      records = records.filter(log => (log.type || "").toLowerCase() === "debit");
+    }
+
+    if (searchQuery) {
+      records = records.filter(log =>
+        String(log.userEmail || "").toLowerCase().includes(searchQuery) ||
+        String(log.customerName || "").toLowerCase().includes(searchQuery) ||
+        String(log.reason || "").toLowerCase().includes(searchQuery) ||
+        String(log.orderId || "").toLowerCase().includes(searchQuery)
+      );
+    }
+
+    byId("wallet-global-log-count").textContent = `${records.length} entries`;
+
+    if (records.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="wallet-empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              <strong>No transactions match filter criteria</strong>
+              <p>${searchQuery ? "Try adjusting your search terms." : "No wallet or refund activity recorded yet across the store."}</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    records.forEach(log => {
+      const isCredit = (log.type || "credit").toLowerCase() === "credit";
+      const isPoints = !!log.isPoints;
+      const amount = Number(log.amount || 0);
+      const tr = document.createElement("tr");
+
+      let dateStr = "—";
+      if (log.createdAt) {
+        const d = log.createdAt.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+        }
+      }
+
+      const badgeHtml = isPoints
+        ? `<span class="wallet-status-badge wallet-badge-points">★ Points (${isCredit ? "+" : "−"})</span>`
+        : isCredit
+          ? `<span class="wallet-status-badge wallet-badge-credit">↑ Credit (+)</span>`
+          : `<span class="wallet-status-badge wallet-badge-debit">↓ Debit (−)</span>`;
+
+      const amountFormatted = isPoints
+        ? `<strong style="color: #b45309;">${isCredit ? "+" : "−"}${Math.round(amount)} pts</strong>`
+        : `<strong style="color: ${isCredit ? '#047857;' : '#b91c1c;'}">${isCredit ? "+" : "−"}₹${amount.toFixed(2)}</strong>`;
+
+      tr.innerHTML = `
+        <td><span style="font-size: 0.8rem; color: var(--text-2); white-space: nowrap;">${dateStr}</span></td>
+        <td>
+          <strong style="color: var(--text-1);">${escapeHtml(log.customerName || log.userEmail || "Customer")}</strong>
+          <div style="font-size: 0.74rem; color: var(--text-3); font-family: monospace;">${escapeHtml(log.userEmail || "")}</div>
+        </td>
+        <td>${badgeHtml}</td>
+        <td>${amountFormatted}</td>
+        <td><span style="font-size: 0.85rem; font-weight: 600; color: var(--text-1);">${escapeHtml(log.reason || "Wallet transaction")}</span></td>
+        <td>${log.orderId ? `<button type="button" class="wallet-order-tag-btn" onclick="lookupAndShowOrder('${escapeHtml(log.orderId)}')">#${escapeHtml(String(log.orderId).replace(/^#/, ''))}</button>` : '<span style="color:var(--text-4);">—</span>'}</td>
+        <td>
+          <button type="button" class="btn-table-action btn-secondary" onclick="loadCustomerWalletFromTable('${escapeHtml(log.userEmail)}')">
+            Inspect Wallet
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const noteEl = byId("wallet-global-pagination-note");
+    if (noteEl) {
+      noteEl.innerHTML = `<span>Showing <strong>${records.length}</strong> of <strong>${globalWalletLogsData.length}</strong> storewide audit transactions</span>`;
+    }
+  }
+
+  // Global Activity filter listeners
+  document.querySelectorAll("[data-global-tx-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      walletGlobalTxFilterState = btn.getAttribute("data-global-tx-filter");
+      document.querySelectorAll("[data-global-tx-filter]").forEach(b => b.classList.toggle("active", b === btn));
+      renderGlobalWalletLogs();
+    });
+  });
+
+  byId("wallet-global-search")?.addEventListener("input", renderGlobalWalletLogs);
+
+  // Global CSV Export handlers
+  function exportAllWalletLogsCsv() {
+    if (!globalWalletLogsData.length) {
+      window.showAdminToast?.("No wallet transactions to export.", "info");
+      return;
+    }
+    const headers = ["Timestamp", "CustomerName", "CustomerEmail", "Type", "Amount", "IsPoints", "Reason", "OrderID", "ProcessedBy"];
+    const rows = globalWalletLogsData.map(log => {
+      const d = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt || Date.now());
+      const dateStr = !isNaN(d.getTime()) ? d.toISOString() : "";
+      return [
+        `"${dateStr}"`,
+        `"${(log.customerName || '').replace(/"/g, '""')}"`,
+        `"${log.userEmail || ''}"`,
+        `"${log.type || 'credit'}"`,
+        log.amount || 0,
+        log.isPoints ? "TRUE" : "FALSE",
+        `"${(log.reason || '').replace(/"/g, '""')}"`,
+        `"${log.orderId || ''}"`,
+        `"${log.processedBy || ''}"`
+      ].join(",");
+    });
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    downloadCsvBlob(csvContent, `creative-souls-wallet-activity-ledger.csv`);
+    window.showAdminToast?.("Storewide wallet audit log exported to CSV", "success");
+  }
+
+  byId("wallet-global-export-csv")?.addEventListener("click", exportAllWalletLogsCsv);
+  byId("wallet-export-all-btn")?.addEventListener("click", exportAllWalletLogsCsv);
+
+  window.loadCustomerWalletFromTable = function(email) {
+    if (!email) return;
+    loadCustomerWallet(email);
+    byId("wallet-workspace-wrap")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // ── Load catalog when section is activated ──────────────────────────────
   const _origNavigateTo = window.navigateTo;
@@ -5323,11 +8206,9 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     if (isAdmin) {
       identity.textContent = `Signed in as ${user.email}`;
       status.textContent = "Loading dashboard…";
-      loadOrders(); loadCollection(); loadTickets();
-      const activeSection = document.querySelector(".admin-section.active")?.id?.replace(/^section-/, "");
-      if (activeSection === "products") loadCatalogProducts();
-      if (activeSection === "wallets") loadWalletsSection();
-      if (activeSection === "feedback") loadCustomerFeedback();
+      loadOrders(); loadCollection(); loadTickets(); loadCustomerFeedback();
+      if (document.querySelector("#section-products.active")) loadCatalogProducts();
+      if (document.querySelector("#section-wallets.active")) loadWalletsSection();
     } else if (user) {
       identity.textContent = `Signed in as ${user.email}. This account is not authorized for the admin dashboard.`;
       status.textContent = "Access denied.";
