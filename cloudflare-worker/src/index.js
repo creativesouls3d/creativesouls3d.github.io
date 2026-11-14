@@ -146,7 +146,9 @@ async function handleGetFeedbackOrder(request, env, origin) {
     expected_delivery: fields.expected_delivery || "",
     items: Array.isArray(fields.items) ? fields.items.map(item => ({ productName: item.productName || item.name || "Product", quantity: Number(item.quantity || 1), colour: item.colour || item.color || "", size: item.size || "", customization: item.customization || "" })) : [],
   };
-  return json({ order, delivered: String(order.status).toLowerCase().includes("deliver"), feedbackSubmitted: !!feedback, feedback: feedback ? { reference_id: feedbackFields.reference_id || "" } : null }, 200, origin);
+  const orderStatusStr = String(order.status || "").toLowerCase();
+  const isDeliveredOrPickedUp = orderStatusStr.includes("deliver") || orderStatusStr.includes("picked") || orderStatusStr.includes("collected");
+  return json({ order, delivered: isDeliveredOrPickedUp, feedbackSubmitted: !!feedback, feedback: feedback ? { reference_id: feedbackFields.reference_id || "" } : null }, 200, origin);
 }
 
 async function handleAdminFeedbackList(request, env, origin) {
@@ -180,7 +182,9 @@ async function handleIssueFeedbackToken(request, env, origin) {
     }
     if (!document) return json({ error: "We could not find that order." }, 404, origin);
     const fields = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, firestoreValue(value)]));
-    if (!String(fields.status || "").toLowerCase().includes("deliver")) return json({ error: "Feedback links are available after delivery." }, 409, origin);
+    const statusLower = String(fields.status || "").toLowerCase();
+    const isTerminal = statusLower.includes("deliver") || statusLower.includes("picked") || statusLower.includes("collected") || statusLower.includes("pickup");
+    if (!isTerminal) return json({ error: "Feedback links are only available once the order has been delivered or picked up." }, 409, origin);
     const token = crypto.randomUUID();
     const access = { token_hash: await sha256Hex(token), issued_at: new Date().toISOString() };
     const documentPath = `/orders/${encodeURIComponent(document.name.split("/").pop())}`;
