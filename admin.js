@@ -5407,9 +5407,21 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       });
       renderCustomerFeedback();
     } catch (firestoreError) {
-      console.warn("Direct Firestore read failed, falling back to listOrderFeedback Cloud Function:", firestoreError);
+      console.warn("Direct Firestore read failed, falling back to Cloudflare Worker /feedback/list:", firestoreError);
       try {
-        const response = await firebase.functions().httpsCallable("listOrderFeedback")({});
+        const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
+        if (!workerUrl) throw new Error("Cloudflare Worker URL is not configured.");
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in as an administrator, then try again.");
+        const idToken = await user.getIdToken();
+        const workerResponse = await fetch(`${workerUrl.replace(/\/+$/, "")}/feedback/list`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+          body: JSON.stringify({})
+        });
+        const result = await workerResponse.json().catch(() => ({}));
+        if (!workerResponse.ok) throw new Error(result.error || `Feedback list failed (HTTP ${workerResponse.status}).`);
+        const response = { data: result };
         customerFeedbackRecords = (response.data.feedback || []).map(data => {
           const ts = data.created_at ?? data.submitted_at;
           return {
