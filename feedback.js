@@ -193,13 +193,13 @@ async function lookupOrder() {
         const response = await getFeedbackOrder({ orderId: raw, token });
         const { order, delivered, feedbackSubmitted, feedback } = response.data;
         if (feedbackSubmitted) throw new Error(`Feedback was already submitted${feedback?.reference_id ? ` (reference ${feedback.reference_id})` : ""}. Thank you!`);
-        if (!delivered) throw new Error("Feedback becomes available once your order is delivered.");
+        if (!delivered) throw new Error("Feedback becomes available once your order is delivered or picked up.");
         currentOrder = order;
         orderDocId = order.id || raw;
         fillForm(order, raw);
         return;
       } catch (cfErr) {
-        if (cfErr.message && (cfErr.message.includes("submitted") || cfErr.message.includes("delivered") || cfErr.message.includes("verify"))) {
+        if (cfErr.message && (cfErr.message.includes("submitted") || cfErr.message.includes("delivered") || cfErr.message.includes("picked") || cfErr.message.includes("verify"))) {
           throw cfErr;
         }
       }
@@ -211,9 +211,9 @@ async function lookupOrder() {
 
     const order = { id: orderDoc.id, ...orderDoc.data() };
     const orderStatus = String(order.status || "").toLowerCase();
-    const delivered = orderStatus.includes("deliver");
+    const delivered = orderStatus.includes("deliver") || orderStatus.includes("picked") || orderStatus.includes("collected");
     if (!delivered) {
-      throw new Error("Feedback becomes available once your order is delivered.");
+      throw new Error("Feedback becomes available once your order is delivered or picked up.");
     }
 
     // Verify ownership if signed in without a token

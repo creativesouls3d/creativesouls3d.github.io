@@ -60,7 +60,7 @@
 
   <script>
     // ── STAGES DEFINITION WITH CUSTOM 3D CRAFT ICONS & DESCRIPTIONS ──
-    const STAGES = [
+    const DELIVERY_STAGES = [
       {
         id: "placed",
         title: "Order Placed",
@@ -110,6 +110,51 @@
         explainerDesc: "🎉 Package delivered! We hope you love your custom 3D printed piece. If you have any feedback or would like to share a photo, please rate your experience below."
       }
     ];
+
+    const PICKUP_STAGES = [
+      {
+        id: "placed",
+        title: "Order Placed",
+        sub: "Received & queued",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+        explainerTitle: "Order Confirmed & Queued",
+        explainerDesc: "We have received your custom 3D order! Our makers are currently reviewing your design geometry, color selections, and slicing setup."
+      },
+      {
+        id: "approved",
+        title: "Order Approved",
+        sub: "Specs & file verified",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
+        explainerTitle: "Design Approved for Manufacturing",
+        explainerDesc: "Your 3D model files and print parameters have been verified. Build plate temperatures, print speeds, and premium filament are being prepared."
+      },
+      {
+        id: "printing",
+        title: "3D Printing",
+        sub: "Layer-by-layer crafting",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+        explainerTitle: "Actively on the 3D Printer",
+        explainerDesc: "✨ Your creation is printing on our precision 3D printer! Micro-fine layers are fusing together with strict temperature and flow calibration for superior strength and finish."
+      },
+      {
+        id: "ready",
+        title: "Ready for Pickup",
+        sub: "Ready at studio",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+        explainerTitle: "Ready for Studio Pickup!",
+        explainerDesc: "🎉 Your custom 3D printed piece has been crafted, inspected, and carefully packaged! It is ready for collection at our studio. Please keep your Order ID handy."
+      },
+      {
+        id: "picked_up",
+        title: "Order Picked Up",
+        sub: "Collected safely",
+        icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/><circle cx="12" cy="12" r="10"/></svg>`,
+        explainerTitle: "Order Picked Up!",
+        explainerDesc: "🎉 Thank you for picking up your order! We hope you love your custom 3D printed piece. If you have any feedback or would like to share a photo, please rate your experience below."
+      }
+    ];
+
+    const STAGES = DELIVERY_STAGES;
 
     const CHECK_ICON = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
@@ -203,9 +248,17 @@
       image.src = "logo_creativesouls.jpg";
     }
 
-    function getProgressIndex(status) {
+    function getProgressIndex(status, isPickup = false) {
       if (!status) return 0;
       const normalized = String(status).toLowerCase();
+      if (isPickup) {
+        if (normalized.includes("picked") || normalized.includes("collected") || normalized.includes("delivered")) return 4;
+        if (normalized.includes("ready") || normalized.includes("pickup") || normalized.includes("dispatch") || normalized.includes("shipped") || normalized.includes("delivery")) return 3;
+        if (normalized.includes("printing") || normalized.includes("production")) return 2;
+        if (normalized.includes("approved") || normalized.includes("confirmed")) return 1;
+        if (normalized.includes("placed") || normalized.includes("pending") || normalized.includes("request")) return 0;
+        return 0;
+      }
       if (normalized.includes("delivered")) return 5;
       if (normalized.includes("delivery")) return 4;
       if (normalized.includes("dispatch") || normalized.includes("shipped")) return 3;
@@ -215,8 +268,18 @@
       return 0;
     }
 
-    function displayOrderStatus(status = "Order Placed") {
+    function displayOrderStatus(status = "Order Placed", isPickup = false) {
       const value = String(status).toLowerCase();
+      if (isPickup) {
+        if (value.includes("picked") || value.includes("collected")) return "Order Picked Up";
+        if (value.includes("ready") || value.includes("pickup")) return "Ready for Pickup";
+        if (value.includes("delivered")) return "Order Picked Up";
+        if (value.includes("delivery") || value.includes("dispatch") || value.includes("shipped")) return "Ready for Pickup";
+        if (value.includes("printing") || value.includes("production")) return "Printing Product";
+        if (value.includes("approved") || value.includes("confirm")) return "Order Approved";
+        if (value.includes("placed") || value.includes("pending") || value.includes("request")) return "Order Placed";
+        return status || "Order Placed";
+      }
       if (value.includes("delivered")) return "Product Delivered";
       if (value.includes("delivery")) return "Out For Delivery";
       if (value.includes("dispatch") || value.includes("shipped")) return "Order Dispatched";
@@ -365,7 +428,7 @@
                           <span class="track-recent-meta">${escapeHTML(date)} &bull; ${itemCount} ${itemCount === 1 ? 'item' : 'items'} &bull; ${formatPrice(ord.total)}</span>
                         </div>
                         <span class="track-recent-action">
-                          <span>${escapeHTML(displayOrderStatus(ord.status))}</span>
+                          <span>${escapeHTML(displayOrderStatus(ord.status, ord.fulfillment_type === "pickup"))}</span>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                         </span>
                       </a>
@@ -378,6 +441,141 @@
             console.warn("Could not load recent orders:", e);
           }
         });
+      }
+    }
+
+    let clientLightboxState = { images: [], index: 0, title: "" };
+
+    function ensureClientLightboxModal() {
+      let dlg = document.getElementById("cs-client-photo-lightbox");
+      if (dlg) return dlg;
+
+      dlg = document.createElement("dialog");
+      dlg.id = "cs-client-photo-lightbox";
+      dlg.className = "cs-photo-lightbox";
+      dlg.setAttribute("aria-label", "Image viewer");
+      dlg.innerHTML = `
+        <div class="cs-lightbox-header">
+          <div class="cs-lightbox-info">
+            <span class="cs-lightbox-title" id="cs-lightbox-title">Photo</span>
+            <span class="cs-lightbox-counter" id="cs-lightbox-counter"></span>
+          </div>
+          <div class="cs-lightbox-actions">
+            <a class="cs-lightbox-external" id="cs-lightbox-external" href="#" target="_blank" rel="noopener noreferrer" title="Open full resolution in new tab">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>Open Full</span>
+            </a>
+            <button type="button" class="cs-lightbox-close" id="cs-lightbox-close" aria-label="Close photo viewer">✕</button>
+          </div>
+        </div>
+        <div class="cs-lightbox-body" id="cs-lightbox-body">
+          <button type="button" class="cs-lightbox-arrow cs-lightbox-prev" id="cs-lightbox-prev" aria-label="Previous image">‹</button>
+          <div class="cs-lightbox-media-wrap">
+            <img class="cs-lightbox-img" id="cs-lightbox-img" src="" alt="Photo" />
+            <div class="cs-lightbox-loading" id="cs-lightbox-loading" hidden>Loading image…</div>
+          </div>
+          <button type="button" class="cs-lightbox-arrow cs-lightbox-next" id="cs-lightbox-next" aria-label="Next image">›</button>
+        </div>
+      `;
+      document.body.appendChild(dlg);
+
+      const updateView = () => {
+        if (!clientLightboxState.images.length) return;
+        const total = clientLightboxState.images.length;
+        clientLightboxState.index = (clientLightboxState.index + total) % total;
+        const cur = clientLightboxState.images[clientLightboxState.index];
+        const url = typeof cur === "string" ? cur : (cur.url || cur.thumbnailUrl || "");
+        const name = typeof cur === "string" ? (clientLightboxState.title || "Photo") : (cur.name || clientLightboxState.title || "Photo");
+
+        const titleEl = document.getElementById("cs-lightbox-title");
+        const counterEl = document.getElementById("cs-lightbox-counter");
+        const extLink = document.getElementById("cs-lightbox-external");
+        const imgEl = document.getElementById("cs-lightbox-img");
+        const loadingEl = document.getElementById("cs-lightbox-loading");
+        const prevBtn = document.getElementById("cs-lightbox-prev");
+        const nextBtn = document.getElementById("cs-lightbox-next");
+
+        if (titleEl) titleEl.textContent = name;
+        if (counterEl) counterEl.textContent = total > 1 ? `${clientLightboxState.index + 1} / ${total}` : "";
+        if (extLink) extLink.href = url;
+
+        if (prevBtn) prevBtn.style.display = total > 1 ? "flex" : "none";
+        if (nextBtn) nextBtn.style.display = total > 1 ? "flex" : "none";
+
+        if (imgEl) {
+          if (loadingEl) loadingEl.hidden = false;
+          imgEl.onload = () => { if (loadingEl) loadingEl.hidden = true; };
+          imgEl.onerror = () => { if (loadingEl) loadingEl.hidden = true; };
+          imgEl.src = url;
+          imgEl.alt = name;
+        }
+      };
+
+      dlg.querySelector("#cs-lightbox-close")?.addEventListener("click", () => dlg.close());
+      dlg.querySelector("#cs-lightbox-prev")?.addEventListener("click", () => {
+        clientLightboxState.index--;
+        updateView();
+      });
+      dlg.querySelector("#cs-lightbox-next")?.addEventListener("click", () => {
+        clientLightboxState.index++;
+        updateView();
+      });
+      dlg.addEventListener("click", (e) => {
+        if (e.target === dlg) dlg.close();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!dlg.open) return;
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          clientLightboxState.index--;
+          updateView();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          clientLightboxState.index++;
+          updateView();
+        }
+      });
+
+      const bodyEl = dlg.querySelector("#cs-lightbox-body");
+      let touchStartX = 0;
+      let touchStartY = 0;
+      bodyEl?.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+      bodyEl?.addEventListener("touchend", (e) => {
+        if (!touchStartX) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        touchStartX = 0;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          if (dx < 0) {
+            clientLightboxState.index++;
+            updateView();
+          } else {
+            clientLightboxState.index--;
+            updateView();
+          }
+        }
+      }, { passive: true });
+
+      dlg._updateView = updateView;
+      return dlg;
+    }
+
+    function openClientPhotoLightbox(images, startIndex = 0, title = "Workshop product photo") {
+      if (!images || !images.length) return;
+      const dlg = ensureClientLightboxModal();
+      clientLightboxState = {
+        images,
+        index: Math.max(0, Math.min(images.length - 1, startIndex)),
+        title
+      };
+      dlg._updateView();
+      if (!dlg.open) {
+        dlg.showModal();
       }
     }
 
@@ -410,9 +608,11 @@
         }
 
         const data = doc.data();
+        const isPickup = data.fulfillment_type === "pickup";
+        const stages = isPickup ? PICKUP_STAGES : DELIVERY_STAGES;
         const orderItems = await hydrateOrderItemImages(Array.isArray(data.items) ? data.items : []);
         const statusText = data.status ? data.status.toLowerCase() : "";
-        const currentStep = getProgressIndex(statusText);
+        const currentStep = getProgressIndex(statusText, isPickup);
         const isRejected = statusText.includes("rejected") || statusText.includes("cancel");
         const isWaitingPayment = String(data.payment_status || "").toLowerCase() === "pending";
         const cleanOrderId = String(data.order_id || orderId || "").replace(/^#/, "");
@@ -420,7 +620,7 @@
 
         // Build Steps HTML
         let stepsHTML = "";
-        STAGES.forEach((stage, index) => {
+        stages.forEach((stage, index) => {
           let stepClass = "";
           let iconHtml = stage.icon;
 
@@ -447,11 +647,13 @@
           `;
         });
 
-        // Stepper width calculations (connecting circle centers: 8.33% to 91.67%, span is 83.33%)
-        const progressWidth = (currentStep / (STAGES.length - 1)) * 83.33;
+        // Dynamic stepper width calculations
+        const offsetPercent = 50 / stages.length;
+        const spanPercent = 100 - (100 / stages.length);
+        const progressWidth = (currentStep / (stages.length - 1)) * spanPercent;
 
         // Current phase description
-        const activeStage = STAGES[Math.min(currentStep, STAGES.length - 1)];
+        const activeStage = stages[Math.min(currentStep, stages.length - 1)];
         let phaseTitle = activeStage.explainerTitle;
         let phaseDesc = activeStage.explainerDesc;
         if (isRejected) {
@@ -501,14 +703,14 @@
         }) : "-";
 
         const statusInfo = String(data.status_info || "").trim();
-        const delivered = statusText.includes("delivered");
+        const delivered = statusText.includes("delivered") || statusText.includes("picked");
         const finalProductImages = Array.isArray(data.final_product_images)
           ? data.final_product_images.filter(img => img && (img.url || img.thumbnailUrl))
           : [];
-        const finalProductImagesHTML = finalProductImages.map(img =>
-          `<a href="${escapeHTML(img.url)}" target="_blank" rel="noopener noreferrer" title="Click to view full photo">
+        const finalProductImagesHTML = finalProductImages.map((img, idx) =>
+          `<button type="button" class="track-final-image-btn" data-track-img-idx="${idx}" title="Click to view full photo" aria-label="View photo ${idx + 1}: ${escapeHTML(img.name || 'Workshop product photo')}">
              <img src="${escapeHTML(img.thumbnailUrl || img.url)}" alt="${escapeHTML(img.name || 'Workshop product photo')}" />
-           </a>`
+           </button>`
         ).join("");
 
         const feedbackLink = `feedback.html?order=${encodeURIComponent(cleanOrderId)}`;
@@ -516,10 +718,8 @@
 
         const statusClass = isRejected ? "danger" :
                             delivered || statusText.includes("approved") ? "success" :
-                            statusText.includes("printing") || statusText.includes("delivery") ? "active" :
+                            statusText.includes("printing") || statusText.includes("delivery") || statusText.includes("pickup") || statusText.includes("ready") ? "active" :
                             "pending";
-
-        const isPickup = data.fulfillment_type === "pickup";
 
         container.innerHTML = `
           <div class="track-card track-result-card">
@@ -542,7 +742,7 @@
               </div>
 
               <div class="order-status ${statusClass}">
-                ${escapeHTML(displayOrderStatus(data.status || "Processing"))}
+                ${escapeHTML(displayOrderStatus(data.status || "Processing", isPickup))}
               </div>
             </div>
 
@@ -556,7 +756,7 @@
                 </div>
                 <div class="track-est-content">
                   <span class="track-est-label">${isPickup ? "Pickup Availability" : "Expected Delivery"}</span>
-                  <div class="track-est-date">${escapeHTML(data.expected_delivery || "Will be scheduled after maker review")}</div>
+                  <div class="track-est-date">${escapeHTML(data.expected_delivery || (isPickup ? "We will notify you when your order is ready for pickup." : "Will be scheduled after maker review"))}</div>
                 </div>
               </div>
 
@@ -591,15 +791,15 @@
                   Live 3D Print Stepper
                 </span>
                 <span class="track-stepper-counter">
-                  ${isRejected ? "Order Cancelled" : `Step ${Math.min(currentStep + 1, 6)} of 6`}
+                  ${isRejected ? "Order Cancelled" : `Step ${Math.min(currentStep + 1, stages.length)} of ${stages.length}`}
                 </span>
               </div>
 
               <div class="progress-container">
-                <div class="progress-track-bg"></div>
+                <div class="progress-track-bg" style="left: ${offsetPercent}%; width: ${spanPercent}%;"></div>
                 <div class="progress-track-fill ${isRejected ? "rejected-fill" : ""}"
                      id="stepper-track-fill"
-                     style="${isRejected ? "" : "width:" + progressWidth + "%"}"></div>
+                     style="left: ${offsetPercent}%; width: ${isRejected ? spanPercent : progressWidth}%;"></div>
                 ${stepsHTML}
               </div>
 
@@ -750,6 +950,13 @@
 
           </div>
         `;
+
+        container.querySelectorAll(".track-final-images-grid .track-final-image-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.trackImgIdx || 0);
+            openClientPhotoLightbox(finalProductImages, idx, "Workshop Product Photo");
+          });
+        });
 
         // Responsive mobile vertical stepper height calculation
         function adjustMobileStepper() {

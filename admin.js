@@ -2,20 +2,26 @@
   function initQuickStatusFilters() {
     const filterWrap = byId("orders-quick-filters");
     if (!filterWrap) return;
-    filterWrap.replaceChildren(...ORDER_WORKFLOW_STATUSES.map(stage => {
+    const QUICK_FILTER_PILLS = [
+      { label: "All Orders", status: "all", active: true },
+      { label: "⚠️ Needs Action", status: "action" },
+      { label: "Order Placed", status: "Order Placed" },
+      { label: "Order Approved", status: "Order Approved" },
+      { label: "Printing Product", status: "Printing Product" },
+      { label: "Ready for Pickup", status: "Ready for Pickup" },
+      { label: "Order Picked Up", status: "Order Picked Up" },
+      { label: "Order Dispatched", status: "Order Dispatched" },
+      { label: "Out For Delivery", status: "Out For Delivery" },
+      { label: "Product Delivered", status: "Product Delivered" }
+    ];
+    filterWrap.replaceChildren(...QUICK_FILTER_PILLS.map(item => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "admin-filter-pill";
-      button.dataset.quickStatus = stage;
-      button.textContent = stage;
+      button.className = "admin-filter-pill" + (item.active ? " active" : "");
+      button.dataset.quickStatus = item.status;
+      button.textContent = item.label;
       return button;
     }));
-    const allButton = document.createElement("button");
-    allButton.type = "button";
-    allButton.className = "admin-filter-pill active";
-    allButton.dataset.quickStatus = "all";
-    allButton.textContent = "All Orders";
-    filterWrap.prepend(allButton);
     filterWrap.querySelectorAll("button[data-quick-status]").forEach(btn => {
       btn.addEventListener("click", () => {
         filterWrap.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -27,7 +33,7 @@
         if (target === "all") {
           checkboxes.forEach(cb => { cb.checked = false; });
         } else if (target === "action") {
-          const actionSet = new Set(["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery"]);
+          const actionSet = new Set(["Order Placed", "Order Approved", "Printing Product", "Ready for Pickup", "Order Dispatched", "Out For Delivery"]);
           checkboxes.forEach(cb => { cb.checked = actionSet.has(cb.value); });
         } else {
           checkboxes.forEach(cb => { cb.checked = cb.value.toLowerCase() === target.toLowerCase(); });
@@ -56,7 +62,7 @@
       const order = doc.data();
       const tr = document.createElement("tr");
       const orderId = order.order_id || doc.id;
-      const canonical = canonicalOrderStatus(order.status);
+      const canonical = canonicalOrderStatus(order.status, order.fulfillment_type);
       const statusSlug = canonical.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       const amount = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(order.total || 0));
       tr.innerHTML = "<td><button type='button' class='admin-order-id'>" + orderId + "</button></td>" +
@@ -115,8 +121,17 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     } catch { return new Map(); }
   })();
   const ORDER_WORKFLOW_STATUSES = ["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Product Delivered"];
-  const ORDER_STATUS_CATEGORIES = [...ORDER_WORKFLOW_STATUSES, "Cancelled", "Rejected", "Other"];
-  const orderStatusOptions = current => [...ORDER_WORKFLOW_STATUSES, "Cancelled", "Rejected"].map(item => `<option value="${item}"${item === current ? " selected" : ""}>${item}</option>`).join("");
+  const ORDER_PICKUP_WORKFLOW_STATUSES = ["Order Placed", "Order Approved", "Printing Product", "Ready for Pickup", "Order Picked Up"];
+  const ORDER_STATUS_CATEGORIES = ["Order Placed", "Order Approved", "Printing Product", "Ready for Pickup", "Order Picked Up", "Order Dispatched", "Out For Delivery", "Product Delivered", "Cancelled", "Rejected", "Other"];
+  const orderStatusOptions = (current, fulfillmentType = "delivery") => {
+    const isPickup = String(fulfillmentType || "").trim().toLowerCase() === "pickup";
+    const workflow = isPickup ? ORDER_PICKUP_WORKFLOW_STATUSES : ORDER_WORKFLOW_STATUSES;
+    const baseList = [...workflow, "Cancelled", "Rejected"];
+    if (current && !baseList.includes(current)) {
+      baseList.push(current);
+    }
+    return baseList.map(item => `<option value="${item}"${item === current ? " selected" : ""}>${item}</option>`).join("");
+  };
   const PRODUCT_CATEGORIES = ["Keychains", "Home Decor", "Idols", "Desk Accessories", "Gifts", "Car Accessories", "Custom Products", "Other"];
   const PRODUCT_BEST_FOR = ["Gifts", "Return Gifts", "Home Decor", "Desk/Office", "Car", "Pooja/Festival"];
   const PRODUCT_AVAILABILITY = ["In Stock", "Made to Order", "Out of Stock"];
@@ -1745,7 +1760,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         wrapper.append(select);
       } else if (/status/i.test(key) && activeDocument.collection === "orders") {
         const select = document.createElement("select"); select.dataset.field = key;
-        select.innerHTML = orderStatusOptions(canonicalOrderStatus(value));
+        select.innerHTML = orderStatusOptions(canonicalOrderStatus(value, activeDocument.data?.fulfillment_type), activeDocument.data?.fulfillment_type);
         wrapper.append(select);
       } else if (key === "fulfillment_type" && activeDocument.collection === "orders") {
         const select = document.createElement("select"); select.dataset.field = key;
@@ -2357,7 +2372,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const statusRow = document.createElement("div");
     statusRow.className = "admin-order-status-bar";
     const curStatus = order.status || "Order Placed";
-    const canonical = canonicalOrderStatus(curStatus);
+    const canonical = canonicalOrderStatus(curStatus, order.fulfillment_type);
     const statusSlug = canonical.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const formattedTotal = order.total !== undefined && order.total !== null ? formatOrderMoney(order.total) : "";
     statusRow.innerHTML = `
@@ -2378,7 +2393,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const statusInput = document.createElement("select");
     statusInput.id = "modal-quick-status";
     statusInput.setAttribute("aria-label", "Change order status");
-    statusInput.innerHTML = orderStatusOptions(canonical);
+    statusInput.innerHTML = orderStatusOptions(canonical, order.fulfillment_type);
     Object.assign(statusInput.style, { height: "34px", padding: "0 10px", borderRadius: "6px", border: "1px solid var(--border)", fontSize: "0.82rem", background: "#fff", color: "#0f172a", minWidth: "170px" });
     statusRow.querySelector("#modal-quick-status").replaceWith(statusInput);
     const statusInfoField = document.createElement("label");
@@ -2476,17 +2491,22 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     finalImageGallery.className = "admin-order-final-image-grid";
     const renderFinalImages = () => {
       finalImageGallery.replaceChildren();
-      (Array.isArray(order.final_product_images) ? order.final_product_images : []).forEach(image => {
+      const currentImages = Array.isArray(order.final_product_images) ? order.final_product_images : [];
+      currentImages.forEach((image, imgIndex) => {
         const card = document.createElement("figure");
         card.className = "admin-order-final-image-card";
-        const link = document.createElement("a");
-        link.href = image.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+        const thumbBtn = document.createElement("button");
+        thumbBtn.type = "button";
+        thumbBtn.className = "admin-order-final-image-thumb-btn";
+        thumbBtn.title = "Click to view full photo";
+        thumbBtn.setAttribute("aria-label", `View photo ${imgIndex + 1}: ${image.name || "Final product image"}`);
         const img = document.createElement("img");
         img.src = image.thumbnailUrl || image.url;
         img.alt = image.name || "Final product image";
-        link.append(img);
+        thumbBtn.append(img);
+        thumbBtn.addEventListener("click", () => {
+          openAdminPhotoViewer(currentImages, imgIndex, `Final Product - Order ${order.order_id || id}`);
+        });
         const caption = document.createElement("figcaption");
         caption.textContent = image.name || "Final product image";
         const remove = document.createElement("button");
@@ -2508,7 +2528,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
             reportError(error);
           }
         });
-        card.append(link, caption, remove);
+        card.append(thumbBtn, caption, remove);
         finalImageGallery.append(card);
       });
       if (!finalImageGallery.childElementCount) {
@@ -2519,6 +2539,19 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       }
     };
     renderFinalImages();
+
+    let stagedFinalFiles = [];
+    const uploadWrap = document.createElement("div");
+    uploadWrap.className = "admin-order-final-image-upload-wrap";
+
+    const stagingBadge = document.createElement("div");
+    stagingBadge.className = "admin-order-final-staging-badge";
+    stagingBadge.style.display = "none";
+
+    const stagingGrid = document.createElement("div");
+    stagingGrid.className = "admin-order-final-staging-grid";
+    stagingGrid.style.display = "none";
+
     const uploadRow = document.createElement("div");
     uploadRow.className = "admin-order-final-image-upload";
     const imageInput = document.createElement("input");
@@ -2530,24 +2563,94 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     uploadButton.type = "button";
     uploadButton.className = "btn-primary";
     uploadButton.textContent = "Upload final product photos";
+
+    const renderStagedFiles = () => {
+      stagingGrid.querySelectorAll("[data-preview-url]").forEach(el => URL.revokeObjectURL(el.dataset.previewUrl));
+      stagingGrid.replaceChildren();
+
+      if (!stagedFinalFiles.length) {
+        stagingBadge.style.display = "none";
+        stagingGrid.style.display = "none";
+        uploadButton.textContent = "Upload final product photos";
+        return;
+      }
+
+      stagingBadge.style.display = "flex";
+      stagingBadge.innerHTML = `<strong>${stagedFinalFiles.length} photo${stagedFinalFiles.length === 1 ? "" : "s"} selected</strong><span>Click "Choose Files" again to add more pictures, or "Upload" to upload all at once.</span>`;
+      stagingGrid.style.display = "grid";
+
+      stagedFinalFiles.forEach((file, fileIdx) => {
+        const card = document.createElement("figure");
+        card.className = "admin-order-final-staging-card";
+        const img = document.createElement("img");
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        img.dataset.previewUrl = objectUrl;
+        img.alt = file.name;
+
+        const info = document.createElement("div");
+        info.className = "admin-order-final-staging-info";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "admin-order-final-staging-name";
+        nameSpan.textContent = file.name;
+        const sizeSpan = document.createElement("small");
+        sizeSpan.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+        info.append(nameSpan, sizeSpan);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "admin-order-final-staging-remove";
+        removeBtn.setAttribute("aria-label", `Remove ${file.name}`);
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", () => {
+          stagedFinalFiles.splice(fileIdx, 1);
+          renderStagedFiles();
+        });
+
+        card.append(img, info, removeBtn);
+        stagingGrid.append(card);
+      });
+
+      uploadButton.textContent = `Upload final product photos (${stagedFinalFiles.length})`;
+    };
+
+    imageInput.addEventListener("change", () => {
+      const selected = [...(imageInput.files || [])];
+      for (const file of selected) {
+        if (!file.type.startsWith("image/")) {
+          window.showAdminToast?.(`${file.name} is not an image file.`, "danger");
+          continue;
+        }
+        if (file.size > IMAGEKIT_MAX_FILE_BYTES) {
+          window.showAdminToast?.(`${file.name} exceeds the 25 MB limit.`, "danger");
+          continue;
+        }
+        const isDuplicate = stagedFinalFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified);
+        if (!isDuplicate) {
+          stagedFinalFiles.push(file);
+        }
+      }
+      imageInput.value = "";
+      renderStagedFiles();
+    });
+
     uploadButton.addEventListener("click", async () => {
-      const files = [...imageInput.files];
-      if (!files.length) {
+      if (!stagedFinalFiles.length) {
         window.showAdminToast?.("Choose one or more final product photos first.", "danger");
         return;
       }
-      if (files.some(file => !file.type.startsWith("image/"))) {
-        window.showAdminToast?.("Only image files can be added as final product photos.", "danger");
-        return;
-      }
       try {
-        validateTicketMedia(files);
+        validateTicketMedia(stagedFinalFiles);
         uploadButton.disabled = true;
-        const uploaded = await uploadAdminTicketMedia(files, order.order_id || id, uploadButton);
+        imageInput.disabled = true;
+        const count = stagedFinalFiles.length;
+        uploadButton.textContent = `Uploading ${count} photo${count === 1 ? "" : "s"}…`;
+        const uploaded = await uploadAdminTicketMedia(stagedFinalFiles, order.order_id || id, uploadButton);
         const images = uploaded.map(image => ({ ...image, addedAt: new Date().toISOString() }));
         await db.collection("orders").doc(id).update({ final_product_images: firebase.firestore.FieldValue.arrayUnion(...images) });
         order.final_product_images = [...(order.final_product_images || []), ...images];
-        imageInput.value = "";
+        stagedFinalFiles = [];
+        renderStagedFiles();
         renderFinalImages();
         await loadOrders();
         window.showAdminToast?.("Final product photos added to the customer order pages.", "success");
@@ -2556,11 +2659,14 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         reportError(error);
       } finally {
         uploadButton.disabled = false;
-        uploadButton.textContent = "Upload final product photos";
+        imageInput.disabled = false;
+        renderStagedFiles();
       }
     });
+
     uploadRow.append(imageInput, uploadButton);
-    finalImageSection.append(finalImageHeading, finalImageHelp, finalImageGallery, uploadRow);
+    uploadWrap.append(stagingBadge, stagingGrid, uploadRow);
+    finalImageSection.append(finalImageHeading, finalImageHelp, finalImageGallery, uploadWrap);
     content.append(finalImageSection);
     byId("order-detail-edit").onclick = () => {
       byId("order-detail-dialog").close();
@@ -2588,16 +2694,23 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   function formatOrderMoney(value) {
     return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value || 0));
   }
-  function canonicalOrderStatus(value) {
+  function canonicalOrderStatus(value, fulfillmentType = "delivery") {
     const status = String(value || "Order Placed").trim().toLowerCase();
-    if (/\b(delivered|product delivered)\b|delivery complete/.test(status)) return "Product Delivered";
-    if (/out for delivery|delivery/.test(status)) return "Out For Delivery";
+    const isPickup = String(fulfillmentType || "").trim().toLowerCase() === "pickup" || /pick|pickup/.test(status);
     if (/reject/.test(status)) return "Rejected";
     if (/cancel/.test(status)) return "Cancelled";
-    if (/payment|due|request/.test(status)) return "Order Placed";
-    if (/ship|dispatch/.test(status)) return "Order Dispatched";
+    if (/picked\s*up|collected/.test(status) || (isPickup && (/\b(delivered|product delivered)\b|delivery complete/.test(status)))) {
+      return "Order Picked Up";
+    }
+    if (/ready\s*(for)?\s*pick/.test(status) || (isPickup && /ready/.test(status))) {
+      return "Ready for Pickup";
+    }
+    if (/\b(delivered|product delivered)\b|delivery complete/.test(status)) return "Product Delivered";
+    if (/out for delivery|delivery/.test(status)) return isPickup ? "Ready for Pickup" : "Out For Delivery";
+    if (/ship|dispatch/.test(status)) return isPickup ? "Ready for Pickup" : "Order Dispatched";
     if (/print|production/.test(status)) return "Printing Product";
     if (/approve|confirm/.test(status)) return "Order Approved";
+    if (/payment|due|request/.test(status)) return "Order Placed";
     if (/place|order placed/.test(status)) return "Order Placed";
     return "Other";
   }
@@ -2611,9 +2724,12 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   function updateOrderOverview(docs) {
     const cleanDocs = (docs || []).filter(doc => !isCustomerIgnored(doc.data(), doc.id));
     const orders = cleanDocs.map(doc => doc.data());
-    const delivered = orders.filter(order => canonicalOrderStatus(order.status) === "Product Delivered").length;
-    const actionStatuses = new Set(["Order Placed", "Order Approved", "Printing Product", "Order Dispatched", "Out For Delivery", "Other"]);
-    const needsAction = orders.filter(order => actionStatuses.has(canonicalOrderStatus(order.status))).length;
+    const delivered = orders.filter(order => {
+      const st = canonicalOrderStatus(order.status, order.fulfillment_type);
+      return st === "Product Delivered" || st === "Order Picked Up";
+    }).length;
+    const actionStatuses = new Set(["Order Placed", "Order Approved", "Printing Product", "Ready for Pickup", "Order Dispatched", "Out For Delivery", "Other"]);
+    const needsAction = orders.filter(order => actionStatuses.has(canonicalOrderStatus(order.status, order.fulfillment_type))).length;
     byId("stat-total-orders").textContent = String(orders.length);
     byId("stat-open-orders").textContent = String(needsAction);
     byId("stat-delivered-orders").textContent = String(delivered);
@@ -2978,11 +3094,11 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   function renderAttentionQueue() {
     const target = byId("admin-attention-queue");
     const now = Date.now();
-    const terminal = new Set(["Product Delivered", "Cancelled", "Rejected"]);
+    const terminal = new Set(["Product Delivered", "Order Picked Up", "Cancelled", "Rejected"]);
     const attention = orderDocuments.map(doc => {
       const order = doc.data();
       if (isCustomerIgnored(order, doc.id)) return null;
-      const canonicalStatus = canonicalOrderStatus(order.status);
+      const canonicalStatus = canonicalOrderStatus(order.status, order.fulfillment_type);
       if (terminal.has(canonicalStatus)) return null;
       const createdAt = orderTimestamp(order.timestamp);
       const ageDays = createdAt === null ? null : Math.floor((now - createdAt) / 86400000);
@@ -3003,7 +3119,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       const row = document.createElement("div"); row.className = "admin-attention-item";
       const copy = document.createElement("div");
       const title = document.createElement("strong"); title.textContent = `${order.order_id || doc.id} · ${order.name || order.email || "Customer details missing"}`;
-      const detail = document.createElement("span"); detail.textContent = `${canonicalOrderStatus(order.status)} · ${reasons.join(" · ")}`;
+      const detail = document.createElement("span"); detail.textContent = `${canonicalOrderStatus(order.status, order.fulfillment_type)} · ${reasons.join(" · ")}`;
       copy.append(title, detail);
       const edit = document.createElement("button"); edit.type = "button"; edit.textContent = "Review order";
       edit.addEventListener("click", () => openEditor({ collection: "orders", id: doc.id, data: order, creating: false }));
@@ -3019,7 +3135,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     return ordersInDateRange().filter(doc => {
       const order = doc.data();
       if (isCustomerIgnored(order, doc.id)) return false;
-      if (selectedStatuses.length && !selectedStatuses.includes(canonicalOrderStatus(order.status))) return false;
+      if (selectedStatuses.length && !selectedStatuses.includes(canonicalOrderStatus(order.status, order.fulfillment_type))) return false;
       if (query) {
         const searchable = [order.order_id, doc.id, order.name, order.email, order.phone, order.status, order.address, order.pickup_location,
           order.payment_ref, order.coupon_code, order.order_note, order.items, order.service_request]
@@ -3032,7 +3148,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         const time = orderTimestamp(order.timestamp);
         return time !== null && time >= chartSelection.start && time < chartSelection.end;
       }
-      if (chartSelection.kind === "status") return canonicalOrderStatus(order.status) === chartSelection.value;
+      if (chartSelection.kind === "status") return canonicalOrderStatus(order.status, order.fulfillment_type) === chartSelection.value;
       if (chartSelection.kind === "product") return (Array.isArray(order.items) ? order.items : []).some(item => String(item.productName || item.name || item.productId || item.id || "Unspecified product").trim() === chartSelection.value);
       if (chartSelection.kind === "payment") return paymentMethodForOrder(order) === chartSelection.value;
       return true;
@@ -3185,7 +3301,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       const itemSummary = items.length ? items.map(item => `${item.productName || item.name || item.id || "Item"} × ${item.quantity || 1}`).join("\n") : order.order_type ? (order.order_type === "bulk_order" ? "Bulk order request" : "3D printing service request") : "No item details";
       row.append(cell(itemSummary, order.order_note ? `Note: ${order.order_note}` : "", "admin-order-items"));
       row.append(cell(order.payment_ref || order.mop || "Payment not specified", order.payment_status ? `Payment status: ${order.payment_status}` : ""));
-      const canonical = canonicalOrderStatus(order.status);
+      const canonical = canonicalOrderStatus(order.status, order.fulfillment_type);
       const statusSlug = canonical.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       const statusCell = cell(canonical);
       statusCell.firstElementChild.className = `admin-order-status status-${statusSlug}`;
@@ -4378,12 +4494,33 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         checkbox.type = "checkbox";
         checkbox.value = String(index);
         checkbox.addEventListener("change", updateTicketEmailPreview);
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "ticket-reply-thumb-wrap";
+        thumbWrap.title = "Click to view full photo";
+        thumbWrap.setAttribute("role", "button");
+        thumbWrap.setAttribute("tabindex", "0");
+        thumbWrap.setAttribute("aria-label", `View ${file.name || "ticket photo"}`);
         const img = document.createElement("img");
         img.src = file.thumbnailUrl || file.url;
-        img.alt = "";
+        img.alt = file.name || "Ticket photo";
+        const viewIcon = document.createElement("span");
+        viewIcon.className = "ticket-reply-thumb-view-icon";
+        viewIcon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="13" r="3"/></svg>`;
+        thumbWrap.append(img, viewIcon);
+
+        const openViewer = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openTicketImageViewer(images, index);
+        };
+        thumbWrap.addEventListener("click", openViewer);
+        thumbWrap.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") openViewer(e);
+        });
+
         const name = document.createElement("span");
         name.textContent = file.name || "Ticket image";
-        label.append(checkbox, img, name);
+        label.append(checkbox, thumbWrap, name);
         grid.append(label);
       });
       groupEl.append(legend, grid);
@@ -4452,7 +4589,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const rawId = String(order.order_id || "").trim().replace(/^#+/, "");
     const idStr = rawId ? `#${rawId}` : "";
     const status = String(order.status || "Order Placed").trim();
-    const canonical = canonicalOrderStatus(status);
+    const canonical = canonicalOrderStatus(status, order.fulfillment_type);
     switch (canonical) {
       case "Order Placed":
         return `Order Received ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
@@ -4464,6 +4601,10 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         return `Payment Pending for Order ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
       case "Printing Product":
         return `Order In Production ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Ready for Pickup":
+        return `Your Order is Ready for Pickup! ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
+      case "Order Picked Up":
+        return `Order Picked Up ${idStr} — Thank You for Choosing Creative Souls 3D!`.replace(/\s+/g, " ").trim();
       case "Order Dispatched":
         return `Order Ready for Dispatch ${idStr} — Creative Souls 3D`.replace(/\s+/g, " ").trim();
       case "Out For Delivery":
@@ -4489,7 +4630,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const feedbackUrl = `${locOrigin}${locPathname.replace(/[^/]*$/, "")}feedback.html?id=${encodeURIComponent(cleanId)}&token=${encodeURIComponent(order._feedbackToken || "")}`;
     const displayId = cleanId ? `#${cleanId}` : "—";
     const status = String(order.status || "Order Placed").trim();
-    const canonicalSt = canonicalOrderStatus(status);
+    const canonicalSt = canonicalOrderStatus(status, order.fulfillment_type);
     const placedOn = orderDate(order.timestamp);
     const items = Array.isArray(order.items) ? order.items : [];
     const itemsSubtotal = Number(order.item_total) || items.reduce((s, it) => s + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1), 0);
@@ -4510,8 +4651,10 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       "Confirmed":          { emoji: "✅", color: "#ffffff", bg: "#059669", border: "#10b981" },
       "In Production":      { emoji: "⚙️", color: "#ffffff", bg: "#d97706", border: "#f59e0b" },
       "Ready for Dispatch": { emoji: "📦", color: "#ffffff", bg: "#ea580c", border: "#f97316" },
+      "Ready for Pickup":   { emoji: "📍", color: "#ffffff", bg: "#d97706", border: "#f59e0b" },
       "Shipped":            { emoji: "🚚", color: "#ffffff", bg: "#1d4ed8", border: "#3b82f6" },
       "Delivered":          { emoji: "🎉", color: "#ffffff", bg: "#16a34a", border: "#22c55e" },
+      "Order Picked Up":    { emoji: "🎉", color: "#ffffff", bg: "#16a34a", border: "#22c55e" },
       "Payment Pending":    { emoji: "⏳", color: "#0f172a", bg: "#f59e0b", border: "#fbbf24" },
       "Cancelled":          { emoji: "❌", color: "#ffffff", bg: "#dc2626", border: "#ef4444" },
       "Rejected":           { emoji: "🚫", color: "#ffffff", bg: "#dc2626", border: "#ef4444" }
@@ -4542,6 +4685,14 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       case "Printing Product":
         statusHeadline = "Your product is now being printed!";
         statusDescription = "Our high-precision 3D printers are currently crafting your items with care and precision. Every piece is monitored to ensure top quality. We will notify you once printing and quality inspections are complete.";
+        break;
+      case "Ready for Pickup":
+        statusHeadline = "Your order is ready for pickup!";
+        statusDescription = `Great news! Your 3D printed items are finished, quality checked, and ready for you to collect at our studio.<br><br><strong>Studio Pickup Location:</strong><br>${esc(order.pickup_location || order.address || "Creative Souls 3D Studio")}<br><br>Please keep your Order ID <strong>${esc(displayId)}</strong> handy when you arrive.`;
+        break;
+      case "Order Picked Up":
+        statusHeadline = "Thank you for picking up your order!";
+        statusDescription = "Your order has been collected from our studio. We hope you love your custom 3D printed piece! Help us improve by sharing your experience.";
         break;
       case "Order Dispatched":
         statusHeadline = "Your order is packed and ready!";
@@ -4757,7 +4908,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
             </table>
 
             ${trackingCardHtml}
-            ${canonicalSt === "Product Delivered" ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been delivered! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
+            ${(canonicalSt === "Product Delivered" || canonicalSt === "Order Picked Up") ? `<div style="margin:20px 0;padding:20px;text-align:center;background-color:#111;background-image:linear-gradient(#111,#111);border:1px solid #ffeb3b;border-radius:12px;"><div style="font-size:11px;font-weight:900;letter-spacing:.13em;color:#ffeb3b;margin-bottom:8px;">WE'D LOVE TO HEAR FROM YOU!</div><div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:7px;">Your order has been ${canonicalSt === "Order Picked Up" ? "collected" : "delivered"}! We hope you loved your purchase.</div><p style="margin:0 0 14px;color:#e5e5e5;font-size:13px;">Help us improve by sharing your experience.</p><a href="${esc(feedbackUrl)}" style="display:inline-block;background:#ffeb3b;color:#111!important;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:900;">SHARE YOUR FEEDBACK</a></div>` : ""}
             ${paymentPendingCardHtml}
             ${itemsSectionHtml}
             ${addressCardHtml}
@@ -4818,7 +4969,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const fmt = v => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(v) || 0);
     const firstName = String(order.name || "Customer").trim().split(/\s+/)[0] || "Customer";
     const status = String(order.status || "Order Placed").trim();
-    const canonicalSt = canonicalOrderStatus(status);
+    const canonicalSt = canonicalOrderStatus(status, order.fulfillment_type);
     const placedOn = orderDate(order.timestamp);
     const cleanId = String(order.order_id || "").trim().replace(/^#+/, "");
     const displayId = cleanId ? `#${cleanId}` : "—";
@@ -4872,6 +5023,25 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
           "Exciting news about your order!",
           "",
           "Your order is now actively in production. Our high-precision 3D printers are currently crafting your items with care and precision. We will update you as soon as printing and quality inspections are complete."
+        ];
+        break;
+      case "Ready for Pickup":
+        introLines = [
+          "Your order is ready for pickup!",
+          "",
+          "Great news! Your custom 3D printed items are finished, quality checked, and ready for pickup at our studio.",
+          "",
+          `Pickup Location: ${order.pickup_location || order.address || "Creative Souls 3D Studio"}`,
+          `Please provide your Order ID (${displayId}) when you come to collect.`
+        ];
+        break;
+      case "Order Picked Up":
+        introLines = [
+          "Thank you for picking up your order!",
+          "",
+          "Your order has been collected from our studio. We hope your custom 3D printed items bring joy to you!",
+          "",
+          "We would love to see your items in action — feel free to tag us on Instagram @creative.souls3d or reply to this email with your feedback."
         ];
         break;
       case "Order Dispatched":
@@ -4930,7 +5100,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         break;
     }
 
-    if (canonicalSt === "Product Delivered" && order._feedbackLink) introLines.push("", "WE'D LOVE TO HEAR FROM YOU!", "Your order has been delivered! We hope you loved your purchase.", "Help us improve by sharing your experience.", "SHARE YOUR FEEDBACK: " + order._feedbackLink);
+    if ((canonicalSt === "Product Delivered" || canonicalSt === "Order Picked Up") && order._feedbackLink) introLines.push("", "WE'D LOVE TO HEAR FROM YOU!", `Your order has been ${canonicalSt === "Order Picked Up" ? "collected" : "delivered"}! We hope you loved your purchase.`, "Help us improve by sharing your experience.", "SHARE YOUR FEEDBACK: " + order._feedbackLink);
     const divider = "─".repeat(40);
     const boldDivider = "━".repeat(40);
 
@@ -5092,7 +5262,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const titleEl = byId("email-preview-title");
 
     const cleanId = String(order.order_id || "").trim().replace(/^#+/, "");
-    if (titleEl) titleEl.textContent = `Customer Email: ${cleanId ? '#' + cleanId : 'Order'} (${canonicalOrderStatus(order.status)})`;
+    if (titleEl) titleEl.textContent = `Customer Email: ${cleanId ? '#' + cleanId : 'Order'} (${canonicalOrderStatus(order.status, order.fulfillment_type)})`;
     if (toEl) toEl.textContent = to;
     if (subEl) subEl.textContent = subject;
     if (frameEl) frameEl.srcdoc = html;
@@ -5151,7 +5321,8 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
 
   async function sendOrderNotificationEmail(order) {
     const prepared = { ...order };
-    if (canonicalOrderStatus(prepared.status) === "Product Delivered") {
+    const canSt = canonicalOrderStatus(prepared.status, prepared.fulfillment_type);
+    if (canSt === "Product Delivered" || canSt === "Order Picked Up") {
       try {
         const docId = prepared._docId || orderDocuments.find(doc => doc.data().order_id === prepared.order_id)?.id || prepared.order_id;
         const result = await firebase.functions().httpsCallable("issueFeedbackToken")({ orderDocId: docId });
@@ -5518,14 +5689,23 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
         attSection.innerHTML = `<div class="fb-section-title">Photos</div>`;
         const attGrid = document.createElement("div");
         attGrid.className = "fb-attachments";
-        attachments.forEach(item => {
+        attachments.forEach((item, attIdx) => {
           const figure = document.createElement("figure");
           figure.className = "fb-attachment";
           let mediaUrl = "";
           try { const parsed = new URL(String(item.url || "")); if (parsed.protocol === "https:") mediaUrl = parsed.href; } catch {}
           if (!mediaUrl) return;
           const mediaName = escapeHtml(item.name || "Photo");
-          figure.innerHTML = `<a href="${escapeHtml(mediaUrl)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(mediaUrl)}" alt="${mediaName}" loading="lazy" /></a><figcaption>${escapeHtml(item.name || "View photo")}</figcaption>`;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "admin-order-final-image-thumb-btn";
+          btn.title = "Click to view full photo";
+          btn.setAttribute("aria-label", `View ${mediaName}`);
+          btn.innerHTML = `<img src="${escapeHtml(mediaUrl)}" alt="${mediaName}" loading="lazy" />`;
+          btn.addEventListener("click", () => openAdminPhotoViewer(attachments, attIdx, `Feedback Photo - ${record.reference_id || record.order_id || ""}`));
+          const caption = document.createElement("figcaption");
+          caption.textContent = item.name || "View photo";
+          figure.append(btn, caption);
           attGrid.append(figure);
         });
         attSection.append(attGrid);
@@ -6008,10 +6188,35 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     ticketImageViewerState.image = null;
     const context = canvas.getContext("2d");
     context?.clearRect(0, 0, canvas.width, canvas.height);
-    byId("ticket-image-loading").hidden = false;
+    const hideLoading = () => {
+      const loadEl = byId("ticket-image-loading");
+      if (loadEl) {
+        loadEl.hidden = true;
+        loadEl.style.display = "none";
+        loadEl.classList.add("is-hidden");
+      }
+    };
+    const showLoading = () => {
+      const loadEl = byId("ticket-image-loading");
+      if (loadEl) {
+        loadEl.hidden = false;
+        loadEl.style.display = "grid";
+        loadEl.classList.remove("is-hidden");
+      }
+    };
+    showLoading();
     const token = ++ticketImageViewerState.loadToken;
     byId("ticket-image-title").textContent = file.name || `Image ${ticketImageViewerState.index + 1}`;
     byId("ticket-image-counter").textContent = `${ticketImageViewerState.index + 1} / ${ticketImageViewerState.files.length}`;
+    const hasMultiple = ticketImageViewerState.files.length > 1;
+    const prevBtn = byId("ticket-image-prev");
+    const nextBtn = byId("ticket-image-next");
+    const stagePrevBtn = byId("ticket-image-stage-prev");
+    const stageNextBtn = byId("ticket-image-stage-next");
+    if (prevBtn) prevBtn.disabled = !hasMultiple;
+    if (nextBtn) nextBtn.disabled = !hasMultiple;
+    if (stagePrevBtn) stagePrevBtn.style.display = hasMultiple ? "flex" : "none";
+    if (stageNextBtn) stageNextBtn.style.display = hasMultiple ? "flex" : "none";
     const drawLoadedImage = image => {
       if (token !== ticketImageViewerState.loadToken) return;
       ticketImageViewerState.image = image;
@@ -6023,40 +6228,82 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       ticketImageViewerState.selectedMarkIndex = -1;
       byId("ticket-image-text-delete").disabled = true;
       updateTicketImageHistoryButtons();
-      byId("ticket-image-loading").hidden = true;
+      hideLoading();
       setTicketImageZoom(1);
       redrawTicketImageCanvas();
     };
+    const tryFallbackLoad = () => {
+      const fallback = new Image();
+      ticketImageCache.set(file.url, fallback);
+      fallback.onload = () => {
+        if (token === ticketImageViewerState.loadToken) {
+          hideLoading();
+          drawLoadedImage(fallback);
+        }
+      };
+      fallback.onerror = () => {
+        ticketImageCache.delete(file.url);
+        if (token === ticketImageViewerState.loadToken) {
+          hideLoading();
+          window.showAdminToast?.("This image could not be loaded.", "danger");
+        }
+      };
+      fallback.src = file.url;
+      if (fallback.complete && fallback.naturalWidth) {
+        if (token === ticketImageViewerState.loadToken) {
+          hideLoading();
+          drawLoadedImage(fallback);
+        }
+      }
+    };
     let image = ticketImageCache.get(file.url);
     if (image?.complete && image.naturalWidth) { drawLoadedImage(image); return; }
-    byId("ticket-image-loading").hidden = false;
+    showLoading();
     if (!image) {
       image = new Image();
       image.crossOrigin = "anonymous";
       ticketImageCache.set(file.url, image);
       image.onerror = () => {
+        if (image.crossOrigin) {
+          tryFallbackLoad();
+          return;
+        }
         ticketImageCache.delete(file.url);
         if (token === ticketImageViewerState.loadToken) {
-          byId("ticket-image-loading").hidden = true;
-          window.showAdminToast?.("This image could not be loaded for annotation.", "danger");
+          hideLoading();
+          window.showAdminToast?.("This image could not be loaded.", "danger");
         }
       };
-      image.onload = () => { if (token === ticketImageViewerState.loadToken) byId("ticket-image-loading").hidden = true; drawLoadedImage(image); };
+      image.onload = () => { if (token === ticketImageViewerState.loadToken) { hideLoading(); drawLoadedImage(image); } };
       image.src = file.url;
+      if (image.complete && image.naturalWidth) {
+        drawLoadedImage(image);
+      }
     } else {
-      image.addEventListener("load", () => { if (token === ticketImageViewerState.loadToken) byId("ticket-image-loading").hidden = true; drawLoadedImage(image); }, { once: true });
+      image.addEventListener("load", () => { if (token === ticketImageViewerState.loadToken) { hideLoading(); drawLoadedImage(image); } }, { once: true });
       image.addEventListener("error", () => {
+        if (image.crossOrigin) {
+          tryFallbackLoad();
+          return;
+        }
         if (token === ticketImageViewerState.loadToken) {
-          byId("ticket-image-loading").hidden = true;
+          hideLoading();
           ticketImageCache.delete(file.url);
-          window.showAdminToast?.("This image could not be loaded for annotation.", "danger");
+          window.showAdminToast?.("This image could not be loaded.", "danger");
         }
       }, { once: true });
+      if (image.complete && image.naturalWidth) {
+        drawLoadedImage(image);
+      }
     }
     if (image.complete && !image.naturalWidth) {
-      ticketImageCache.delete(file.url);
-      byId("ticket-image-loading").hidden = true;
-      if (token === ticketImageViewerState.loadToken) window.showAdminToast?.("This image could not be loaded for annotation.", "danger");
+      if (image.crossOrigin) {
+        tryFallbackLoad();
+      } else {
+        ticketImageCache.delete(file.url);
+        hideLoading();
+        if (token === ticketImageViewerState.loadToken) window.showAdminToast?.("This image could not be loaded.", "danger");
+      }
     }
   }
   function openTicketImageViewer(files, index) {
@@ -6102,8 +6349,28 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   }
   function initTicketImageViewerListeners() {
     byId("ticket-image-close")?.addEventListener("click", () => byId("ticket-image-viewer").close());
-  byId("ticket-image-prev")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index - 1));
-  byId("ticket-image-next")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index + 1));
+    byId("ticket-image-prev")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index - 1));
+    byId("ticket-image-next")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index + 1));
+    byId("ticket-image-stage-prev")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index - 1));
+    byId("ticket-image-stage-next")?.addEventListener("click", () => showTicketImageAt(ticketImageViewerState.index + 1));
+    const stageEl = byId("ticket-image-stage");
+    let touchStartX = 0;
+    let touchStartY = 0;
+    stageEl?.addEventListener("touchstart", (e) => {
+      if (ticketImageViewerState.mode === "draw" || e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    stageEl?.addEventListener("touchend", (e) => {
+      if (ticketImageViewerState.mode === "draw" || !touchStartX) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      touchStartX = 0;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) showTicketImageAt(ticketImageViewerState.index + 1);
+        else showTicketImageAt(ticketImageViewerState.index - 1);
+      }
+    }, { passive: true });
   byId("ticket-image-zoom-in")?.addEventListener("click", () => setTicketImageZoom(ticketImageViewerState.zoom + .25));
   byId("ticket-image-zoom-out")?.addEventListener("click", () => setTicketImageZoom(ticketImageViewerState.zoom - .25));
   byId("ticket-image-zoom-fit")?.addEventListener("click", () => setTicketImageZoom(1));
@@ -6943,6 +7210,129 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
   byId("ticket-create-cancel")?.addEventListener("click", () => ticketCreateDialog.close());
   byId("ticket-create-close")?.addEventListener("click", () => ticketCreateDialog.close());
   initTicketImageViewerListeners();
+
+  // Admin Photo Lightbox (for viewing final product photos & media)
+  let adminLightboxState = { images: [], index: 0, title: "" };
+
+  function updateAdminLightboxView() {
+    if (!adminLightboxState.images.length) return;
+    const total = adminLightboxState.images.length;
+    adminLightboxState.index = (adminLightboxState.index + total) % total;
+    const cur = adminLightboxState.images[adminLightboxState.index];
+    const url = typeof cur === "string" ? cur : (cur.url || cur.thumbnailUrl || "");
+    const name = typeof cur === "string" ? "Photo" : (cur.name || "Photo");
+
+    const titleEl = byId("admin-lightbox-title");
+    const counterEl = byId("admin-lightbox-counter");
+    const extLink = byId("admin-lightbox-external");
+    const imgEl = byId("admin-lightbox-img");
+    const loadingEl = byId("admin-lightbox-loading");
+    const prevBtn = byId("admin-lightbox-prev");
+    const nextBtn = byId("admin-lightbox-next");
+
+    if (titleEl) titleEl.textContent = name;
+    if (counterEl) counterEl.textContent = total > 1 ? `${adminLightboxState.index + 1} / ${total}` : "";
+    if (extLink) extLink.href = url;
+
+    if (prevBtn) prevBtn.style.display = total > 1 ? "flex" : "none";
+    if (nextBtn) nextBtn.style.display = total > 1 ? "flex" : "none";
+
+    if (imgEl) {
+      const hideLoading = () => {
+        if (loadingEl) {
+          loadingEl.hidden = true;
+          loadingEl.style.display = "none";
+          loadingEl.classList.add("is-hidden");
+        }
+      };
+      const showLoading = () => {
+        if (loadingEl) {
+          loadingEl.hidden = false;
+          loadingEl.style.display = "grid";
+          loadingEl.classList.remove("is-hidden");
+        }
+      };
+
+      imgEl.onload = hideLoading;
+      imgEl.onerror = hideLoading;
+
+      if (imgEl.src !== url) {
+        showLoading();
+        imgEl.src = url;
+      }
+      imgEl.alt = name;
+      if (imgEl.complete && imgEl.naturalWidth) {
+        hideLoading();
+      }
+    }
+  }
+
+  function openAdminPhotoViewer(images, startIndex = 0, title = "Photos") {
+    if (!images || !images.length) return;
+    adminLightboxState = {
+      images,
+      index: Math.max(0, Math.min(images.length - 1, startIndex)),
+      title
+    };
+    updateAdminLightboxView();
+    const dialog = byId("admin-photo-lightbox");
+    if (dialog?.showModal && !dialog.open) {
+      dialog.showModal();
+    }
+  }
+
+  function initAdminPhotoLightboxListeners() {
+    byId("admin-lightbox-close")?.addEventListener("click", () => byId("admin-photo-lightbox")?.close());
+    byId("admin-lightbox-prev")?.addEventListener("click", () => {
+      adminLightboxState.index--;
+      updateAdminLightboxView();
+    });
+    byId("admin-lightbox-next")?.addEventListener("click", () => {
+      adminLightboxState.index++;
+      updateAdminLightboxView();
+    });
+    const dialog = byId("admin-photo-lightbox");
+    dialog?.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (!byId("admin-photo-lightbox")?.open) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        adminLightboxState.index--;
+        updateAdminLightboxView();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        adminLightboxState.index++;
+        updateAdminLightboxView();
+      }
+    });
+    const body = byId("admin-lightbox-body");
+    let touchX = 0;
+    let touchY = 0;
+    body?.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    body?.addEventListener("touchend", (e) => {
+      if (!touchX) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      const dy = e.changedTouches[0].clientY - touchY;
+      touchX = 0;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) {
+          adminLightboxState.index++;
+          updateAdminLightboxView();
+        } else {
+          adminLightboxState.index--;
+          updateAdminLightboxView();
+        }
+      }
+    }, { passive: true });
+  }
+  initAdminPhotoLightboxListeners();
 
   // ══════════════════════════════════════════════════════════════════════════
   // WALLET & REFUNDS MANAGEMENT MODULE
@@ -8196,6 +8586,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     if (isAdmin && sectionId === "tickets") loadTickets();
     if (sectionId === "feedback") loadCustomerFeedback();
     if (isAdmin && sectionId === "wallets") loadWalletsSection();
+    if (isAdmin && sectionId === "calculator") window.RateCalculator?.init?.();
     return sectionId;
   };
 
@@ -8209,6 +8600,7 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
       loadOrders(); loadCollection(); loadTickets(); loadCustomerFeedback();
       if (document.querySelector("#section-products.active")) loadCatalogProducts();
       if (document.querySelector("#section-wallets.active")) loadWalletsSection();
+      if (document.querySelector("#section-calculator.active")) window.RateCalculator?.init?.();
     } else if (user) {
       identity.textContent = `Signed in as ${user.email}. This account is not authorized for the admin dashboard.`;
       status.textContent = "Access denied.";

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Profile & Settings | Creative Souls 3D</title>
+  <title>Your Profile &amp; Settings | Creative Souls 3D</title>
 
   <link rel="icon" type="image/png" href="logo_creativesouls.jpg">
   <link rel="stylesheet" href="styles.css" />
@@ -16,91 +16,504 @@
   <script defer src="account.js"></script>
 
   <style>
+    /* ── Login Wall ── */
+    #login-wall {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px;
+      gap: 16px;
+    }
+    #login-wall .lw-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--brand-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+    #login-wall h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    #login-wall p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+    .lw-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 32px;
+      background: var(--brand-gradient);
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 0.97rem;
+      border-radius: var(--radius-full);
+      box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+      transition: all var(--transition-fast);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .lw-btn:hover {
+      background: var(--brand-gradient-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(245,158,11,0.45);
+    }
+
+    /* ── Account Content ── */
+    #account-content { display: none; }
+
+    /* ── Profile Hero ── */
     .profile-hero {
       display: flex;
       align-items: center;
       gap: 18px;
-      padding-bottom: 24px;
+      padding: 24px;
       margin-bottom: 24px;
-      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #312a1a 100%);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
     }
-
+    .profile-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top right, rgba(245,158,11,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .profile-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
     .profile-avatar-large {
-      width: 68px;
-      height: 68px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       border: 3px solid var(--brand);
-      background: var(--surface-alt);
+      background: #1e293b;
       object-fit: cover;
-      box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 0 20px rgba(245,158,11,0.35);
     }
-
+    .profile-avatar-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      background: #22c55e;
+      border-radius: 50%;
+      border: 2px solid #0f172a;
+    }
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
     .profile-info h2 {
-      font-size: 1.4rem;
+      font-size: 1.25rem;
       font-weight: 800;
-      color: var(--text-primary);
-      margin-bottom: 2px;
+      color: #ffffff;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .profile-info .profile-email {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+    .profile-info .profile-member-since {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 7px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--brand);
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius-full);
+      padding: 3px 10px;
+    }
+    .logout-btn-hero {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .logout-btn-hero:hover {
+      background: rgba(239,68,68,0.22);
+      border-color: rgba(239,68,68,0.5);
+      color: #fff;
+      transform: translateY(-1px);
     }
 
-    .profile-info p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
+    /* ── Quick Action Cards ── */
     .account-quick-links {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 28px;
+      gap: 10px;
+      margin-bottom: 24px;
     }
-
     .account-quick-card {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 14px 10px;
+      gap: 7px;
+      padding: 16px 10px;
       background: var(--surface-alt);
-      border: 1px solid var(--border);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--text-secondary);
       transition: all var(--transition-fast);
       text-align: center;
+      text-decoration: none;
+      cursor: pointer;
     }
-
-    .account-quick-card:hover {
-      background: #ffffff;
-      border-color: var(--brand);
-      color: var(--text-primary);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .input-with-icon {
-      position: relative;
+    .account-quick-card .aqc-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      transition: all var(--transition-fast);
+    }
+    .account-quick-card:hover {
+      background: #fff;
+      border-color: var(--brand);
+      color: var(--text-primary);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(245,158,11,0.15);
+    }
+    .account-quick-card:hover .aqc-icon {
+      background: var(--brand-light);
+      border-color: var(--brand-border);
     }
 
-    .input-with-icon svg {
-      position: absolute;
-      left: 14px;
+    /* ── Section Divider ── */
+    .acct-section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      font-weight: 800;
       color: var(--text-muted);
-      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 24px 0 14px;
+    }
+    .acct-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
 
-    .input-with-icon input {
-      padding-left: 42px !important;
+    /* ── Wallet Card ── */
+    .account-wallet-card {
+      background: var(--surface-alt);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .wallet-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #0f172a, #1e2d4a);
+      color: #fff;
+    }
+    .wallet-card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .wallet-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand);
+      flex-shrink: 0;
+    }
+    .wallet-card-title-wrap h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 1px;
+    }
+    .wallet-card-title-wrap p {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+    .wallet-refresh-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+    }
+    .wallet-refresh-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .wallet-refresh-btn.spinning svg {
+      animation: spin 0.6s linear;
     }
 
+    .wallet-balance-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .wallet-stat-card {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .wallet-stat-card:first-child {
+      border-right: 1px solid var(--border);
+    }
+    .wallet-stat-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .wallet-stat-amount {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .wallet-stat-card.primary .wallet-stat-amount {
+      color: #15803d;
+    }
+    .wallet-points-amount {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--brand-dark);
+    }
+
+    .wallet-usage-tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 12px 20px;
+      background: rgba(245,158,11,0.06);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .wallet-usage-tip svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: var(--brand);
+    }
+
+    /* Wallet History */
+    .wallet-history-section { padding: 0 20px 16px; }
+    .wallet-history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .wallet-history-header h4 {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .wallet-history-count {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 2px 10px;
+    }
+    .wallet-history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .wallet-history-loading {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 16px 0;
+    }
+    .wallet-history-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 20px 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .wallet-history-empty p { font-weight: 700; color: var(--text-secondary); }
+    .wallet-history-empty span { font-size: 0.78rem; }
+    .wallet-tx-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      gap: 10px;
+    }
+    .wallet-tx-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .wallet-tx-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .tx-credit .wallet-tx-icon { background: #dcfce7; color: #15803d; }
+    .tx-debit  .wallet-tx-icon { background: #fee2e2; color: #b91c1c; }
+    .wallet-tx-meta { min-width: 0; }
+    .wallet-tx-title {
+      display: block;
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wallet-tx-sub {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .wallet-tx-order {
+      background: var(--brand-light);
+      color: var(--brand-dark);
+      border-radius: var(--radius-full);
+      padding: 1px 7px;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+    .wallet-tx-amount {
+      font-size: 0.9rem;
+      font-weight: 800;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .amount-credit { color: #15803d; }
+    .amount-debit  { color: #b91c1c; }
+
+    /* ── Profile Form ── */
+    .profile-form-card {
+      background: var(--surface-alt);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .profile-form-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .profile-form-header-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--brand-light);
+      border: 1px solid var(--brand-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand-dark);
+      flex-shrink: 0;
+    }
+    .profile-form-header-title h3 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 1px;
+    }
+    .profile-form-header-title p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .profile-form-body {
+      padding: 20px;
+    }
     #profile-form {
       display: grid;
       gap: 16px;
     }
-
     #profile-form #save-btn {
       display: flex;
       align-items: center;
@@ -113,15 +526,80 @@
       line-height: 1.2;
       text-align: center;
     }
+    #profile-form #save-btn svg { flex: 0 0 auto; }
 
-    #profile-form #save-btn svg {
-      flex: 0 0 auto;
+    .input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-with-icon svg {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .input-with-icon input { padding-left: 42px !important; }
+
+    /* ── Logout Section ── */
+    .logout-section {
+      margin-top: 24px;
+      padding: 18px 20px;
+      background: #fff5f5;
+      border: 1.5px solid #fecaca;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .logout-section-info h4 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #991b1b;
+      margin-bottom: 2px;
+    }
+    .logout-section-info p {
+      font-size: 0.78rem;
+      color: #b91c1c;
+    }
+    .logout-btn-main {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      background: #ef4444;
+      border: none;
+      color: #fff;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .logout-btn-main:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239,68,68,0.35);
     }
 
     @media (max-width: 600px) {
-      .account-quick-links {
-        grid-template-columns: 1fr;
-      }
+      .account-quick-links { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .account-quick-card { padding: 12px 6px; gap: 5px; font-size: 0.75rem; }
+      .account-quick-card .aqc-icon { width: 34px; height: 34px; font-size: 1.1rem; }
+      .profile-hero { gap: 14px; padding: 18px; }
+      .profile-avatar-large { width: 58px; height: 58px; }
+      .logout-btn-hero span { display: none; }
+      .logout-section { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .logout-btn-main { width: 100%; justify-content: center; }
+      .wallet-balance-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -159,128 +637,200 @@
 
   <main>
     <section class="account-section">
-      <!-- Profile Hero Header -->
-      <div class="profile-hero">
-        <img id="profile-photo" class="profile-avatar-large" src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg" alt="User Avatar" />
-        <div class="profile-info">
-          <h2 id="profile-display-name">Customer Profile</h2>
-          <p id="profile-email">Sign in to manage your orders</p>
+
+      <!-- ── NOT LOGGED IN STATE ── -->
+      <div id="login-wall">
+        <div class="lw-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
         </div>
-      </div>
-
-      <!-- Quick Action Cards -->
-      <div class="account-quick-links">
-        <a href="orders.html" class="account-quick-card">
-          <span style="font-size: 1.3rem;">📦</span>
-          <span>My Orders</span>
-        </a>
-        <a href="cart.html" class="account-quick-card">
-          <span style="font-size: 1.3rem;">🛒</span>
-          <span>View Cart</span>
-        </a>
-        <a href="track-order.html" class="account-quick-card">
-          <span style="font-size: 1.3rem;">📍</span>
-          <span>Track Order</span>
+        <h2>Sign In to Your Account</h2>
+        <p>View your orders, manage delivery details, check wallet balance, and track your 3D prints.</p>
+        <a href="index.html" class="lw-btn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          Go to Login
         </a>
       </div>
 
-      <!-- Wallet & Credits Card -->
-      <div class="account-wallet-card" id="account-wallet-card">
-        <div class="wallet-card-header">
-          <div class="wallet-card-header-left">
-            <div class="wallet-card-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path>
-              </svg>
-            </div>
-            <div class="wallet-card-title-wrap">
-              <h3>My Wallet &amp; Store Credit</h3>
-              <p>Refunds, cashbacks, and referral bonuses</p>
-            </div>
+      <!-- ── LOGGED IN STATE ── -->
+      <div id="account-content">
+
+        <!-- Profile Hero -->
+        <div class="profile-hero">
+          <div class="profile-avatar-wrap">
+            <img id="profile-photo" class="profile-avatar-large"
+              src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
+              alt="User Avatar" />
+            <div class="profile-avatar-badge"></div>
           </div>
-          <button type="button" class="wallet-refresh-btn" id="wallet-refresh-btn" title="Refresh wallet balance" aria-label="Refresh wallet balance">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <polyline points="1 20 1 14 7 14"></polyline>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          <div class="profile-info">
+            <h2 id="profile-display-name">Customer</h2>
+            <span class="profile-email" id="profile-email">—</span>
+            <span class="profile-member-since" id="profile-member-since">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Verified Member
+            </span>
+          </div>
+          <button type="button" class="logout-btn-hero" id="logout-btn-hero">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
+            <span>Log Out</span>
           </button>
         </div>
 
-        <div class="wallet-balance-row">
-          <div class="wallet-stat-card primary">
-            <span class="wallet-stat-label">Available Balance</span>
-            <div class="wallet-stat-amount" id="wallet-balance-display">₹0.00</div>
-          </div>
-          <div class="wallet-stat-card secondary">
-            <span class="wallet-stat-label">Reward Points</span>
-            <div class="wallet-points-amount" id="wallet-points-display">0 pts</div>
-          </div>
+        <!-- Quick Action Cards -->
+        <div class="account-quick-links">
+          <a href="orders.html" class="account-quick-card">
+            <div class="aqc-icon">📦</div>
+            <span>My Orders</span>
+          </a>
+          <a href="cart.html" class="account-quick-card">
+            <div class="aqc-icon">🛒</div>
+            <span>View Cart</span>
+          </a>
+          <a href="track-order.html" class="account-quick-card">
+            <div class="aqc-icon">📍</div>
+            <span>Track Order</span>
+          </a>
         </div>
 
-        <div class="wallet-usage-tip">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        <!-- Wallet & Credits Card -->
+        <div class="acct-section-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
           </svg>
-          <span>You can apply this balance during checkout to instantly discount or pay for your 3D orders.</span>
+          Wallet &amp; Credits
+        </div>
+        <div class="account-wallet-card" id="account-wallet-card">
+          <div class="wallet-card-header">
+            <div class="wallet-card-header-left">
+              <div class="wallet-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                  <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+                </svg>
+              </div>
+              <div class="wallet-card-title-wrap">
+                <h3>My Wallet &amp; Store Credit</h3>
+                <p>Refunds, cashbacks &amp; referral bonuses</p>
+              </div>
+            </div>
+            <button type="button" class="wallet-refresh-btn" id="wallet-refresh-btn" title="Refresh wallet balance" aria-label="Refresh wallet balance">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="wallet-balance-row">
+            <div class="wallet-stat-card primary">
+              <span class="wallet-stat-label">Available Balance</span>
+              <div class="wallet-stat-amount" id="wallet-balance-display">₹0.00</div>
+            </div>
+            <div class="wallet-stat-card secondary">
+              <span class="wallet-stat-label">Reward Points</span>
+              <div class="wallet-points-amount" id="wallet-points-display">0 pts</div>
+            </div>
+          </div>
+
+          <div class="wallet-usage-tip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>Apply your wallet balance at checkout to instantly discount or fully pay for your 3D orders.</span>
+          </div>
+
+          <!-- Wallet History -->
+          <div class="wallet-history-section">
+            <div class="wallet-history-header">
+              <h4>Transaction History</h4>
+              <span id="wallet-history-count" class="wallet-history-count">Loading…</span>
+            </div>
+            <div id="wallet-history-list" class="wallet-history-list">
+              <p class="wallet-history-loading">Fetching wallet activity…</p>
+            </div>
+          </div>
         </div>
 
-        <!-- Wallet History -->
-        <div class="wallet-history-section">
-          <div class="wallet-history-header">
-            <h4>Transaction History</h4>
-            <span id="wallet-history-count" class="wallet-history-count">Loading…</span>
+        <!-- Delivery Information Form -->
+        <div class="acct-section-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          Delivery Information
+        </div>
+        <div class="profile-form-card">
+          <div class="profile-form-header">
+            <div class="profile-form-header-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div class="profile-form-header-title">
+              <h3>Your Profile &amp; Address</h3>
+              <p>Keep updated for fast 1-click checkout on all custom prints</p>
+            </div>
           </div>
-          <div id="wallet-history-list" class="wallet-history-list">
-            <p class="wallet-history-loading">Fetching wallet activity…</p>
+          <div class="profile-form-body">
+            <form id="profile-form">
+              <label>
+                Full Name
+                <div class="input-with-icon">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <input type="text" id="name" placeholder="Your full name" required />
+                </div>
+              </label>
+
+              <label>
+                Delivery Address
+                <textarea id="address" rows="3" placeholder="House no, Street, Landmark, City, Pincode" required></textarea>
+              </label>
+
+              <label>
+                Contact Phone Number (10 digits)
+                <div class="input-with-icon">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <input type="tel" id="phone" placeholder="9876543210" required pattern="[0-9]{10}" />
+                </div>
+              </label>
+
+              <button type="submit" id="save-btn">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Profile Details
+              </button>
+            </form>
+            <p id="status" style="text-align:center; margin-top:12px; font-weight:800; font-size:0.92rem;"></p>
           </div>
         </div>
-      </div>
 
-      <div style="margin-bottom: 20px;">
-        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">Delivery Information</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Keep your address updated for fast 1-click checkout on all custom prints.</p>
-      </div>
-
-      <form id="profile-form">
-        <label>
-          Full Name
-          <div class="input-with-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <input type="text" id="name" placeholder="Your full name" required />
+        <!-- Logout Section -->
+        <div class="logout-section">
+          <div class="logout-section-info">
+            <h4>Sign Out</h4>
+            <p>You'll need to sign in again to view your account.</p>
           </div>
-        </label>
+          <button type="button" class="logout-btn-main" id="logout-btn-main">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Log Out
+          </button>
+        </div>
 
-        <label>
-          Delivery Address (House no, Street, Landmark, City, Pincode)
-          <textarea id="address" rows="3" placeholder="Enter complete doorstep delivery address with pincode" required></textarea>
-        </label>
+      </div><!-- /#account-content -->
 
-        <label>
-          Contact Phone Number (10 digits)
-          <div class="input-with-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-            <input type="tel" id="phone" placeholder="9876543210" required pattern="[0-9]{10}" />
-          </div>
-        </label>
-
-        <button type="submit" id="save-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-          Save Profile Details
-        </button>
-      </form>
-
-      <p id="status" style="text-align:center; margin-top:14px; font-weight:800; font-size: 0.95rem;"></p>
     </section>
   </main>
 
   <!-- Footer -->
   <footer>
-    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts & Keepsakes</p>
+    <p>Creative Souls 3D &copy; 2026 &bull; Personalized 3D Printed Art, Gifts &amp; Keepsakes</p>
   </footer>
 
   <script src="navigation.js"></script>

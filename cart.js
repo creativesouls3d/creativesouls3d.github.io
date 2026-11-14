@@ -131,13 +131,19 @@ document.getElementById("place-order").addEventListener("click", async () => {
     return;
   }
 
-  if (!paymentMode || (paymentMode === "cod" && !paymentModes.cod) || (paymentMode === "upi" && !paymentModes.upi)) {
+  const itemTotalPreview = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const preWalletTotalPreview = Math.max(itemTotalPreview + deliveryCharge - discountAmount, 0);
+  const userWalletPreview = Math.max(0, Number(userData.wallet_balance || 0));
+  const walletUsedPreview = (useWallet && userWalletPreview > 0) ? Math.min(userWalletPreview, preWalletTotalPreview) : 0;
+  const isFullyPaidByWallet = walletUsedPreview > 0 && (preWalletTotalPreview - walletUsedPreview <= 0);
+
+  if (!isFullyPaidByWallet && (!paymentMode || (paymentMode === "cod" && !paymentModes.cod) || (paymentMode === "upi" && !paymentModes.upi))) {
     msg.style.color = "var(--danger)";
     msg.textContent = "No payment method is currently available. Please contact us.";
     return;
   }
 
-  if (paymentMode === "upi" && checkoutStep === "details") {
+  if (!isFullyPaidByWallet && paymentMode === "upi" && checkoutStep === "details") {
     checkoutStep = "payment";
     renderCart();
     msg.style.color = "var(--text-secondary)";
@@ -164,7 +170,11 @@ document.getElementById("place-order").addEventListener("click", async () => {
   try {
     const newId = await generateUniqueOrderId();
     const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
-    const finalTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
+    const preWalletTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
+    const availableWallet = Math.max(0, Number(userData.wallet_balance || 0));
+    const walletUsed = (useWallet && availableWallet > 0) ? Math.min(availableWallet, preWalletTotal) : 0;
+    const finalTotal = Math.max(preWalletTotal - walletUsed, 0);
+    const isFullyPaid = walletUsed > 0 && finalTotal === 0;
 
     const orderData = {
       order_id: newId,
@@ -179,15 +189,16 @@ document.getElementById("place-order").addEventListener("click", async () => {
       item_total: itemTotal,
       delivery_charge: deliveryCharge,
       discount: discountAmount,
+      wallet_used: walletUsed,
       total: finalTotal,
       coupon_code: appliedCouponCode,
-      status: paymentMode === "upi" ? "Payment Verification Pending" : "Order Placed",
+      status: isFullyPaid ? "Order Placed" : paymentMode === "upi" ? "Payment Verification Pending" : "Order Placed",
       timestamp: firebase.firestore.Timestamp.now(),
       approved: false,
-      payment_status: paymentMode === "upi" ? "pending" : "cash on delivery",
-      mop: paymentMode === "upi" ? "upi" : "cash",
-      payment_ref: paymentMode === "upi" ? "UPI" : fulfillmentType === "pickup" ? "cash-on-pickup" : "cash-on-delivery",
-      upi_id: paymentMode === "upi" ? paymentModes.upiID : "",
+      payment_status: isFullyPaid ? "Paid (Wallet)" : "Pending",
+      mop: isFullyPaid ? "wallet" : paymentMode === "upi" ? "upi" : "cash",
+      payment_ref: isFullyPaid ? "Wallet Balance" : paymentMode === "upi" ? "UPI" : fulfillmentType === "pickup" ? "cash-on-pickup" : "cash-on-delivery",
+      upi_id: (!isFullyPaid && paymentMode === "upi") ? paymentModes.upiID : "",
       expected_delivery: fulfillmentType === "pickup"
         ? "We will contact you when your order is ready for pickup."
         : "Estimated delivery within 5–7 days. The exact date will be updated once your order is confirmed."
@@ -312,13 +323,17 @@ function renderCart() {
     });
   });
 
-  const finalTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
+  const userWalletBalance = Math.max(0, Number(userData?.wallet_balance || 0));
+  const preWalletTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
+  const walletUsedAmount = (useWallet && userWalletBalance > 0) ? Math.min(userWalletBalance, preWalletTotal) : 0;
+  const finalTotal = Math.max(preWalletTotal - walletUsedAmount, 0);
+  const isFullyPaid = walletUsedAmount > 0 && finalTotal === 0;
 
   const qrWrap = document.getElementById("upi-payment");
   const qrNode = document.getElementById("upi-qr");
   const amountNode = document.getElementById("upi-amount");
   if (qrWrap && qrNode && amountNode) {
-    const showQr = paymentMode === "upi" && paymentModes.upi && checkoutStep === "payment";
+    const showQr = !isFullyPaid && paymentMode === "upi" && paymentModes.upi && checkoutStep === "payment";
     qrWrap.hidden = !showQr;
     if (showQr) {
       const upiUrl = `upi://pay?pa=${encodeURIComponent(paymentModes.upiID)}&pn=${encodeURIComponent("Creative Souls 3D")}&am=${finalTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent("Creative Souls 3D order")}`;
@@ -336,12 +351,32 @@ function renderCart() {
       <label><input type="radio" name="fulfillment-type" value="delivery" ${fulfillmentType === "delivery" ? "checked" : ""}> Home delivery</label>
       <label><input type="radio" name="fulfillment-type" value="pickup" ${fulfillmentType === "pickup" ? "checked" : ""}> Store pickup</label>
     </fieldset>
-    <fieldset class="fulfillment-selector" style="margin-top:14px;">
-      <legend>Payment method</legend>
-      ${paymentModes.cod ? `<label><input type="radio" name="payment-mode" value="cod" ${paymentMode === "cod" ? "checked" : ""}> Cash ${fulfillmentType === "pickup" ? "on pickup" : "on delivery"}</label>` : ""}
-      ${paymentModes.upi ? `<label><input type="radio" name="payment-mode" value="upi" ${paymentMode === "upi" ? "checked" : ""}> UPI (pay now)</label>` : ""}
-      ${!paymentModes.cod && !paymentModes.upi ? `<p style="color:var(--danger);">No payment methods are enabled. Please contact us.</p>` : ""}
-    </fieldset>
+
+    ${userWalletBalance > 0 ? `
+      <div class="cart-wallet-box" style="margin: 14px 0 10px; padding: 12px 14px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-md);">
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="cart-use-wallet" ${useWallet ? "checked" : ""} style="width: 17px; height: 17px; accent-color: var(--brand);">
+            <span>Use Wallet Balance (Available: <strong>₹${userWalletBalance.toFixed(2)}</strong>)</span>
+          </span>
+          ${walletUsedAmount > 0 ? `<strong style="color: var(--accent-emerald-text); font-size: 0.95rem;">-₹${walletUsedAmount.toFixed(2)}</strong>` : ""}
+        </label>
+      </div>
+    ` : ""}
+
+    ${isFullyPaid ? `
+      <div style="background: var(--accent-emerald-bg); border: 1px solid var(--accent-emerald-border); border-radius: var(--radius-md); padding: 11px 14px; margin-top: 14px;">
+        <span style="color: var(--accent-emerald-text); font-weight: 700; font-size: 0.88rem;">✓ 100% covered by Wallet Balance. No other payment required!</span>
+      </div>
+    ` : `
+      <fieldset class="fulfillment-selector" style="margin-top:14px;">
+        <legend>Payment method</legend>
+        ${paymentModes.cod ? `<label><input type="radio" name="payment-mode" value="cod" ${paymentMode === "cod" ? "checked" : ""}> Cash ${fulfillmentType === "pickup" ? "on pickup" : "on delivery"}</label>` : ""}
+        ${paymentModes.upi ? `<label><input type="radio" name="payment-mode" value="upi" ${paymentMode === "upi" ? "checked" : ""}> UPI (pay now)</label>` : ""}
+        ${!paymentModes.cod && !paymentModes.upi ? `<p style="color:var(--danger);">No payment methods are enabled. Please contact us.</p>` : ""}
+      </fieldset>
+    `}
+
     <div class="user-box">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <strong>${fulfillmentType === "pickup" ? "Pickup Details:" : "Delivery Details:"}</strong>
@@ -401,10 +436,15 @@ function renderCart() {
     input.addEventListener("change", () => { paymentMode = input.value; checkoutStep = "details"; renderCart(); });
   });
   document.getElementById("place-order").textContent = getPlaceOrderLabel();
-  document.getElementById("place-order").disabled = !paymentMode;
+  document.getElementById("place-order").disabled = !isFullyPaid && !paymentMode;
 }
 
 function getPlaceOrderLabel() {
+  const userWalletBalance = Math.max(0, Number(userData?.wallet_balance || 0));
+  const itemTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const preWalletTotal = Math.max(itemTotal + deliveryCharge - discountAmount, 0);
+  const isFullyPaid = useWallet && userWalletBalance >= preWalletTotal && preWalletTotal > 0;
+  if (isFullyPaid) return "Pay with Wallet & Place Order";
   if (paymentMode === "upi") return checkoutStep === "payment" ? "I’ve paid — Place Order for Verification" : "Proceed to UPI Payment";
   return fulfillmentType === "pickup" ? "Place Pickup Order" : "Place Order (Cash on Delivery)";
 }

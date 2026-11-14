@@ -23,14 +23,24 @@ function escapeHTML(value = "") {
 
 function getStatusClass(status = "") {
   const normalized = String(status).toLowerCase();
-  if (normalized.includes("delivered") || normalized.includes("approved")) return "success";
+  if (normalized.includes("delivered") || normalized.includes("approved") || normalized.includes("picked")) return "success";
   if (normalized.includes("rejected") || normalized.includes("cancel")) return "danger";
-  if (normalized.includes("printing") || normalized.includes("delivery") || normalized.includes("dispatch")) return "active";
+  if (normalized.includes("printing") || normalized.includes("delivery") || normalized.includes("dispatch") || normalized.includes("ready") || normalized.includes("pickup")) return "active";
   return "pending";
 }
 
-function displayOrderStatus(status = "Order Placed") {
+function displayOrderStatus(status = "Order Placed", isPickup = false) {
   const value = String(status).toLowerCase();
+  if (isPickup) {
+    if (value.includes("picked") || value.includes("collected")) return "Order Picked Up";
+    if (value.includes("ready") || value.includes("pickup")) return "Ready for Pickup";
+    if (value.includes("delivered")) return "Order Picked Up";
+    if (value.includes("delivery") || value.includes("dispatch") || value.includes("shipped")) return "Ready for Pickup";
+    if (value.includes("printing") || value.includes("production")) return "Printing Product";
+    if (value.includes("approved") || value.includes("confirm")) return "Order Approved";
+    if (value.includes("placed") || value.includes("pending") || value.includes("request")) return "Order Placed";
+    return status || "Order Placed";
+  }
   if (value.includes("delivered")) return "Product Delivered";
   if (value.includes("delivery")) return "Out For Delivery";
   if (value.includes("dispatch") || value.includes("shipped")) return "Order Dispatched";
@@ -42,6 +52,141 @@ function displayOrderStatus(status = "Order Placed") {
 
 function itemImageUrl(item = {}) {
   return String(item.imageUrl || "").split(",").map(url => url.trim()).find(Boolean) || "logo_creativesouls.jpg";
+}
+
+let clientLightboxState = { images: [], index: 0, title: "" };
+
+function ensureClientLightboxModal() {
+  let dlg = document.getElementById("cs-client-photo-lightbox");
+  if (dlg) return dlg;
+
+  dlg = document.createElement("dialog");
+  dlg.id = "cs-client-photo-lightbox";
+  dlg.className = "cs-photo-lightbox";
+  dlg.setAttribute("aria-label", "Image viewer");
+  dlg.innerHTML = `
+    <div class="cs-lightbox-header">
+      <div class="cs-lightbox-info">
+        <span class="cs-lightbox-title" id="cs-lightbox-title">Photo</span>
+        <span class="cs-lightbox-counter" id="cs-lightbox-counter"></span>
+      </div>
+      <div class="cs-lightbox-actions">
+        <a class="cs-lightbox-external" id="cs-lightbox-external" href="#" target="_blank" rel="noopener noreferrer" title="Open full resolution in new tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>Open Full</span>
+        </a>
+        <button type="button" class="cs-lightbox-close" id="cs-lightbox-close" aria-label="Close photo viewer">✕</button>
+      </div>
+    </div>
+    <div class="cs-lightbox-body" id="cs-lightbox-body">
+      <button type="button" class="cs-lightbox-arrow cs-lightbox-prev" id="cs-lightbox-prev" aria-label="Previous image">‹</button>
+      <div class="cs-lightbox-media-wrap">
+        <img class="cs-lightbox-img" id="cs-lightbox-img" src="" alt="Photo" />
+        <div class="cs-lightbox-loading" id="cs-lightbox-loading" hidden>Loading image…</div>
+      </div>
+      <button type="button" class="cs-lightbox-arrow cs-lightbox-next" id="cs-lightbox-next" aria-label="Next image">›</button>
+    </div>
+  `;
+  document.body.appendChild(dlg);
+
+  const updateView = () => {
+    if (!clientLightboxState.images.length) return;
+    const total = clientLightboxState.images.length;
+    clientLightboxState.index = (clientLightboxState.index + total) % total;
+    const cur = clientLightboxState.images[clientLightboxState.index];
+    const url = typeof cur === "string" ? cur : (cur.url || cur.thumbnailUrl || "");
+    const name = typeof cur === "string" ? (clientLightboxState.title || "Photo") : (cur.name || clientLightboxState.title || "Photo");
+
+    const titleEl = document.getElementById("cs-lightbox-title");
+    const counterEl = document.getElementById("cs-lightbox-counter");
+    const extLink = document.getElementById("cs-lightbox-external");
+    const imgEl = document.getElementById("cs-lightbox-img");
+    const loadingEl = document.getElementById("cs-lightbox-loading");
+    const prevBtn = document.getElementById("cs-lightbox-prev");
+    const nextBtn = document.getElementById("cs-lightbox-next");
+
+    if (titleEl) titleEl.textContent = name;
+    if (counterEl) counterEl.textContent = total > 1 ? `${clientLightboxState.index + 1} / ${total}` : "";
+    if (extLink) extLink.href = url;
+
+    if (prevBtn) prevBtn.style.display = total > 1 ? "flex" : "none";
+    if (nextBtn) nextBtn.style.display = total > 1 ? "flex" : "none";
+
+    if (imgEl) {
+      if (loadingEl) loadingEl.hidden = false;
+      imgEl.onload = () => { if (loadingEl) loadingEl.hidden = true; };
+      imgEl.onerror = () => { if (loadingEl) loadingEl.hidden = true; };
+      imgEl.src = url;
+      imgEl.alt = name;
+    }
+  };
+
+  dlg.querySelector("#cs-lightbox-close")?.addEventListener("click", () => dlg.close());
+  dlg.querySelector("#cs-lightbox-prev")?.addEventListener("click", () => {
+    clientLightboxState.index--;
+    updateView();
+  });
+  dlg.querySelector("#cs-lightbox-next")?.addEventListener("click", () => {
+    clientLightboxState.index++;
+    updateView();
+  });
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (!dlg.open) return;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      clientLightboxState.index--;
+      updateView();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      clientLightboxState.index++;
+      updateView();
+    }
+  });
+
+  const bodyEl = dlg.querySelector("#cs-lightbox-body");
+  let touchStartX = 0;
+  let touchStartY = 0;
+  bodyEl?.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+  bodyEl?.addEventListener("touchend", (e) => {
+    if (!touchStartX) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    touchStartX = 0;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) {
+        clientLightboxState.index++;
+        updateView();
+      } else {
+        clientLightboxState.index--;
+        updateView();
+      }
+    }
+  }, { passive: true });
+
+  dlg._updateView = updateView;
+  return dlg;
+}
+
+function openClientPhotoLightbox(images, startIndex = 0, title = "Finished product photo") {
+  if (!images || !images.length) return;
+  const dlg = ensureClientLightboxModal();
+  clientLightboxState = {
+    images,
+    index: Math.max(0, Math.min(images.length - 1, startIndex)),
+    title
+  };
+  dlg._updateView();
+  if (!dlg.open) {
+    dlg.showModal();
+  }
 }
 
 function generateRandom6Digit() {
@@ -92,12 +237,32 @@ function productCheckboxHTML(items) {
 
 function existingTicketsHTML(tickets) {
   if (!tickets.length) return "";
-  const rows = tickets.map(ticket => `
-    <div class="issue-existing-item">
-      <span><strong>${escapeHTML(ticket.ticket_id)}</strong> · ${escapeHTML(ticket.status || "Open")}</span>
-      <span>${escapeHTML((ticket.issue || "").slice(0, 80))}${(ticket.issue || "").length > 80 ? "…" : ""}</span>
-    </div>
-  `).join("");
+  const rows = tickets.map((ticket, tktIdx) => {
+    const rawAttachments = Array.isArray(ticket.attachments) ? ticket.attachments.filter(att => att && (att.url || att.thumbnailUrl)) : [];
+    const imageAttachments = rawAttachments.filter(file => !String(file.fileType || "").toLowerCase().includes("video") && !/\.(mp4|webm|mov|m4v|avi|mkv)(?:[?#]|$)/i.test(file.url || ""));
+    const attachmentsHTML = imageAttachments.length ? `
+      <div class="issue-ticket-attachments">
+        <span class="issue-attachments-label">Photos attached (${imageAttachments.length}):</span>
+        <div class="issue-attachments-grid">
+          ${imageAttachments.map((img, imgIdx) => `
+            <button type="button" class="issue-ticket-thumb-btn" data-tkt-idx="${tktIdx}" data-img-idx="${imgIdx}" title="Click to view photo" aria-label="View photo ${imgIdx + 1}: ${escapeHTML(img.name || "Ticket photo")}">
+              <img src="${escapeHTML(img.thumbnailUrl || img.url)}" alt="${escapeHTML(img.name || "Ticket photo")}" loading="lazy" />
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    ` : "";
+    return `
+      <div class="issue-existing-item">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span><strong>${escapeHTML(ticket.ticket_id)}</strong> · ${escapeHTML(ticket.status || "Open")}</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${ticket.created_at?.toDate ? ticket.created_at.toDate().toLocaleString("en-IN", { dateStyle: "short" }) : ""}</span>
+        </div>
+        <p style="margin:4px 0 0;font-size:0.86rem;color:var(--text-muted);">${escapeHTML((ticket.issue || "").slice(0, 120))}${(ticket.issue || "").length > 120 ? "…" : ""}</p>
+        ${attachmentsHTML}
+      </div>
+    `;
+  }).join("");
   return `
     <div class="issue-existing-list">
       <p class="issue-panel-intro" style="margin:0 0 8px;">Tickets already raised for this order:</p>
@@ -121,25 +286,47 @@ function bindIssueForm({ user, orderId, data, items }) {
     toggle.textContent = open ? "Hide issue form" : "Have any issues with the order? Raise an issue";
   });
 
-  fileInput.addEventListener("change", () => {
-    preview.innerHTML = "";
-    [...fileInput.files].forEach(file => {
-      const figure = document.createElement("figure");
-      const caption = document.createElement("figcaption");
-      caption.textContent = file.name;
-      if (file.type.startsWith("video/")) {
-        const video = document.createElement("video");
-        video.src = URL.createObjectURL(file);
-        video.muted = true;
-        figure.append(video, caption);
-      } else {
-        const img = document.createElement("img");
-        img.src = URL.createObjectURL(file);
-        img.alt = file.name;
-        figure.append(img, caption);
-      }
-      preview.append(figure);
+  let stagedIssueFiles = [];
+
+  const renderIssuePreviews = () => {
+    preview.replaceChildren();
+    if (!stagedIssueFiles.length) return;
+    const grid = document.createElement("div");
+    grid.className = "issue-staged-grid";
+    stagedIssueFiles.forEach((file, index) => {
+      const card = document.createElement("figure");
+      card.className = "issue-staged-card";
+      const isVideo = file.type.startsWith("video/");
+      const visual = document.createElement(isVideo ? "video" : "img");
+      visual.src = URL.createObjectURL(file);
+      if (isVideo) { visual.muted = true; }
+      else { visual.alt = file.name; }
+      const name = document.createElement("span");
+      name.className = "issue-staged-name";
+      name.textContent = file.name;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "issue-staged-remove";
+      remove.textContent = "✕";
+      remove.setAttribute("aria-label", `Remove ${file.name}`);
+      remove.addEventListener("click", () => {
+        stagedIssueFiles.splice(index, 1);
+        renderIssuePreviews();
+      });
+      card.append(visual, name, remove);
+      grid.append(card);
     });
+    preview.append(grid);
+  };
+
+  fileInput.addEventListener("change", () => {
+    const selected = [...(fileInput.files || [])];
+    selected.forEach(file => {
+      const isDup = stagedIssueFiles.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified);
+      if (!isDup) stagedIssueFiles.push(file);
+    });
+    fileInput.value = "";
+    renderIssuePreviews();
   });
 
   form.addEventListener("submit", async event => {
@@ -172,7 +359,7 @@ function bindIssueForm({ user, orderId, data, items }) {
       return;
     }
 
-    const files = [...fileInput.files];
+    const files = [...stagedIssueFiles];
     const oversized = files.find(file => file.size > IMAGEKIT_MAX_FILE_BYTES);
     if (oversized) {
       message.textContent = `${oversized.name} is larger than 25 MB. Please choose a smaller photo or video.`;
@@ -215,6 +402,8 @@ function bindIssueForm({ user, orderId, data, items }) {
       message.innerHTML = `Issue submitted. Ticket ID <strong>${escapeHTML(ticketId)}</strong>. We’ll review it shortly.`;
       message.style.color = "var(--accent-emerald-text)";
       button.textContent = "Ticket submitted";
+      stagedIssueFiles = [];
+      renderIssuePreviews();
       form.querySelectorAll("input:not([readonly]), textarea").forEach(field => { field.disabled = true; });
     } catch (err) {
       console.error("Could not submit issue ticket:", err);
@@ -312,14 +501,15 @@ firebase.auth().onAuthStateChanged(async (user) => {
       </div>
     `).join("");
     const finalProductImages = Array.isArray(data.final_product_images) ? data.final_product_images.filter(image => image && /^https:\/\//i.test(String(image.url || ""))) : [];
-    const finalProductImagesHTML = finalProductImages.map(image => `
-      <a class="final-product-image-link" href="${escapeHTML(image.url)}" target="_blank" rel="noopener noreferrer">
+    const finalProductImagesHTML = finalProductImages.map((image, idx) => `
+      <button type="button" class="final-product-image-link" data-final-idx="${idx}" title="Click to view full photo" aria-label="View photo ${idx + 1}: ${escapeHTML(image.name || "Finished product photo")}">
         <img src="${escapeHTML(image.thumbnailUrl || image.url)}" alt="${escapeHTML(image.name || "Finished product photo")}" loading="lazy" />
         <span>${escapeHTML(image.name || "Finished product photo")}</span>
-      </a>
+      </button>
     `).join("");
 
-    const status = displayOrderStatus(data.status || "Order Placed");
+    const isPickup = data.fulfillment_type === "pickup";
+    const status = displayOrderStatus(data.status || "Order Placed", isPickup);
     const placedOn = data.timestamp ? data.timestamp.toDate().toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short"
@@ -333,7 +523,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
       </tr>
     `).join("");
     const paymentMode = String(data.payment_ref || "Cash on Delivery").replaceAll("-", " ");
-    const isPickup = data.fulfillment_type === "pickup";
     const isServiceRequest = data.order_type === "bulk_order" || data.order_type === "printing_service";
     const serviceRequest = data.service_request || {};
     const requestLabels = {
@@ -416,7 +605,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
               <div><dt>Email Address</dt><dd>${escapeHTML(data.email || "-")}</dd></div>
               <div><dt>Phone Number</dt><dd>${escapeHTML(data.phone || "-")}</dd></div>
               <div><dt>${isPickup ? "Pickup Location" : "Shipping Address"}</dt><dd>${escapeHTML(data.pickup_location || data.address || "-")}</dd></div>
-              <div><dt>${isServiceRequest ? "Next step" : "Expected Delivery"}</dt><dd>${escapeHTML(data.expected_delivery || "-")}</dd></div>
+              <div><dt>${isServiceRequest ? "Next step" : isPickup ? "Pickup Availability" : "Expected Delivery"}</dt><dd>${escapeHTML(data.expected_delivery || (isPickup ? "Will notify when ready for pickup" : "-"))}</dd></div>
             </dl>
           </article>
 
@@ -493,6 +682,27 @@ firebase.auth().onAuthStateChanged(async (user) => {
       </div>
     `;
     bindIssueForm({ user, orderId, data, items });
+
+    // Lightbox for final product photos
+    container.querySelectorAll(".final-product-images-grid .final-product-image-link").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.finalIdx || 0);
+        openClientPhotoLightbox(finalProductImages, idx, "Finished Product Photo");
+      });
+    });
+
+    // Lightbox for existing ticket attachments
+    container.querySelectorAll(".issue-ticket-thumb-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tktIdx = Number(btn.dataset.tktIdx || 0);
+        const imgIdx = Number(btn.dataset.imgIdx || 0);
+        const ticket = existingTickets[tktIdx];
+        if (!ticket) return;
+        const raw = Array.isArray(ticket.attachments) ? ticket.attachments.filter(att => att && (att.url || att.thumbnailUrl)) : [];
+        const images = raw.filter(file => !String(file.fileType || "").toLowerCase().includes("video") && !/\.(mp4|webm|mov|m4v|avi|mkv)(?:[?#]|$)/i.test(file.url || ""));
+        openClientPhotoLightbox(images, imgIdx, `Ticket ${ticket.ticket_id || ""} Photo`);
+      });
+    });
   } catch (err) {
     console.error("Failed to fetch order details:", err);
     container.innerHTML = `

@@ -79,6 +79,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
         Products
       </button>
+      <button class="admin-bottom-nav-item" data-section="calculator" aria-label="Rate Calculator">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg>
+        Rate Calc
+      </button>
       <button class="admin-bottom-nav-item" data-section="analytics" aria-label="Analytics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Analytics
@@ -170,12 +174,24 @@
         <div class="admin-nav-divider"></div>
 
         <div class="admin-nav-group">
-          <div class="admin-nav-group-label">Catalog</div>
+          <div class="admin-nav-group-label">Catalog &amp; Production</div>
           <button class="admin-nav-item" data-section="products" data-tip="Product Catalog">
             <span class="admin-nav-icon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
             </span>
             <span class="admin-nav-label">Products Catalog</span>
+          </button>
+          <button class="admin-nav-item" data-section="calculator" data-tip="3D Print Rate Calculator">
+            <span class="admin-nav-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="16" y1="14" x2="16" y2="18"></line>
+                <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"></path>
+              </svg>
+            </span>
+            <span class="admin-nav-label">Rate Calculator</span>
+            <span class="nav-badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-dark); font-weight: 700; font-size: 0.65rem;">Cost</span>
           </button>
         </div>
 
@@ -297,7 +313,7 @@
                 <span class="admin-stat-tag">FULFILLED</span>
               </div>
               <div>
-                <div class="admin-stat-label">Product Delivered</div>
+                <div class="admin-stat-label">Delivered / Picked Up</div>
                 <div class="admin-stat-value" id="stat-delivered-orders">—</div>
               </div>
               <div class="admin-stat-sub">Successfully fulfilled to customers</div>
@@ -594,10 +610,14 @@
           <div class="admin-quick-filters" id="orders-quick-filters" role="group" aria-label="Quick status filters">
             <button type="button" class="admin-filter-pill active" data-quick-status="all">All Orders</button>
             <button type="button" class="admin-filter-pill" data-quick-status="action">⚠️ Needs Action</button>
-            <button type="button" class="admin-filter-pill" data-quick-status="In Production">⚙️ In Production</button>
-            <button type="button" class="admin-filter-pill" data-quick-status="Ready for Dispatch">📦 Ready for Dispatch</button>
-            <button type="button" class="admin-filter-pill" data-quick-status="Shipped">🚚 Shipped</button>
-            <button type="button" class="admin-filter-pill" data-quick-status="Delivered">✅ Delivered</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Order Placed">Order Placed</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Order Approved">Order Approved</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Printing Product">Printing Product</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Ready for Pickup">Ready for Pickup</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Order Picked Up">Order Picked Up</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Order Dispatched">Order Dispatched</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Out For Delivery">Out For Delivery</button>
+            <button type="button" class="admin-filter-pill" data-quick-status="Product Delivered">Product Delivered</button>
           </div>
 
           <div class="admin-toolbar-row">
@@ -1157,6 +1177,715 @@
           </article>
         </section>
 
+        <!-- ════════════════════════════════════════════════════════════════
+             3D PRINT RATE CALCULATOR
+        ════════════════════════════════════════════════════════════════ -->
+        <section class="admin-section" id="section-calculator">
+          <div class="admin-page-hdr">
+            <div class="admin-page-hdr-left">
+              <p class="eyebrow">Manufacturing &amp; Cost Estimation</p>
+              <h1>3D Print Rate Calculator</h1>
+              <p class="sub">Calculate exact production cost, machine depreciation, maintenance wear, power &amp; commercial quotation for 3D printed products.</p>
+            </div>
+            <div class="admin-page-hdr-right calc-hdr-actions">
+              <button id="calc-copy-quote-btn" type="button" class="btn btn-secondary" title="Copy formatted quote for WhatsApp or Email">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy Client Quote
+              </button>
+              <button id="calc-print-quote-btn" type="button" class="btn btn-secondary" title="Print Job Card / Quotation Slip">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Print Job Slip
+              </button>
+              <button id="calc-save-preset-btn" type="button" class="btn btn-secondary" title="Save current settings as a reusable preset">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Save Preset
+              </button>
+              <button id="calc-reset-btn" type="button" class="btn btn-secondary" title="Reset all fields to defaults">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- ── MODE SWITCHER & PRESET BAR ────────────────────────── -->
+          <div class="calc-toolbar-strip">
+            <div class="calc-mode-switch" role="tablist" aria-label="Calculator Mode">
+              <button type="button" class="calc-mode-btn active" data-mode="beginner" role="tab" aria-selected="true">
+                <span class="calc-mode-icon">⚡</span>
+                <div class="calc-mode-label">
+                  <strong>Beginner Mode</strong>
+                  <span>Quick quote &amp; standard rates</span>
+                </div>
+              </button>
+              <button type="button" class="calc-mode-btn" data-mode="complex" role="tab" aria-selected="false">
+                <span class="calc-mode-icon">⚙️</span>
+                <div class="calc-mode-label">
+                  <strong>Complex Mode</strong>
+                  <span>Full engineering &amp; cost precision</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="calc-toolbar-right">
+              <div class="calc-preset-wrap">
+                <label for="calc-preset-select" class="calc-mini-label">Saved Presets:</label>
+                <select id="calc-preset-select" class="calc-select-sm">
+                  <option value="">-- Load Saved Preset --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── CALCULATOR MAIN WORKSPACE ─────────────────────────── -->
+          <div class="calc-workspace-grid">
+
+            <!-- LEFT COLUMN: MODE VIEWS -->
+            <div class="calc-inputs-column">
+
+              <!-- ═════════════════════════════════════════════════════
+                   BEGINNER MODE VIEW
+              ═════════════════════════════════════════════════════ -->
+              <div id="calc-beginner-view" class="calc-view-panel active">
+
+                <!-- Step 1: Select 3D Printer -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-step-badge">1</div>
+                    <div>
+                      <h3>Select Your 3D Printer</h3>
+                      <p class="calc-card-sub">Choose among your workshop machines. Base price, depreciation rate, and maintenance wear are applied automatically.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-printer-grid">
+                    <!-- Kobra 2 Neo -->
+                    <div class="calc-printer-card selected" data-printer-id="kobra2neo" tabindex="0" role="button">
+                      <div class="calc-printer-radio">
+                        <input type="radio" name="calc-b-printer-choice" id="calc-p-kobra2" value="kobra2neo" checked>
+                      </div>
+                      <div class="calc-printer-info">
+                        <div class="calc-printer-title-row">
+                          <strong>Anycubic Kobra 2 Neo</strong>
+                          <span class="calc-tag green">₹16,000</span>
+                        </div>
+                        <p class="calc-printer-desc">Rapid bed-slinger (250mm/s). Low hourly power draw &amp; economical wear.</p>
+                        <div class="calc-printer-metrics">
+                          <span title="Depreciation per hour">📉 Depr: <strong>₹5.33/hr</strong></span>
+                          <span title="Maintenance wear per hour">🔧 Maint: <strong>₹6.00/hr</strong></span>
+                          <span title="Power consumption">⚡ Power: <strong>180W</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Kobra X -->
+                    <div class="calc-printer-card" data-printer-id="kobrax" tabindex="0" role="button">
+                      <div class="calc-printer-radio">
+                        <input type="radio" name="calc-b-printer-choice" id="calc-p-kobrax" value="kobrax">
+                      </div>
+                      <div class="calc-printer-info">
+                        <div class="calc-printer-title-row">
+                          <strong>Anycubic Kobra X</strong>
+                          <span class="calc-tag purple">₹40,000</span>
+                        </div>
+                        <p class="calc-printer-desc">Heavy-duty large-format workhorse with high wattage bed heater &amp; rigid linear rails.</p>
+                        <div class="calc-printer-metrics">
+                          <span title="Depreciation per hour">📉 Depr: <strong>₹10.00/hr</strong></span>
+                          <span title="Maintenance wear per hour">🔧 Maint: <strong>₹12.00/hr</strong></span>
+                          <span title="Power consumption">⚡ Power: <strong>350W</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 2: Print Specifications -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-step-badge">2</div>
+                    <div>
+                      <h3>Print Duration &amp; Material Weight</h3>
+                      <p class="calc-card-sub">Enter slicing estimate from Cura, PrusaSlicer, OrcaSlicer, or Anycubic Studio.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-2">
+                    <!-- Print Time (Hours & Minutes) -->
+                    <div class="calc-field-group">
+                      <label class="calc-label">
+                        <span>Print Duration (Hours &amp; Min)</span>
+                        <span class="calc-helper-pill" id="calc-b-time-helper">Total: 3h 45m (3.75 hrs)</span>
+                      </label>
+                      <div class="calc-time-inputs">
+                        <div class="calc-time-field">
+                          <input type="number" id="calc-b-hours" min="0" max="999" value="3" class="calc-input">
+                          <span class="calc-time-unit">Hours</span>
+                        </div>
+                        <span class="calc-time-sep">:</span>
+                        <div class="calc-time-field">
+                          <input type="number" id="calc-b-minutes" min="0" max="59" value="45" class="calc-input">
+                          <span class="calc-time-unit">Mins</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Print Weight in Grams -->
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-b-weight">
+                        <span>Filament Weight (Grams)</span>
+                        <span class="calc-helper-pill" id="calc-b-rate-per-gram">₹0.85/g</span>
+                      </label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-b-weight" min="1" max="99999" value="65" class="calc-input">
+                        <span class="calc-addon-tag">grams (g)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 3: Filament Details & Price -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-step-badge">3</div>
+                    <div>
+                      <h3>Filament Details &amp; Spool Price</h3>
+                      <p class="calc-card-sub">Select material preset or adjust your actual spool purchase rate.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-2">
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-b-filament">Filament Material</label>
+                      <select id="calc-b-filament" class="calc-select">
+                        <option value="pla_std">PLA Standard (₹850 / 1kg)</option>
+                        <option value="pla_plus">PLA+ / Tough High-Speed (₹1,050 / 1kg)</option>
+                        <option value="petg">PETG Functional (₹950 / 1kg)</option>
+                        <option value="abs">ABS / ASA Technical (₹1,150 / 1kg)</option>
+                        <option value="tpu">TPU 95A Flexible (₹1,450 / 1kg)</option>
+                        <option value="silk">Silk / Dual-Tone PLA (₹1,250 / 1kg)</option>
+                        <option value="cf">Carbon Fiber PLA-CF (₹1,850 / 1kg)</option>
+                        <option value="custom">Custom Filament Price...</option>
+                      </select>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-b-spool-price">Spool Cost (₹ per 1kg)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹</span>
+                        <input type="number" id="calc-b-spool-price" min="100" max="20000" value="850" class="calc-input">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 4: Profit Margin / Markup -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-step-badge">4</div>
+                    <div>
+                      <h3>Target Profit Margin / Markup</h3>
+                      <p class="calc-card-sub">Choose your target return above direct manufacturing costs.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-markup-chips-row">
+                    <button type="button" class="calc-markup-chip" data-markup="30">
+                      <strong>30%</strong>
+                      <span>Budget / Friends</span>
+                    </button>
+                    <button type="button" class="calc-markup-chip active" data-markup="50">
+                      <strong>50%</strong>
+                      <span>Standard Commercial</span>
+                    </button>
+                    <button type="button" class="calc-markup-chip" data-markup="80">
+                      <strong>80%</strong>
+                      <span>Custom / Bespoke</span>
+                    </button>
+                    <button type="button" class="calc-markup-chip" data-markup="120">
+                      <strong>120%</strong>
+                      <span>Artisan / Novelty</span>
+                    </button>
+                    <div class="calc-custom-markup-box">
+                      <label for="calc-b-markup-custom">Custom %</label>
+                      <input type="number" id="calc-b-markup-custom" min="0" max="1000" value="50" class="calc-input-mini">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Beginner Auto-Calculated Cost Badges -->
+                <div class="calc-breakdown-strip">
+                  <div class="calc-badge-item">
+                    <span class="calc-badge-icon">🧵</span>
+                    <div class="calc-badge-text">
+                      <span>Filament (incl. 5% waste)</span>
+                      <strong id="calc-b-breakdown-material">₹58.01</strong>
+                    </div>
+                  </div>
+                  <div class="calc-badge-item">
+                    <span class="calc-badge-icon">📉</span>
+                    <div class="calc-badge-text">
+                      <span>Depreciation Cost</span>
+                      <strong id="calc-b-breakdown-depr">₹19.99</strong>
+                    </div>
+                  </div>
+                  <div class="calc-badge-item">
+                    <span class="calc-badge-icon">🔧</span>
+                    <div class="calc-badge-text">
+                      <span>Maintenance Wear</span>
+                      <strong id="calc-b-breakdown-maint">₹22.50</strong>
+                    </div>
+                  </div>
+                  <div class="calc-badge-item">
+                    <span class="calc-badge-icon">⚡</span>
+                    <div class="calc-badge-text">
+                      <span>Electricity Cost</span>
+                      <strong id="calc-b-breakdown-power">₹6.08</strong>
+                    </div>
+                  </div>
+                  <div class="calc-badge-item">
+                    <span class="calc-badge-icon">🛡️</span>
+                    <div class="calc-badge-text">
+                      <span>Print Failure Buffer</span>
+                      <strong id="calc-b-breakdown-buffer">₹5.33</strong>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- ═════════════════════════════════════════════════════
+                   COMPLEX MODE VIEW
+              ═════════════════════════════════════════════════════ -->
+              <div id="calc-complex-view" class="calc-view-panel" hidden>
+
+                <!-- Card 1: Machine & Capital Economics -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-section-icon">🖨️</div>
+                    <div>
+                      <h3>Printer Hardware &amp; Capital Economics</h3>
+                      <p class="calc-card-sub">Granular depreciation rate, maintenance wear budget, wattage &amp; electrical tariffs.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-3">
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-printer">Selected Machine</label>
+                      <select id="calc-c-printer" class="calc-select">
+                        <option value="kobra2neo">Anycubic Kobra 2 Neo (₹16,000)</option>
+                        <option value="kobrax">Anycubic Kobra X (₹40,000)</option>
+                        <option value="custom">Custom 3D Printer</option>
+                      </select>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-machine-cost">Machine Purchase Cost (₹)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹</span>
+                        <input type="number" id="calc-c-machine-cost" min="1000" value="16000" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-lifespan">Service Lifespan (Hours)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-lifespan" min="500" value="3000" class="calc-input">
+                        <span class="calc-addon-tag">hrs</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-depr-rate">Hourly Depreciation (₹/hr)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹/hr</span>
+                        <input type="number" id="calc-c-depr-rate" step="0.01" value="5.33" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-maint-rate">Hourly Maintenance Wear (₹/hr)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹/hr</span>
+                        <input type="number" id="calc-c-maint-rate" step="0.5" value="6.00" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-watts">Average Power Draw (Watts)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-watts" min="10" value="180" class="calc-input">
+                        <span class="calc-addon-tag">W</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-power-rate">Electricity Rate (₹/kWh / Unit)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹/kWh</span>
+                        <input type="number" id="calc-c-power-rate" step="0.5" value="9.00" class="calc-input">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Material & Slicer Precision -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-section-icon">🧵</div>
+                    <div>
+                      <h3>Filament Material &amp; Waste Engineering</h3>
+                      <p class="calc-card-sub">Spool pricing, model weight, purge towers, brims, support scrap buffer.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-3">
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-filament">Material Type</label>
+                      <select id="calc-c-filament" class="calc-select">
+                        <option value="pla_std">PLA Standard (₹850 / 1kg)</option>
+                        <option value="pla_plus">PLA+ / Tough High-Speed (₹1,050 / 1kg)</option>
+                        <option value="petg">PETG Functional (₹950 / 1kg)</option>
+                        <option value="abs">ABS / ASA Technical (₹1,150 / 1kg)</option>
+                        <option value="tpu">TPU 95A Flexible (₹1,450 / 1kg)</option>
+                        <option value="silk">Silk / Dual-Tone PLA (₹1,250 / 1kg)</option>
+                        <option value="cf">Carbon Fiber PLA-CF (₹1,850 / 1kg)</option>
+                        <option value="custom">Custom Filament Price...</option>
+                      </select>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-spool-price">Spool Cost (₹)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹</span>
+                        <input type="number" id="calc-c-spool-price" value="850" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-spool-grams">Spool Net Weight (g)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-spool-grams" value="1000" class="calc-input">
+                        <span class="calc-addon-tag">g</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-weight">
+                        <span>Model Net Weight</span>
+                        <span class="calc-helper-pill" id="calc-c-rate-per-gram">₹0.85/g</span>
+                      </label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-weight" min="1" value="65" class="calc-input">
+                        <span class="calc-addon-tag">g</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-waste">
+                        <span>Support / Waste Overhead</span>
+                        <span class="calc-helper-pill" id="calc-c-gross-grams">~70.2g gross</span>
+                      </label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-waste" min="0" max="100" value="8" class="calc-input">
+                        <span class="calc-addon-tag">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3: Time, Labor & Post-Processing -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-section-icon">⏱️</div>
+                    <div>
+                      <h3>Print Duration, Labor &amp; Finishing</h3>
+                      <p class="calc-card-sub">CAD/slicing prep, support removal, sanding, inserts, hardware &amp; packaging.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-3">
+                    <!-- Print Time -->
+                    <div class="calc-field-group">
+                      <label class="calc-label">
+                        <span>Print Duration</span>
+                        <span class="calc-helper-pill" id="calc-c-time-helper">3h 45m</span>
+                      </label>
+                      <div class="calc-time-inputs">
+                        <div class="calc-time-field">
+                          <input type="number" id="calc-c-hours" min="0" value="3" class="calc-input">
+                          <span class="calc-time-unit">Hrs</span>
+                        </div>
+                        <span class="calc-time-sep">:</span>
+                        <div class="calc-time-field">
+                          <input type="number" id="calc-c-minutes" min="0" max="59" value="45" class="calc-input">
+                          <span class="calc-time-unit">Mins</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-prep-mins">Prep &amp; Slicing Time</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-prep-mins" min="0" value="10" class="calc-input">
+                        <span class="calc-addon-tag">mins</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-post-mins">Post-Processing / Cleanup</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-post-mins" min="0" value="15" class="calc-input">
+                        <span class="calc-addon-tag">mins</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-labor-rate">Technician Labor Rate</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹/hr</span>
+                        <input type="number" id="calc-c-labor-rate" min="0" value="120" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-hardware">Hardware &amp; Inserts (₹)</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹</span>
+                        <input type="number" id="calc-c-hardware" min="0" value="0" placeholder="Magnets, bolts..." class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-packaging">Protective Box &amp; Packaging</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹</span>
+                        <input type="number" id="calc-c-packaging" min="0" value="20" class="calc-input">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4: Commercial Overheads, Tax & Batches -->
+                <div class="calc-card">
+                  <div class="calc-card-hdr">
+                    <div class="calc-section-icon">📈</div>
+                    <div>
+                      <h3>Commercial Overheads, Taxes &amp; Multi-Quantity</h3>
+                      <p class="calc-card-sub">Studio rent overhead, scrap failure risk, markup vs margin, GST &amp; wholesale tier.</p>
+                    </div>
+                  </div>
+
+                  <div class="calc-grid-3">
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-failure">Print Failure Risk Buffer</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-failure" min="0" max="50" value="8" class="calc-input">
+                        <span class="calc-addon-tag">%</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-overhead">Studio Overhead Rate</label>
+                      <div class="calc-input-addon">
+                        <span class="calc-addon-tag">₹/hr</span>
+                        <input type="number" id="calc-c-overhead" min="0" value="15" class="calc-input">
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-strategy">Pricing Strategy</label>
+                      <select id="calc-c-strategy" class="calc-select">
+                        <option value="markup">Markup on Cost (%)</option>
+                        <option value="margin">Gross Profit Margin (%)</option>
+                      </select>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-markup">Target Profit Rate (%)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-markup" min="0" max="1000" value="50" class="calc-input">
+                        <span class="calc-addon-tag">%</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-tax">Applicable Tax / GST (%)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-tax" min="0" max="28" value="0" class="calc-input">
+                        <span class="calc-addon-tag">%</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-qty">Order Batch Quantity</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-qty" min="1" max="1000" value="1" class="calc-input">
+                        <span class="calc-addon-tag">units</span>
+                      </div>
+                    </div>
+
+                    <div class="calc-field-group">
+                      <label class="calc-label" for="calc-c-wholesale">Wholesale Discount (%)</label>
+                      <div class="calc-input-addon">
+                        <input type="number" id="calc-c-wholesale" min="0" max="70" value="15" class="calc-input">
+                        <span class="calc-addon-tag">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: STICKY COMMERCIAL STATION & QUOTE -->
+            <aside class="calc-summary-column">
+
+              <!-- Hero Quotation Card -->
+              <div class="calc-hero-card">
+                <div class="calc-hero-top">
+                  <span class="calc-hero-eyebrow">Recommended Retail Price</span>
+                  <span class="calc-hero-badge" id="calc-summary-margin">33.3% margin</span>
+                </div>
+                <div class="calc-hero-price-wrap">
+                  <span class="calc-hero-currency">₹</span>
+                  <strong class="calc-hero-price" id="calc-summary-hero-price">0</strong>
+                </div>
+                <div class="calc-hero-sub">
+                  <span>Direct Cost: <strong id="calc-summary-cost">₹0</strong></span>
+                  <span>Profit: <strong id="calc-summary-profit" class="text-green">+₹0</strong></span>
+                </div>
+                <div class="calc-hero-rate-pill">
+                  <span>Machine Hourly Return: <strong id="calc-summary-machine-hr">₹0/hr</strong></span>
+                </div>
+
+                <!-- Stacked Cost Breakdown Bar -->
+                <div class="calc-dist-section">
+                  <div class="calc-dist-bar-header">
+                    <span>Cost Distribution Breakdown</span>
+                  </div>
+                  <div class="calc-dist-bar" role="progressbar" aria-label="Cost distribution">
+                    <div class="calc-bar-segment mat" id="calc-bar-mat" style="width: 25%;" title="Material"></div>
+                    <div class="calc-bar-segment depr" id="calc-bar-depr" style="width: 15%;" title="Depreciation"></div>
+                    <div class="calc-bar-segment maint" id="calc-bar-maint" style="width: 15%;" title="Maintenance"></div>
+                    <div class="calc-bar-segment power" id="calc-bar-power" style="width: 8%;" title="Electricity"></div>
+                    <div class="calc-bar-segment labor" id="calc-bar-labor" style="width: 12%;" title="Labor"></div>
+                    <div class="calc-bar-segment buffer" id="calc-bar-buffer" style="width: 10%;" title="Buffer &amp; Overheads"></div>
+                    <div class="calc-bar-segment profit" id="calc-bar-profit" style="width: 15%;" title="Profit"></div>
+                  </div>
+                  <div class="calc-dist-legend">
+                    <span><i class="dot mat"></i> Material</span>
+                    <span><i class="dot depr"></i> Depr</span>
+                    <span><i class="dot maint"></i> Maint</span>
+                    <span><i class="dot power"></i> Power</span>
+                    <span><i class="dot labor"></i> Labor</span>
+                    <span><i class="dot buffer"></i> Buffer</span>
+                    <span><i class="dot profit"></i> Profit</span>
+                  </div>
+                </div>
+
+                <!-- Ledger Table -->
+                <div class="calc-ledger-table">
+                  <div class="calc-ledger-row">
+                    <span>🧵 Filament Material</span>
+                    <strong id="calc-c-cost-material">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>📉 Machine Depreciation</span>
+                    <strong id="calc-c-cost-depr">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>🔧 Maintenance &amp; Wear</span>
+                    <strong id="calc-c-cost-maint">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>⚡ Electricity (Power)</span>
+                    <strong id="calc-c-cost-power">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row sub">
+                    <span>Machine Run Cost Subtotal</span>
+                    <strong id="calc-c-cost-machine-sub">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>🛡️ Scrap Risk Buffer</span>
+                    <strong id="calc-c-cost-failure">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>⏱️ Labor &amp; Finishing</span>
+                    <strong id="calc-c-cost-labor">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>📦 Hardware &amp; Packaging</span>
+                    <strong id="calc-c-cost-hardware">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row">
+                    <span>🏢 Studio Overhead</span>
+                    <strong id="calc-c-cost-overhead">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-divider"></div>
+                  <div class="calc-ledger-row highlight">
+                    <span>Total Unit Cost (COGS)</span>
+                    <strong id="calc-c-cogs">₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row profit">
+                    <span>Net Cash Profit / Unit</span>
+                    <strong id="calc-c-unit-profit" class="text-green">+₹0.00</strong>
+                  </div>
+                  <div class="calc-ledger-row wholesale">
+                    <span>Wholesale Rate (Bulk 5+)</span>
+                    <strong id="calc-c-wholesale">₹0.00</strong>
+                  </div>
+                </div>
+
+                <!-- 1-Click Action to Catalog -->
+                <button type="button" id="calc-apply-to-catalog-btn" class="btn btn-primary calc-apply-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+                  Apply Price to Products Catalog
+                </button>
+              </div>
+
+              <!-- Client Quotation Station -->
+              <div class="calc-quote-card">
+                <div class="calc-card-hdr">
+                  <div class="calc-section-icon">💬</div>
+                  <div>
+                    <h3>Customer Quotation Card</h3>
+                    <p class="calc-card-sub">Instant WhatsApp &amp; Email quotation text ready to copy.</p>
+                  </div>
+                </div>
+
+                <div class="calc-quote-fields">
+                  <div class="calc-field-group">
+                    <label class="calc-label" for="calc-quote-product">Job / Product Title</label>
+                    <input type="text" id="calc-quote-product" value="Custom 3D Print" class="calc-input">
+                  </div>
+                  <div class="calc-field-group">
+                    <label class="calc-label" for="calc-quote-customer">Client Name (Optional)</label>
+                    <input type="text" id="calc-quote-customer" placeholder="e.g. John Doe" class="calc-input">
+                  </div>
+                  <div class="calc-field-group">
+                    <label class="calc-label" for="calc-quote-turnaround">Delivery Turnaround</label>
+                    <input type="text" id="calc-quote-turnaround" value="1-2 business days" class="calc-input">
+                  </div>
+                </div>
+
+                <div class="calc-quote-preview-wrap">
+                  <pre class="calc-quote-preview-text" id="calc-quote-preview-text"></pre>
+                </div>
+
+                <div class="calc-quote-actions">
+                  <button type="button" class="btn btn-secondary calc-quote-copy-btn" onclick="RateCalculator.copyQuotationToClipboard?.() || document.getElementById('calc-copy-quote-btn')?.click()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy WhatsApp Quote
+                  </button>
+                </div>
+              </div>
+
+            </aside>
+
+          </div>
+
+        </section>
+
       </main>
     </div>
   </div>
@@ -1577,12 +2306,39 @@
       <button type="button" class="btn-secondary" id="ticket-image-revert">Revert to original</button>
     </div>
     <div class="ticket-image-stage" id="ticket-image-stage">
+      <button type="button" class="ticket-image-stage-arrow ticket-image-stage-prev" id="ticket-image-stage-prev" aria-label="Previous image">‹</button>
       <canvas id="ticket-image-canvas" aria-label="Image annotation canvas"></canvas>
+      <button type="button" class="ticket-image-stage-arrow ticket-image-stage-next" id="ticket-image-stage-next" aria-label="Next image">›</button>
       <div id="ticket-image-loading" class="ticket-image-loading" hidden>Loading image…</div>
     </div>
     <div class="ticket-image-footer">
       <span>Choose Text to add or edit notes; adjust size, color, bold, and background. Stamp the date and time. Ctrl/⌘+Z undo · Ctrl/⌘+Shift+Z redo.</span>
       <button type="button" class="btn-primary" id="ticket-image-save">Save annotated copy</button>
+    </div>
+  </dialog>
+
+  <!-- Admin Photo Lightbox Dialog (for final product photos & media viewing) -->
+  <dialog id="admin-photo-lightbox" class="admin-dialog admin-photo-lightbox" aria-label="Photo viewer">
+    <div class="admin-lightbox-header">
+      <div class="admin-lightbox-info">
+        <span id="admin-lightbox-title" class="admin-lightbox-title">Photo</span>
+        <span id="admin-lightbox-counter" class="admin-lightbox-counter"></span>
+      </div>
+      <div class="admin-lightbox-actions">
+        <a id="admin-lightbox-external" class="btn-secondary admin-lightbox-external" href="#" target="_blank" rel="noopener noreferrer" title="Open full resolution in new tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>Open Full</span>
+        </a>
+        <button type="button" id="admin-lightbox-close" class="admin-lightbox-close" aria-label="Close photo viewer">✕</button>
+      </div>
+    </div>
+    <div class="admin-lightbox-body" id="admin-lightbox-body">
+      <button type="button" class="admin-lightbox-arrow admin-lightbox-prev" id="admin-lightbox-prev" aria-label="Previous image">‹</button>
+      <div class="admin-lightbox-media-wrap">
+        <img id="admin-lightbox-img" class="admin-lightbox-img" src="" alt="Photo" />
+        <div id="admin-lightbox-loading" class="admin-lightbox-loading" hidden>Loading image…</div>
+      </div>
+      <button type="button" class="admin-lightbox-arrow admin-lightbox-next" id="admin-lightbox-next" aria-label="Next image">›</button>
     </div>
   </dialog>
 
@@ -2007,6 +2763,7 @@
         wallets:   { title: 'Wallets & Refunds',  sub: 'Search client wallets, credit refunds, issue goodwill points & audit logs' },
         products:  { title: 'Products Catalog',  sub: 'Browse, manage & export your product catalog PDF' },
         explorer:  { title: 'Data Explorer',     sub: 'Browse & edit Firestore collections' },
+        calculator:{ title: '3D Print Rate Calculator', sub: 'Manufacturing cost estimation, depreciation & pricing quotation' },
       };
 
       const sectionFromURL = () => {
@@ -2065,6 +2822,7 @@
     })();
   </script>
 
+  <script src="rate-calculator.js"></script>
   <script src="rich-text.js"></script>
   <script src="admin.js"></script>
 
