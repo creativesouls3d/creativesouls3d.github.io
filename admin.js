@@ -5324,13 +5324,24 @@ const ALLOWED_ADMINS = [ADMIN_EMAIL, "hello.creative.souls3d@gmail.com"]; // per
     const canSt = canonicalOrderStatus(prepared.status, prepared.fulfillment_type);
     if (canSt === "Product Delivered" || canSt === "Order Picked Up") {
       try {
+        const workerUrl = window.PRODUCT_MARKETING_WORKER_URL;
+        if (!workerUrl) throw new Error("Set the Cloudflare Worker URL in cloudflare-worker-config.js, then reload this page.");
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in as an administrator, then try again.");
+        const token = await user.getIdToken();
         const docId = prepared._docId || orderDocuments.find(doc => doc.data().order_id === prepared.order_id)?.id || prepared.order_id;
-        const result = await firebase.functions().httpsCallable("issueFeedbackToken")({ orderDocId: docId });
-        prepared._feedbackToken = result.data.token;
-        prepared._feedbackLink = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "")}feedback.html?id=${encodeURIComponent(String(result.data.orderId).replace(/^#/, ""))}&token=${encodeURIComponent(result.data.token)}`;
+        const response = await fetch(`${workerUrl.replace(/\/+$/, "")}/feedback/issue-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ orderDocId: docId })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Could not issue feedback token (HTTP ${response.status}).`);
+        prepared._feedbackToken = result.token;
+        prepared._feedbackLink = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "")}feedback.html?id=${encodeURIComponent(String(result.orderId).replace(/^#/, ""))}&token=${encodeURIComponent(result.token)}`;
       } catch (error) {
         console.error("Could not create a secure feedback link:", error);
-        window.showAdminToast?.("Could not create a secure feedback link. Confirm the feedback Cloud Functions are deployed.", "danger");
+        window.showAdminToast?.(`Could not create a secure feedback link: ${error.message || error}`, "danger");
         return;
       }
     }
